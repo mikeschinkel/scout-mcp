@@ -1,40 +1,82 @@
-# scout-mcp
-An MCP Server for enabling Claude UI to access local files using a Cloudflare Tunnel.
+# Scout-MCP: Secure File Search Server
 
-# Secure File Search MCP Server Setup Guide
-
-This guide will help you set up a secure Model Context Protocol (MCP) server that allows Claude to search your whitelisted directories through a CloudFlare tunnel.
+Scout-MCP is a secure Model Context Protocol (MCP) server that allows Claude to search your whitelisted directories through a CloudFlare tunnel. Built with explicit directory whitelisting and robust security features.
 
 ## Features
 
 - **Explicit Directory Whitelisting**: Only specified directories are accessible
 - **Two Main Tools**:
-    - `search_files`: Search for files by name pattern in whitelisted directories
-    - `read_file`: Read contents of files from whitelisted directories
+  - `search_files`: Search for files by name pattern in whitelisted directories
+  - `read_file`: Read contents of files from whitelisted directories
 - **Security**: Path validation prevents access outside whitelisted directories
 - **CORS Support**: Configured for Claude.ai origins
 
-## Setup Instructions
-
-### 1. Initialize the Project
+## Quick Start
 
 ```bash
-# Create project directory
-mkdir mcp-file-search
-cd mcp-file-search
+# Clone/create your project
+git clone your-repo/scout-mcp
+cd scout-mcp
 
 # Initialize Go module
-go mod init mcp-file-search
+go mod init scout-mcp
 
-# Create the main.go file (use the code from the artifact above)
+# Create default config with custom directory
+go run main.go init ~/Code
 
-# Generate default configuration
-go run main.go init
+# Start server with config file paths
+go run main.go
+
+# Or add additional path to config file paths
+go run main.go ~/MyProjects
+
+# Or use only a specific path (ignore config)
+go run main.go --only /tmp/safe-dir
 ```
 
-### 2. Configure Whitelisted Directories
+## Documentation
 
-Edit the generated `config.json` file:
+- **[CloudFlare Tunnel Setup](docs/cloudflare-tunnel-setup.md)** - Complete guide to setting up secure tunnel access
+- **[Configuration Guide](#configuration)** - Local configuration options
+- **[API Reference](#api-tools)** - Available tools and their parameters
+- **[Troubleshooting](#troubleshooting)** - Common issues and solutions
+
+## Command Line Usage
+
+Scout-MCP offers flexible path management through command line arguments:
+
+**Basic Commands:**
+- `scout-mcp <path>` - Add path to config file paths and start server
+- `scout-mcp --only <path>` - Use only the specified path (ignore config file)
+- `scout-mcp init` - Create empty config file (requires manual editing)
+- `scout-mcp init <path>` - Create config with custom initial path
+- `scout-mcp` - Start server with config file paths only
+
+**Examples:**
+```bash
+# Start with ~/Projects (from config) + ~/MyCode (from command line)
+scout-mcp ~/MyCode
+
+# Use only /tmp/safe-dir, ignore any config file
+scout-mcp --only /tmp/safe-dir
+
+# Create config with ~/Development as initial directory
+scout-mcp init ~/Development
+
+# Start with just config file paths
+scout-mcp
+```
+
+**Error Handling:**
+- Running without arguments and no config file shows helpful usage information
+- All paths are validated to exist and be directories before starting
+- Clear error messages explain available options
+
+## Configuration
+
+### Configuration File
+
+The configuration file is automatically created at `~/.config/scout-mcp/scout-mcp.json`:
 
 ```json
 {
@@ -49,72 +91,51 @@ Edit the generated `config.json` file:
 }
 ```
 
-**Important Security Notes:**
+### Path Management
+
+**Config File Paths**: Persistent directories specified in the configuration file
+**Command Line Paths**: Temporary paths added for a single session
+**Combined Mode** (default): Command line paths are added to config file paths
+**Only Mode** (`--only` flag): Uses only command line paths, ignoring config file
+
+**Security Notes:**
 - Only add directories you want Claude to access
 - Use absolute paths for clarity
-- The server validates that all paths are directories and exist
 - Subdirectories of whitelisted paths are automatically accessible
+- All paths are validated at startup
 
-### 3. Set Up CloudFlare Tunnel
+## Setup Process
 
-Install CloudFlare Tunnel (cloudflared):
-
-```bash
-# Download and install cloudflared
-# Visit: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
-
-# Login to CloudFlare
-cloudflared tunnel login
-
-# Create a tunnel
-cloudflared tunnel create mcp-file-search
-
-# Configure the tunnel (create config.yml in ~/.cloudflared/)
-```
-
-Example CloudFlare tunnel configuration (`~/.cloudflared/config.yml`):
-
-```yaml
-tunnel: YOUR_TUNNEL_ID
-credentials-file: /home/yourusername/.cloudflared/YOUR_TUNNEL_ID.json
-
-ingress:
-  - hostname: your-mcp-server.your-domain.com
-    service: http://localhost:8080
-  - service: http_status:404
-```
-
-### 4. Start the Services
-
-Terminal 1 - Start the MCP server:
-```bash
-go run main.go
-# Review the whitelisted directories
-# Press Enter to start
-```
-
-Terminal 2 - Start the CloudFlare tunnel:
-```bash
-cloudflared tunnel --config ~/.cloudflared/config.yml run
-```
-
-### 5. Add Integration to Claude
-
-1. Go to Claude.ai → Settings → Integrations
-2. Click "Add Custom Integration"
-3. Enter your tunnel URL: `https://your-mcp-server.your-domain.com/sse`
-4. Complete the authentication process
+1. **Configure Scout-MCP**: Create config file and whitelist directories
+2. **Set up CloudFlare Tunnel**: Follow the [CloudFlare Tunnel Setup Guide](docs/cloudflare-tunnel-setup.md)
+3. **Connect to Claude**: Add the tunnel URL as a custom integration
+4. **Start using**: Search and read files through Claude conversations
 
 ## Usage Examples
 
-Once connected, you can use Claude with commands like:
+Once connected to Claude, you can use commands like:
 
 ```
 "Search for Go files in my Projects directory"
 "Show me all README files in ~/Projects"
-"Read the main.go file from ~/Projects/my-app"
+"Read the main.go file from ~/Projects/scout-mcp"
 "Find all files containing 'database' in the name in my Projects folder"
+"List all .json files in my current project"
 ```
+
+## API Tools
+
+Scout-MCP provides two main tools to Claude:
+
+### `search_files`
+Search for files by name pattern in whitelisted directories
+- **Parameters**: `path` (required), `pattern` (optional)
+- **Returns**: Array of file information (path, name, size, modified date, is_directory)
+
+### `read_file`
+Read contents of files from whitelisted directories
+- **Parameters**: `path` (required)
+- **Returns**: File contents as text
 
 ## Security Features
 
@@ -131,29 +152,17 @@ Once connected, you can use Claude with commands like:
 - Server logs all whitelisted directories on startup
 - Invalid access attempts are logged with details
 
-## Troubleshooting
+## Testing Your Setup
 
-### Common Issues
+### Local Testing
 
-1. **"Access denied: path not whitelisted"**
-    - Check that the requested path is within a whitelisted directory
-    - Ensure paths in config.json are absolute and exist
-
-2. **Connection issues**
-    - Verify CloudFlare tunnel is running and accessible
-    - Check that the port in config matches the tunnel configuration
-    - Ensure CORS origins include Claude.ai domains
-
-3. **File not found errors**
-    - Verify the file exists and is readable
-    - Check file permissions
-
-### Testing the Server
-
-You can test the server directly with curl:
+Before setting up the tunnel, test Scout-MCP locally:
 
 ```bash
-# Test tools list
+# Start Scout-MCP
+scout-mcp ~/MyProjects
+
+# In another terminal, test the API
 curl -X POST http://localhost:8080/sse \
   -H "Content-Type: application/json" \
   -d '{"id":"1","method":"tools/list","params":{}}'
@@ -161,12 +170,50 @@ curl -X POST http://localhost:8080/sse \
 # Test file search
 curl -X POST http://localhost:8080/sse \
   -H "Content-Type: application/json" \
-  -d '{"id":"2","method":"tools/call","params":{"name":"search_files","arguments":{"path":"/home/user/Projects","pattern":"*.go"}}}'
+  -d '{"id":"2","method":"tools/call","params":{"name":"search_files","arguments":{"path":"/your/path","pattern":"*.go"}}}'
 ```
+
+### Integration Testing
+
+Once tunnel is set up and connected to Claude:
+
+```
+"List all files in my Projects directory"
+"Search for .go files in my current project"
+"Read the README.md file from my scout-mcp project"
+```
+
+## Troubleshooting
+
+### Command Line Issues
+
+**"Error parsing arguments: path does not exist"**
+- Verify the path exists: `ls -la /your/path`
+- Use absolute paths for clarity
+- Check permissions on the directory
+
+**"No whitelisted directories specified"**
+- Run `scout-mcp init` to create default config
+- Or specify a path: `scout-mcp /your/project/path`
+- Check config file exists: `cat ~/.config/scout-mcp/scout-mcp.json`
+
+### Server Issues
+
+**"Access denied: path not whitelisted"**
+- Check that the requested path is within a whitelisted directory
+- Verify paths in config are absolute and exist
+- Restart server after config changes
+
+**Connection issues**
+- See the [CloudFlare Tunnel Setup Guide](docs/cloudflare-tunnel-setup.md) for tunnel-specific troubleshooting
+- Verify Scout-MCP server is running on the correct port
+- Ensure CORS origins include Claude.ai domains
 
 ## Configuration Reference
 
-### config.json Options
+### Configuration File Options
+
+**File Location**: `~/.config/scout-mcp/scout-mcp.json`
 
 - `whitelisted_paths`: Array of directory paths that Claude can access
 - `port`: Port number for the HTTP server (default: 8080)
@@ -175,13 +222,30 @@ curl -X POST http://localhost:8080/sse \
 ### Environment Considerations
 
 - Ensure the user running the server has read access to whitelisted directories
-- Consider running the server as a systemd service for production use
+- Consider running as a systemd service for production use
 - Keep CloudFlare tunnel credentials secure
+- Command line paths are not persisted to config file
 
-## Next Steps
+## Future Development
 
-Once running, you can:
-- Add more whitelisted directories as needed
-- Extend the server with additional tools (e.g., file writing, git operations)
-- Set up monitoring and logging for production use
-- Configure automatic startup as a system service
+This is an initial implementation. Planned enhancements include:
+
+- **Cobra CLI framework**: `start`, `stop`, `status`, `add-path`, `remove-path` commands
+- **Service management**: Systemd integration and daemon mode
+- **Path management**: Commands to permanently add/remove paths from config
+- **Enhanced tools**: File writing, git operations, project analysis
+- **Logging and monitoring**: Structured logging and metrics
+- **Security enhancements**: Authentication, rate limiting, audit trails
+
+## Contributing
+
+When contributing, please follow the "Clear Path" coding style used throughout the project:
+- Use `goto end` pattern instead of early returns
+- Single return point per function with named return variables
+- Minimal nesting through helper functions
+- All variables declared before first `goto`
+- No variable shadowing
+
+## License
+
+MIT
