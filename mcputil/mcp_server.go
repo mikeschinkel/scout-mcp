@@ -9,7 +9,7 @@ import (
 
 // Server represents an MCP server
 type Server interface {
-	AddTool(opts ToolOptions, handler ToolHandler) error
+	AddTool(handler ToolHandler, opts ToolOptions) error
 	ServeStdio() error
 	Shutdown(ctx context.Context) error
 }
@@ -52,7 +52,7 @@ func NewServer(opts ServerOpts) Server {
 	return &mcpServer{srv: srv}
 }
 
-func (s *mcpServer) AddTool(opts ToolOptions, handler ToolHandler) (err error) {
+func (s *mcpServer) AddTool(handler ToolHandler, opts ToolOptions) (err error) {
 	var tool mcp.Tool
 
 	errs := make([]error, 0)

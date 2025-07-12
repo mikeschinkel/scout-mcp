@@ -12,7 +12,7 @@ type arrayProperty struct {
 }
 
 func (p *arrayProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithArray(p.Name(), opts...)
+	return mcp.WithArray(p.GetName(), opts...)
 }
 
 func (*arrayProperty) Property() {}

@@ -13,14 +13,13 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
+	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
 type MCPServer struct {
 	config          Config
 	whitelistedDirs map[string]bool
-	mcpServer       *server.MCPServer
+	mcpServer       mcputil.Server
 }
 
 func NewMCPServer(additionalPaths []string, opts Opts) (s *MCPServer, err error) {
@@ -40,15 +39,16 @@ func NewMCPServer(additionalPaths []string, opts Opts) (s *MCPServer, err error)
 	s.config = config
 	s.whitelistedDirs = whitelistedDirs
 
-	// Create MCP server with stdio transport
-	s.mcpServer = server.NewMCPServer(
-		AppName,
-		AppVersion,
-		server.WithToolCapabilities(true),
-		server.WithResourceCapabilities(false, false),
-		server.WithPromptCapabilities(false),
-		server.WithLogging(),
-	)
+	// Create MCP server with stdio transport using mcputil
+	s.mcpServer = mcputil.NewServer(mcputil.ServerOpts{
+		Name:        AppName,
+		Version:     AppVersion,
+		Tools:       true,
+		Subscribe:   false,
+		ListChanged: false,
+		Prompts:     false,
+		Logging:     true,
+	})
 
 	// Register tools
 	err = s.registerTools()
@@ -68,7 +68,7 @@ func (s *MCPServer) StartMCP() (err error) {
 	}
 
 	// Start the stdio server (blocking)
-	err = server.ServeStdio(s.mcpServer)
+	err = s.mcpServer.ServeStdio()
 
 	return err
 }
@@ -201,132 +201,160 @@ end:
 }
 
 func (s *MCPServer) registerTools() (err error) {
-	// Register list_files tool (enhanced from search_files)
-	listFilesTool := mcp.NewTool("list_files",
-		mcp.WithDescription("List files and directories in whitelisted paths"),
-		mcp.WithString("path",
-			mcp.Required(),
-			mcp.Description("Directory path to list"),
-		),
-		mcp.WithBoolean("recursive",
-			mcp.DefaultBool(false),
-			mcp.Description("Recursive listing"),
-		),
-		mcp.WithArray("extensions",
-			mcp.Description("Filter by file extensions (e.g., ['.go', '.txt'])"),
-		),
-		mcp.WithString("pattern",
-			mcp.Description("Name pattern to match"),
-		),
-	)
-	s.mcpServer.AddTool(listFilesTool, s.handleListFiles)
+	// Register list_files tool using mcputil
+	err = s.mcpServer.AddTool(s.handleListFiles, mcputil.ToolOptions{
+		Name:        "list_files",
+		Description: "List files and directories in whitelisted paths",
+		Properties: []mcputil.Property{
+			mcputil.String("path", "Directory path to list").Required(),
+			mcputil.Bool("recursive", "Recursive listing"),
+			mcputil.Array("extensions", "Filter by file extensions (e.g., ['.go', '.txt'])"),
+			mcputil.String("pattern", "Name pattern to match"),
+		},
+	})
+	if err != nil {
+		goto end
+	}
 
-	// Register read_file tool
-	readFileTool := mcp.NewTool("read_file",
-		mcp.WithDescription("Read contents of a file from whitelisted directories"),
-		mcp.WithString("path",
-			mcp.Required(),
-			mcp.Description("File path to read"),
-		),
-	)
-	s.mcpServer.AddTool(readFileTool, s.handleReadFile)
+	// Register read_file tool using mcputil
+	err = s.mcpServer.AddTool(s.handleReadFile, mcputil.ToolOptions{
+		Name:        "read_file",
+		Description: "Read contents of a file from whitelisted directories",
+		Properties: []mcputil.Property{
+			mcputil.String("path", "File path to read").Required(),
+		},
+	})
+	if err != nil {
+		goto end
+	}
 
-	// Register create_file tool
-	createFileTool := mcp.NewTool("create_file",
-		mcp.WithDescription("Create a new file in whitelisted directories"),
-		mcp.WithString("path", mcp.Required(), mcp.Description("File path to create")),
-		mcp.WithString("content", mcp.Required(), mcp.Description("File content")),
-		mcp.WithBoolean("create_dirs", mcp.DefaultBool(false), mcp.Description("Create parent directories if needed")),
-	)
-	s.mcpServer.AddTool(createFileTool, s.handleCreateFile)
+	// Register create_file tool using mcputil
+	err = s.mcpServer.AddTool(s.handleCreateFile, mcputil.ToolOptions{
+		Name:        "create_file",
+		Description: "Create a new file in whitelisted directories",
+		Properties: []mcputil.Property{
+			mcputil.String("path", "File path to create").Required(),
+			mcputil.String("content", "File content").Required(),
+			mcputil.Bool("create_dirs", "Create parent directories if needed"),
+		},
+	})
+	if err != nil {
+		goto end
+	}
 
-	// Register update_file tool
-	updateFileTool := mcp.NewTool("update_file",
-		mcp.WithDescription("Update existing file in whitelisted directories"),
-		mcp.WithString("path", mcp.Required(), mcp.Description("File path to update")),
-		mcp.WithString("content", mcp.Required(), mcp.Description("New file content")),
-	)
-	s.mcpServer.AddTool(updateFileTool, s.handleUpdateFile)
+	// Register update_file tool using mcputil
+	err = s.mcpServer.AddTool(s.handleUpdateFile, mcputil.ToolOptions{
+		Name:        "update_file",
+		Description: "Update existing file in whitelisted directories",
+		Properties: []mcputil.Property{
+			mcputil.String("path", "File path to update").Required(),
+			mcputil.String("content", "New file content").Required(),
+		},
+	})
+	if err != nil {
+		goto end
+	}
 
-	// Register delete_file tool
-	deleteFileTool := mcp.NewTool("delete_file",
-		mcp.WithDescription("Delete file or directory from whitelisted directories"),
-		mcp.WithString("path", mcp.Required(), mcp.Description("File or directory path to delete")),
-		mcp.WithBoolean("recursive", mcp.DefaultBool(false), mcp.Description("Delete directory recursively")),
-	)
-	s.mcpServer.AddTool(deleteFileTool, s.handleDeleteFile)
+	// Register delete_file tool using mcputil
+	err = s.mcpServer.AddTool(s.handleDeleteFile, mcputil.ToolOptions{
+		Name:        "delete_file",
+		Description: "Delete file or directory from whitelisted directories",
+		Properties: []mcputil.Property{
+			mcputil.String("path", "File or directory path to delete").Required(),
+			mcputil.Bool("recursive", "Delete directory recursively"),
+		},
+	})
+	if err != nil {
+		goto end
+	}
+
+end:
 	return err
 }
 
-func (s *MCPServer) handleListFiles(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *MCPServer) handleListFiles(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var path string
 	var recursive bool
 	var pattern string
 	var results []FileSearchResult
-	var err error
+	var allowed bool
 
 	logger.Info("Tool called", "tool", "list_files")
 
 	path, err = req.RequireString("path")
 	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+		result = mcputil.NewToolResultError(err.Error())
+		goto end
 	}
 
 	recursive = req.GetBool("recursive", false)
 	pattern = req.GetString("pattern", "")
 
-	logger.Info("Tool arguments parsed", "tool", "list_files", "list_files", "path", path, "recursive", recursive, "pattern", pattern)
+	logger.Info("Tool arguments parsed", "tool", "list_files", "path", path, "recursive", recursive, "pattern", pattern)
 
 	// Check path is allowed
-	allowed, err := s.isPathAllowed(path)
-	if err != nil || !allowed {
-		return mcp.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", path)), nil
+	allowed, err = s.isPathAllowed(path)
+	if err != nil {
+		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		goto end
+	}
+
+	if !allowed {
+		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", path))
+		goto end
 	}
 
 	results, err = s.searchFiles(path, pattern, recursive)
 	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+		result = mcputil.NewToolResultError(err.Error())
+		goto end
 	}
 
-	// Convert results to JSON
-	jsonData, err := json.Marshal(map[string]any{
+	// Convert results to JSON using mcputil
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"path":      path,
 		"results":   results,
 		"count":     len(results),
 		"recursive": recursive,
 		"pattern":   pattern,
 	})
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to marshal results: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(string(jsonData)), nil
+end:
+	return result, err
 }
 
-func (s *MCPServer) handleReadFile(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *MCPServer) handleReadFile(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var content string
-	var err error
+	var allowed bool
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+		result = mcputil.NewToolResultError(err.Error())
+		goto end
 	}
 
 	// Check path is allowed
-	allowed, err := s.isPathAllowed(filePath)
-	if err != nil || !allowed {
-		return mcp.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath)), nil
+	allowed, err = s.isPathAllowed(filePath)
+	if err != nil {
+		goto end
+	}
+
+	if !allowed {
+		err = fmt.Errorf("access denied: path not whitelisted: %s", filePath)
+		goto end
 	}
 
 	content, err = s.readFile(filePath)
 	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+		result = mcputil.NewToolResultError(err.Error())
+		goto end
 	}
 
-	return mcp.NewToolResultText(content), nil
-}
+	result = mcputil.NewToolResultText(content)
 
+end:
+	return result, err
+}
 func (s *MCPServer) isPathAllowed(targetPath string) (allowed bool, err error) {
 	var absPath string
 
@@ -440,11 +468,7 @@ end:
 	return err
 }
 
-// Add to registerTools() function:
-
-// Handler functions to add:
-
-func (s *MCPServer) handleCreateFile(_ context.Context, req mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
+func (s *MCPServer) handleCreateFile(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var content string
 	var createDirs bool
@@ -455,13 +479,13 @@ func (s *MCPServer) handleCreateFile(_ context.Context, req mcp.CallToolRequest)
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		result = mcp.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err.Error())
 		goto end
 	}
 
 	content, err = req.RequireString("content")
 	if err != nil {
-		result = mcp.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err.Error())
 		goto end
 	}
 
@@ -472,22 +496,22 @@ func (s *MCPServer) handleCreateFile(_ context.Context, req mcp.CallToolRequest)
 	// Check path is allowed
 	allowed, err = s.isPathAllowed(filePath)
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
 		goto end
 	}
 	if !allowed {
-		result = mcp.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
 		goto end
 	}
 
 	// Check if file already exists
 	_, err = os.Stat(filePath)
 	if err == nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("file already exists: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Sprintf("file already exists: %s", filePath))
 		goto end
 	}
 	if !os.IsNotExist(err) {
-		result = mcp.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
 		goto end
 	}
 
@@ -495,27 +519,26 @@ func (s *MCPServer) handleCreateFile(_ context.Context, req mcp.CallToolRequest)
 	if createDirs {
 		fileDir = filepath.Dir(filePath)
 		err = os.MkdirAll(fileDir, 0755)
-		if err != nil {
-			result = mcp.NewToolResultError(fmt.Sprintf("failed to create directories: %v", err))
-			goto end
-		}
+	}
+	if err != nil {
+		result = mcputil.NewToolResultError(fmt.Sprintf("failed to create directories: %v", err))
+		goto end
 	}
 
 	// Create the file
 	err = os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("failed to create file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("failed to create file: %v", err))
 		goto end
 	}
 
-	result = mcp.NewToolResultText(fmt.Sprintf("File created successfully: %s (%d bytes)", filePath, len(content)))
-
+	logger.Info("Tool completed", "tool", "create_file", "success", true, "path", filePath)
+	result = mcputil.NewToolResultText(fmt.Sprintf("File created successfully: %s (%d bytes)", filePath, len(content)))
 end:
-	logger.Info("Tool completed", "tool", "create_file", "success", err == nil, "path", filePath)
 	return result, err
 }
 
-func (s *MCPServer) handleUpdateFile(_ context.Context, req mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
+func (s *MCPServer) handleUpdateFile(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var content string
 	var allowed bool
@@ -526,13 +549,13 @@ func (s *MCPServer) handleUpdateFile(_ context.Context, req mcp.CallToolRequest)
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		result = mcp.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err.Error())
 		goto end
 	}
 
 	content, err = req.RequireString("content")
 	if err != nil {
-		result = mcp.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err.Error())
 		goto end
 	}
 
@@ -541,28 +564,28 @@ func (s *MCPServer) handleUpdateFile(_ context.Context, req mcp.CallToolRequest)
 	// Check path is allowed
 	allowed, err = s.isPathAllowed(filePath)
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
 		goto end
 	}
 	if !allowed {
-		result = mcp.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
 		goto end
 	}
 
 	// Check if file exists
 	fileInfo, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
-		result = mcp.NewToolResultError(fmt.Sprintf("file does not exist: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Sprintf("file does not exist: %s", filePath))
 		goto end
 	}
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
 		goto end
 	}
 
 	// Don't allow updating directories
 	if fileInfo.IsDir() {
-		result = mcp.NewToolResultError(fmt.Sprintf("cannot update directory: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Sprintf("cannot update directory: %s", filePath))
 		goto end
 	}
 
@@ -571,18 +594,17 @@ func (s *MCPServer) handleUpdateFile(_ context.Context, req mcp.CallToolRequest)
 	// Update the file
 	err = os.WriteFile(filePath, []byte(content), fileInfo.Mode())
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("failed to update file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("failed to update file: %v", err))
 		goto end
 	}
 
-	result = mcp.NewToolResultText(fmt.Sprintf("File updated successfully: %s (%d -> %d bytes)", filePath, oldSize, len(content)))
-
+	logger.Info("Tool completed", "tool", "update_file", "success", true, "path", filePath)
+	result = mcputil.NewToolResultText(fmt.Sprintf("File updated successfully: %s (%d -> %d bytes)", filePath, oldSize, len(content)))
 end:
-	logger.Info("Tool completed", "tool", "update_file", "success", err == nil, "path", filePath)
 	return result, err
 }
 
-func (s *MCPServer) handleDeleteFile(_ context.Context, req mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
+func (s *MCPServer) handleDeleteFile(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var recursive bool
 	var allowed bool
@@ -593,7 +615,7 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcp.CallToolRequest)
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		result = mcp.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err.Error())
 		goto end
 	}
 
@@ -604,22 +626,22 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcp.CallToolRequest)
 	// Check path is allowed
 	allowed, err = s.isPathAllowed(filePath)
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
 		goto end
 	}
 	if !allowed {
-		result = mcp.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
 		goto end
 	}
 
 	// Check if file/directory exists
 	fileInfo, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
-		result = mcp.NewToolResultError(fmt.Sprintf("file or directory does not exist: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Sprintf("file or directory does not exist: %s", filePath))
 		goto end
 	}
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
 		goto end
 	}
 
@@ -627,7 +649,7 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcp.CallToolRequest)
 	if fileInfo.IsDir() {
 		fileType = "directory"
 		if !recursive {
-			result = mcp.NewToolResultError(fmt.Sprintf("cannot delete directory without recursive flag: %s", filePath))
+			result = mcputil.NewToolResultError(fmt.Sprintf("cannot delete directory without recursive flag: %s", filePath))
 			goto end
 		}
 		// Use RemoveAll for recursive directory deletion
@@ -639,16 +661,15 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcp.CallToolRequest)
 	}
 
 	if err != nil {
-		result = mcp.NewToolResultError(fmt.Sprintf("failed to delete %s: %v", fileType, err))
+		result = mcputil.NewToolResultError(fmt.Sprintf("failed to delete %s: %v", fileType, err))
 		goto end
 	}
 
-	result = mcp.NewToolResultText(fmt.Sprintf("%s deleted successfully: %s",
+	logger.Info("Tool completed", "tool", "delete_file", "success", true, "path", filePath, "type", fileType)
+	result = mcputil.NewToolResultText(fmt.Sprintf("%s deleted successfully: %s",
 		cases.Title(language.English).String(fileType),
 		filePath,
 	))
-	
 end:
-	logger.Info("Tool completed", "tool", "delete_file", "success", err == nil, "path", filePath, "type", fileType)
 	return result, err
 }

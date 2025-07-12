@@ -16,7 +16,7 @@ type stringProperty struct {
 }
 
 func (p *stringProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithString(p.Name(), opts...)
+	return mcp.WithString(p.GetName(), opts...)
 }
 
 func (*stringProperty) Property() {}

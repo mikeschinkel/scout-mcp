@@ -10,7 +10,7 @@ type boolProperty struct {
 }
 
 func (p *boolProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithBoolean(p.Name(), opts...)
+	return mcp.WithBoolean(p.GetName(), opts...)
 }
 
 func (*boolProperty) Property() {}

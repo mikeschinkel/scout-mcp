@@ -12,7 +12,7 @@ type numberProperty struct {
 }
 
 func (p *numberProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithNumber(p.Name(), opts...)
+	return mcp.WithNumber(p.GetName(), opts...)
 }
 
 func (*numberProperty) Property() {}
