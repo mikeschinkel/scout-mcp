@@ -10,9 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
-
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
@@ -201,6 +198,49 @@ end:
 }
 
 func (s *MCPServer) registerTools() (err error) {
+	// Register request_approval tool
+	err = s.mcpServer.AddTool(s.handleRequestApproval, mcputil.ToolOptions{
+		Name:        "request_approval",
+		Description: "Request user approval with rich visual formatting",
+		Properties: []mcputil.Property{
+			mcputil.String("operation", "Brief operation description").Required(),
+			mcputil.Array("files", "List of files to be affected").Required(),
+			mcputil.String("preview_content", "Code preview or diff content"),
+			mcputil.String("risk_level", "Risk level: low, medium, or high"),
+			mcputil.String("impact_summary", "Summary of what will change"),
+		},
+	})
+	if err != nil {
+		goto end
+	}
+
+	// Register generate_approval_token tool
+	err = s.mcpServer.AddTool(s.handleGenerateApprovalToken, mcputil.ToolOptions{
+		Name:        "generate_approval_token",
+		Description: "Generate approval token after user confirmation",
+		Properties: []mcputil.Property{
+			mcputil.Array("file_actions", "File actions approved").Required(),
+			mcputil.Array("operations", "Operations approved (create, update, delete)").Required(),
+			mcputil.String("session_id", "Session identifier for this approval"),
+		},
+	})
+	if err != nil {
+		goto end
+	}
+
+	// Register list_files tool using mcputil
+	err = s.mcpServer.AddTool(s.handleRequestApproval,
+		mcputil.ToolOptions{
+			Name:        "request_approval",
+			Description: "Request user approval with rich visual formatting",
+			Properties: []mcputil.Property{
+				mcputil.String("operation", "Brief operation description").Required(),
+				mcputil.Array("files", "List of files to be affected"),
+				mcputil.String("preview_content", "Code preview or diff content"),
+				mcputil.String("risk_level", "low, medium, or high"),
+				mcputil.String("impact_summary", "Summary of what will change"),
+			},
+		})
 	// Register list_files tool using mcputil
 	err = s.mcpServer.AddTool(s.handleListFiles, mcputil.ToolOptions{
 		Name:        "list_files",
@@ -272,6 +312,114 @@ end:
 	return err
 }
 
+//	func (s *MCPServer) handleRequestApproval(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error)  {
+//		// MCP server builds the entire formatted approval display
+//		formatted := s.buildApprovalDisplay(ApprovalRequest{
+//			Operation: req.RequireString("operation"),
+//			FileActions:     req.GetArray("files"),
+//			Preview:   req.GetString("preview_content"),
+//			Risk:      req.GetString("risk_level"),
+//			Impact:    req.GetString("impact_summary"),
+//		})
+//
+//		// Returns ready-to-display formatted text
+//		result = mcputil.NewToolResultText(formatted)
+//
+// end:
+//
+//		return result, err
+//	}
+func (s *MCPServer) handleRequestApproval(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+	var operation string
+	var fileActions []FileAction
+	var previewContent string
+	var riskLevel string
+	var impactSummary string
+	var formatted string
+
+	logger.Info("Tool called", "tool", "request_approval")
+
+	operation, err = req.RequireString("operation")
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	fileActions, err = s.getFileActions(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+	previewContent = req.GetString("preview_content", "")
+	riskLevel = req.GetString("risk_level", "medium")
+	impactSummary = req.GetString("impact_summary", "")
+
+	// Build the formatted approval display
+	formatted = s.buildApprovalDisplay(ApprovalRequest{
+		Operation:   operation,
+		FileActions: fileActions,
+		Preview:     previewContent,
+		Risk:        riskLevel,
+		Impact:      impactSummary,
+	})
+
+	result = mcputil.NewToolResultText(formatted)
+
+end:
+	return result, err
+}
+
+type FileAction struct {
+	Action  string `json:"action"`  // create, update, delete
+	Path    string `json:"path"`    // file path
+	Purpose string `json:"purpose"` // why this file is being modified
+}
+
+func (s *MCPServer) buildApprovalDisplay(req ApprovalRequest) string {
+	var riskIcon string
+
+	var b strings.Builder
+
+	b.WriteString("┌─ APPROVAL REQUIRED ─────────────────────────────────────┐\n")
+	b.WriteString("│\n")
+	b.WriteString(fmt.Sprintf("│ 📋 Operation: %s\n", req.Operation))
+	b.WriteString("│\n")
+
+	// Files section
+	b.WriteString("│ ┌─ FILES TO MODIFY ───────────────────────────────────┐\n")
+	for _, fa := range req.FileActions {
+		var icon string
+		icon = s.getFileActionIcon(fa.Action)
+		b.WriteString(fmt.Sprintf("│ │ %s %s %s\n", icon, fa.Action, fa.Path))
+		if fa.Purpose != "" {
+			b.WriteString(fmt.Sprintf("│ │    └── 🎯 %s\n", fa.Purpose))
+		}
+	}
+	b.WriteString("│ └─────────────────────────────────────────────────────┘\n")
+
+	// Code preview section
+	if req.Preview != "" {
+		b.WriteString("│\n")
+		b.WriteString("│ ┌─ CODE PREVIEW ──────────────────────────────────────┐\n")
+		lines := strings.Split(req.Preview, "\n")
+		for _, line := range lines {
+			b.WriteString(fmt.Sprintf("│ │ %s\n", line))
+		}
+		b.WriteString("│ └─────────────────────────────────────────────────────┘\n")
+	}
+
+	// Risk assessment
+	riskIcon = s.getRiskIcon(req.Risk)
+	b.WriteString("│\n")
+	b.WriteString(fmt.Sprintf("│ %s Risk Level: %s\n", riskIcon, titleCase(req.Risk)))
+	b.WriteString(fmt.Sprintf("│ 📊 Impact: %s\n", req.Impact))
+	b.WriteString("│\n")
+	b.WriteString("│ ❓ Reply 'approve' to continue, 'deny' to cancel\n")
+	b.WriteString("└─────────────────────────────────────────────────────────┘")
+
+	return b.String()
+}
+
 func (s *MCPServer) handleListFiles(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var path string
 	var recursive bool
@@ -283,7 +431,7 @@ func (s *MCPServer) handleListFiles(_ context.Context, req mcputil.ToolRequest) 
 
 	path, err = req.RequireString("path")
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -295,18 +443,18 @@ func (s *MCPServer) handleListFiles(_ context.Context, req mcputil.ToolRequest) 
 	// Check path is allowed
 	allowed, err = s.isPathAllowed(path)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
 		goto end
 	}
 
 	if !allowed {
-		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", path))
+		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not whitelisted: %s", path))
 		goto end
 	}
 
 	results, err = s.searchFiles(path, pattern, recursive)
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -329,7 +477,7 @@ func (s *MCPServer) handleReadFile(_ context.Context, req mcputil.ToolRequest) (
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -346,7 +494,7 @@ func (s *MCPServer) handleReadFile(_ context.Context, req mcputil.ToolRequest) (
 
 	content, err = s.readFile(filePath)
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -479,13 +627,13 @@ func (s *MCPServer) handleCreateFile(_ context.Context, req mcputil.ToolRequest)
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	content, err = req.RequireString("content")
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -496,22 +644,22 @@ func (s *MCPServer) handleCreateFile(_ context.Context, req mcputil.ToolRequest)
 	// Check path is allowed
 	allowed, err = s.isPathAllowed(filePath)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
 		goto end
 	}
 	if !allowed {
-		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not whitelisted: %s", filePath))
 		goto end
 	}
 
 	// Check if file already exists
 	_, err = os.Stat(filePath)
 	if err == nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("file already exists: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Errorf("file already exists: %s", filePath))
 		goto end
 	}
 	if !os.IsNotExist(err) {
-		result = mcputil.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("error checking file: %v", err))
 		goto end
 	}
 
@@ -521,14 +669,14 @@ func (s *MCPServer) handleCreateFile(_ context.Context, req mcputil.ToolRequest)
 		err = os.MkdirAll(fileDir, 0755)
 	}
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("failed to create directories: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("failed to create directories: %v", err))
 		goto end
 	}
 
 	// Create the file
 	err = os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("failed to create file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("failed to create file: %v", err))
 		goto end
 	}
 
@@ -549,13 +697,13 @@ func (s *MCPServer) handleUpdateFile(_ context.Context, req mcputil.ToolRequest)
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	content, err = req.RequireString("content")
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -564,28 +712,28 @@ func (s *MCPServer) handleUpdateFile(_ context.Context, req mcputil.ToolRequest)
 	// Check path is allowed
 	allowed, err = s.isPathAllowed(filePath)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
 		goto end
 	}
 	if !allowed {
-		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not whitelisted: %s", filePath))
 		goto end
 	}
 
 	// Check if file exists
 	fileInfo, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
-		result = mcputil.NewToolResultError(fmt.Sprintf("file does not exist: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Errorf("file does not exist: %s", filePath))
 		goto end
 	}
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("error checking file: %v", err))
 		goto end
 	}
 
 	// Don't allow updating directories
 	if fileInfo.IsDir() {
-		result = mcputil.NewToolResultError(fmt.Sprintf("cannot update directory: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Errorf("cannot update directory: %s", filePath))
 		goto end
 	}
 
@@ -594,7 +742,7 @@ func (s *MCPServer) handleUpdateFile(_ context.Context, req mcputil.ToolRequest)
 	// Update the file
 	err = os.WriteFile(filePath, []byte(content), fileInfo.Mode())
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("failed to update file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("failed to update file: %v", err))
 		goto end
 	}
 
@@ -615,7 +763,7 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcputil.ToolRequest)
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
-		result = mcputil.NewToolResultError(err.Error())
+		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -626,22 +774,22 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcputil.ToolRequest)
 	// Check path is allowed
 	allowed, err = s.isPathAllowed(filePath)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("path validation failed: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
 		goto end
 	}
 	if !allowed {
-		result = mcputil.NewToolResultError(fmt.Sprintf("access denied: path not whitelisted: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not whitelisted: %s", filePath))
 		goto end
 	}
 
 	// Check if file/directory exists
 	fileInfo, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
-		result = mcputil.NewToolResultError(fmt.Sprintf("file or directory does not exist: %s", filePath))
+		result = mcputil.NewToolResultError(fmt.Errorf("file or directory does not exist: %s", filePath))
 		goto end
 	}
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("error checking file: %v", err))
+		result = mcputil.NewToolResultError(fmt.Errorf("error checking file: %v", err))
 		goto end
 	}
 
@@ -649,7 +797,7 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcputil.ToolRequest)
 	if fileInfo.IsDir() {
 		fileType = "directory"
 		if !recursive {
-			result = mcputil.NewToolResultError(fmt.Sprintf("cannot delete directory without recursive flag: %s", filePath))
+			result = mcputil.NewToolResultError(fmt.Errorf("cannot delete directory without recursive flag: %s", filePath))
 			goto end
 		}
 		// Use RemoveAll for recursive directory deletion
@@ -661,15 +809,186 @@ func (s *MCPServer) handleDeleteFile(_ context.Context, req mcputil.ToolRequest)
 	}
 
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Sprintf("failed to delete %s: %v", fileType, err))
+		result = mcputil.NewToolResultError(fmt.Errorf("failed to delete %s: %v", fileType, err))
 		goto end
 	}
 
 	logger.Info("Tool completed", "tool", "delete_file", "success", true, "path", filePath, "type", fileType)
 	result = mcputil.NewToolResultText(fmt.Sprintf("%s deleted successfully: %s",
-		cases.Title(language.English).String(fileType),
+		titleCase(fileType),
 		filePath,
 	))
 end:
 	return result, err
+}
+
+func (s *MCPServer) getFileActions(req mcputil.ToolRequest) ([]FileAction, error) {
+	return convertSlice[FileAction](req.GetArray("file_actions", nil))
+}
+func (s *MCPServer) getOperations(req mcputil.ToolRequest) ([]string, error) {
+	return convertSlice[string](req.GetArray("operations", nil))
+}
+
+// Tool: generate_approval_token
+func (s *MCPServer) handleGenerateToken(req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+	var token string
+	var fileActions []FileAction
+	var operations []string
+
+	fileActions, err = s.getFileActions(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+	operations, err = s.getOperations(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	// MCP server handles all JWT logic
+	token, err = s.generateApprovalToken(TokenRequest{
+		FileActions: fileActions,
+		Operations:  operations,
+		ExpiresIn:   time.Hour,
+	})
+
+	result = mcputil.NewToolResultText(fmt.Sprintf("Approval token generated: %s", token))
+
+end:
+	return result, err
+}
+
+// Tool: analyze_files_for_approval
+func (s *MCPServer) handleAnalyzeFiles(req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+	var fileActions []FileAction
+	var analysis FileAnalysis
+
+	fileActions, err = s.getFileActions(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+	analysis = FileAnalysis{
+		TotalLines:   s.countTotalLines(fileActions),
+		Complexity:   s.assessComplexity(fileActions),
+		Dependencies: s.findNewDependencies(fileActions),
+		RiskFactors:  s.identifyRiskFactors(fileActions),
+	}
+	result = mcputil.NewToolResultJSON(analysis)
+end:
+	return result, err
+}
+
+type FileAnalysis struct {
+	TotalLines   int      `json:"total_lines"`
+	Complexity   string   `json:"complexity"`   // "low", "medium", "high"
+	Dependencies []string `json:"dependencies"` // New imports/packages
+	RiskFactors  []string `json:"risk_factors"` // Security, breaking changes, etc.
+}
+
+func (s *MCPServer) countTotalLines(files []FileAction) int {
+	// Implementation to count lines across files
+	return 0
+}
+
+func (s *MCPServer) assessComplexity(files []FileAction) string {
+	// Implementation to assess complexity level
+	return ""
+}
+
+func (s *MCPServer) findNewDependencies(files []FileAction) []string {
+	// Implementation to find new imports
+	return []string{}
+}
+
+func (s *MCPServer) identifyRiskFactors(files []FileAction) []string {
+	// Implementation to identify potential risks
+	return []string{}
+}
+func (s *MCPServer) handleGenerateApprovalToken(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+	var fileActions []FileAction
+	var operations []string
+	var sessionID string
+	var token string
+
+	logger.Info("Tool called", "tool", "generate_approval_token")
+
+	fileActions, err = s.getFileActions(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	operations, err = s.getOperations(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+	sessionID = req.GetString("session_id", "")
+
+	// Generate the JWT token
+	token, err = s.generateApprovalToken(TokenRequest{
+		FileActions: fileActions,
+		Operations:  operations,
+		SessionID:   sessionID,
+		ExpiresIn:   time.Hour,
+	})
+	if err != nil {
+		result = mcputil.NewToolResultError(fmt.Errorf("failed to generate token: %v", err))
+		goto end
+	}
+
+	result = mcputil.NewToolResultText(fmt.Sprintf("✅ Approval token generated (expires in 1 hour)\n🔑 Token: %s", token))
+
+end:
+	return result, err
+}
+
+type ApprovalRequest struct {
+	Operation   string
+	FileActions []FileAction
+	Preview     string
+	Risk        string
+	Impact      string
+}
+
+type TokenRequest struct {
+	FileActions []FileAction
+	Operations  []string
+	SessionID   string
+	ExpiresIn   time.Duration
+}
+
+func (s *MCPServer) generateApprovalToken(req TokenRequest) (token string, err error) {
+	// JWT token generation logic
+	return token, err
+}
+
+func (s *MCPServer) getFileActionIcon(action string) string {
+	switch action {
+	case "create":
+		return "✨"
+	case "update", "modify":
+		return "📝"
+	case "delete":
+		return "🗑️"
+	case "move", "rename":
+		return "📦"
+	default:
+		return "📄"
+	}
+}
+
+func (s *MCPServer) getRiskIcon(riskLevel string) string {
+	switch strings.ToLower(riskLevel) {
+	case "low":
+		return "🟢"
+	case "medium":
+		return "🟡"
+	case "high":
+		return "🔴"
+	default:
+		return "⚪"
+	}
 }

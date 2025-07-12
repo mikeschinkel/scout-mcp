@@ -1,6 +1,8 @@
 package mcputil
 
 import (
+	"fmt"
+
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -43,4 +45,31 @@ func (w *toolRequest) GetBool(key string, defaultValue bool) bool {
 
 func (w *toolRequest) GetArguments() map[string]any {
 	return w.req.GetArguments()
+}
+
+func (w *toolRequest) RequireArray(key string) (array []any, err error) {
+	var ok bool
+
+	raw, exists := w.req.GetArguments()[key]
+	if !exists {
+		err = fmt.Errorf("required parameter %s not found", key)
+		goto end
+	}
+
+	array, ok = raw.([]any)
+	if !ok {
+		err = fmt.Errorf("parameter %s must be an array", key)
+		goto end
+	}
+end:
+	return array, err
+}
+
+func (w *toolRequest) GetArray(key string, defaultValue []any) (array []any) {
+	var err error
+	array, err = w.RequireArray(key)
+	if err != nil {
+		array = defaultValue
+	}
+	return array
 }

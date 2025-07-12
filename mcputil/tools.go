@@ -23,6 +23,8 @@ type ToolRequest interface {
 	GetFloat(key string, defaultValue float64) float64
 	GetBool(key string, defaultValue bool) bool
 	GetArguments() map[string]any
+	RequireArray(key string) ([]any, error)
+	GetArray(key string, defaultValue []any) []any
 }
 
 // ToolResult represents the result of a tool call
@@ -52,8 +54,8 @@ func NewToolResultText(text string) ToolResult {
 }
 
 // NewToolResultError creates an error result for a tool call
-func NewToolResultError(message string) ToolResult {
-	return &errorResult{message: message}
+func NewToolResultError(err error) ToolResult {
+	return &errorResult{message: err.Error()}
 }
 
 // NewToolResultJSON creates a JSON result for a tool call
