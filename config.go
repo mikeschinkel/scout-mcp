@@ -1,4 +1,4 @@
-package main
+package scout
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ type ConfigArgs struct {
 	InitialPath string
 }
 
-func getConfigPath() (configPath string, err error) {
+func GetConfigPath() (configPath string, err error) {
 	var homeDir string
 	var configDir string
 
@@ -32,7 +32,7 @@ end:
 	return configPath, err
 }
 
-func createDefaultConfig(args ConfigArgs) (err error) {
+func CreateDefaultConfig(args ConfigArgs) (err error) {
 	var homeDir string
 	var config Config
 	var configData []byte

@@ -232,7 +232,7 @@ Test that your tunnel is working:
 
 ```bash
 # Test the tunnel endpoint
-curl https://scout-mcp.your-domain.com/sse \
+curl https://scout-mcp.your-domain.com/mcp \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{"id":"test","method":"tools/list","params":{}}'
@@ -244,7 +244,7 @@ You should receive a JSON response listing the available tools.
 
 1. Go to Claude.ai → Settings → Integrations
 2. Click "Add Custom Integration"
-3. Enter your tunnel URL: `https://scout-mcp.your-domain.com/sse`
+3. Enter your tunnel URL: `https://scout-mcp.your-domain.com/mcp`
 4. Complete the authentication process
 5. Enable the integration for your conversations
 
