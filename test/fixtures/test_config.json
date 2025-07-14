@@ -1,0 +1,5 @@
+{
+  "allowed_paths": ["/tmp/scout-mcp-test"],
+  "port": "8754",
+  "allowed_origins": ["https://claude.ai", "https://*.anthropic.com"]
+}
