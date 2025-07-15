@@ -85,12 +85,12 @@ func teardownTestEnvironment() {
 	log.Println("🧹 Cleaning up test environment...")
 
 	if testClient != nil {
-		testClient.Close()
+		mustClose(testClient)
 		log.Println("🔌 MCP client closed")
 	}
 
 	if testDir != "" {
-		os.RemoveAll(testDir)
+		logOnError(os.RemoveAll(testDir))
 		log.Printf("📁 Removed test directory: %s", testDir)
 	}
 
