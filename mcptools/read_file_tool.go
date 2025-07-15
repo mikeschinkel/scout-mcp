@@ -3,7 +3,6 @@ package mcptools
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
@@ -48,7 +47,7 @@ func (t *ReadFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (resul
 		goto end
 	}
 
-	content, err = t.readFile(filePath)
+	content, err = readFile(t.Config(), filePath)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
@@ -58,29 +57,4 @@ func (t *ReadFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (resul
 
 end:
 	return result, err
-}
-
-func (t *ReadFileTool) readFile(filePath string) (content string, err error) {
-	var allowed bool
-	var fileData []byte
-
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
-		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
-		goto end
-	}
-
-	fileData, err = os.ReadFile(filePath)
-	if err != nil {
-		goto end
-	}
-
-	content = string(fileData)
-
-end:
-	return content, err
 }

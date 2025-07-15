@@ -29,7 +29,7 @@ func (t *AnalyzeFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (r
 	var files []string
 	var analysis FileAnalysis
 
-	files, err = getFiles(req)
+	files, err = getStringSlice(req, "files")
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end

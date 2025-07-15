@@ -64,7 +64,7 @@ func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (re
 	maxResults = req.GetInt("max_results", 1000)
 
 	// Get extensions array if provided
-	extensions, err = getExtensions(req)
+	extensions, err = getStringSlice(req, "extensions")
 	if err != nil {
 		result = mcputil.NewToolResultError(fmt.Errorf("invalid extensions array: %v", err))
 		goto end

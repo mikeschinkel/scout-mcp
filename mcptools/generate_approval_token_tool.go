@@ -42,7 +42,7 @@ func (t *GenerateApprovalTokenTool) Handle(_ context.Context, req mcputil.ToolRe
 		goto end
 	}
 
-	operations, err = getOperations(req)
+	operations, err = getStringSlice(req, "operations")
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end

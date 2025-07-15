@@ -3,6 +3,7 @@ package mcptools
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"golang.org/x/text/cases"
@@ -12,14 +13,23 @@ import (
 func getFileActions(req mcputil.ToolRequest) ([]FileAction, error) {
 	return convertSlice[FileAction](req.GetArray("file_actions", nil))
 }
-func getOperations(req mcputil.ToolRequest) ([]string, error) {
-	return convertSlice[string](req.GetArray("operations", nil))
+func getStringSlice(req mcputil.ToolRequest, prop string) ([]string, error) {
+	return convertSlice[string](req.GetArray(prop, nil))
 }
-func getFiles(req mcputil.ToolRequest) ([]string, error) {
-	return convertSlice[string](req.GetArray("files", nil))
-}
-func getExtensions(req mcputil.ToolRequest) ([]string, error) {
-	return convertSlice[string](req.GetArray("extensions", nil))
+
+func getNumberAsInt(req mcputil.ToolRequest, prop string) (n int, err error) {
+	var s string
+	s, err = req.RequireString(prop)
+	if err != nil {
+		goto end
+	}
+	n, err = strconv.Atoi(s)
+	if err != nil {
+		err = fmt.Errorf("'%s' must be a valid number: %w", prop, err)
+		goto end
+	}
+end:
+	return n, err
 }
 
 func convertSlice[T any](input []any) (output []T, err error) {

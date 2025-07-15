@@ -1,0 +1,151 @@
+package mcptools
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/mikeschinkel/scout-mcp/mcputil"
+)
+
+var _ mcputil.Tool = (*InsertFileLinesTool)(nil)
+
+func init() {
+	mcputil.RegisterTool(&InsertFileLinesTool{
+		toolBase: newToolBase(mcputil.ToolOptions{
+			Name:        "insert_file_lines",
+			Description: "Insert content at a specific line number in a file",
+		}),
+	})
+}
+
+type InsertFileLinesTool struct {
+	*toolBase
+}
+
+func (t *InsertFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+	var filePath string
+	var lineNumber int
+	var content string
+	var position string
+
+	logger.Info("Tool called", "tool", "insert_file_lines")
+
+	filePath, err = req.RequireString("path")
+	if err != nil {
+		goto end
+	}
+
+	content, err = req.RequireString("content")
+	if err != nil {
+		goto end
+	}
+
+	// TODO Change back to checking error here
+	position = req.GetString("position", "after")
+
+	err = t.validatePosition(position)
+	if err != nil {
+		goto end
+	}
+
+	err = t.insertAtLine(filePath, lineNumber, content, position)
+	if err != nil {
+		goto end
+	}
+
+	result = mcputil.NewToolResultText(fmt.Sprintf("Successfully inserted content %s line %d in %s", position, lineNumber, filePath))
+	logger.Info("Tool completed", "tool", "insert_file_lines", "path", filePath, "line_number", lineNumber, "position", position)
+
+end:
+	return result, err
+}
+
+func (t *InsertFileLinesTool) validatePosition(position string) (err error) {
+	if position != "before" && position != "after" {
+		err = fmt.Errorf("position must be 'before' or 'after', got '%s'", position)
+		goto end
+	}
+
+end:
+	return err
+}
+
+func (t *InsertFileLinesTool) insertAtLine(filePath string, lineNumber int, content, position string) (err error) {
+	var allowed bool
+	var originalContent string
+	var lines []string
+	var updatedContent string
+
+	allowed, err = t.IsAllowedPath(filePath)
+	if err != nil {
+		goto end
+	}
+
+	if !allowed {
+		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
+		goto end
+	}
+
+	originalContent, err = readFile(t.Config(), filePath)
+	if err != nil {
+		goto end
+	}
+
+	lines = strings.Split(originalContent, "\n")
+
+	err = t.validateLineNumber(lines, lineNumber)
+	if err != nil {
+		goto end
+	}
+
+	updatedContent = t.insertContent(lines, lineNumber, content, position)
+
+	err = writeFile(t.Config(), filePath, updatedContent)
+
+end:
+	return err
+}
+
+func (t *InsertFileLinesTool) validateLineNumber(lines []string, lineNumber int) (err error) {
+	totalLines := len(lines)
+
+	if lineNumber < 1 {
+		err = fmt.Errorf("line_number must be >= 1, got %d", lineNumber)
+		goto end
+	}
+
+	if lineNumber > totalLines {
+		err = fmt.Errorf("line_number %d exceeds file length %d", lineNumber, totalLines)
+		goto end
+	}
+
+end:
+	return err
+}
+
+func (t *InsertFileLinesTool) insertContent(lines []string, lineNumber int, content, position string) (result string) {
+	var insertIdx int
+	var newLines []string
+	var combined []string
+
+	// Convert to 0-based indexing
+	baseIdx := lineNumber - 1
+
+	if position == "before" {
+		insertIdx = baseIdx
+	} else {
+		insertIdx = baseIdx + 1
+	}
+
+	newLines = strings.Split(content, "\n")
+
+	combined = make([]string, 0, len(lines)+len(newLines))
+	combined = append(combined, lines[:insertIdx]...)
+	combined = append(combined, newLines...)
+	combined = append(combined, lines[insertIdx:]...)
+
+	result = strings.Join(combined, "\n")
+
+	return result
+}
