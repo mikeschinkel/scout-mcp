@@ -125,6 +125,10 @@ end:
 // createTestDirectory creates a temporary directory with test files
 func createTestDirectory() (testDirPath string, err error) {
 	var fullPath string
+	var filePath, content string
+	var dir string
+	var testFiles map[string]string
+	var emptyDirs []string
 
 	testDirPath, err = os.MkdirTemp("", TestFilePrefix)
 	if err != nil {
@@ -132,7 +136,7 @@ func createTestDirectory() (testDirPath string, err error) {
 	}
 
 	// Create test file structure using constants
-	testFiles := map[string]string{
+	testFiles = map[string]string{
 		TestReadmeFile:    TestProjectReadme,
 		TestConfigFile:    TestConfigJSON,
 		TestMainGoFile:    TestMainGoContent,
@@ -143,7 +147,7 @@ func createTestDirectory() (testDirPath string, err error) {
 		TestSampleFile:    TestSampleData,
 	}
 
-	for filePath, content := range testFiles {
+	for filePath, content = range testFiles {
 		fullPath = filepath.Join(testDirPath, filePath)
 
 		// Create parent directories if needed
@@ -160,13 +164,13 @@ func createTestDirectory() (testDirPath string, err error) {
 	}
 
 	// Create empty directories using constants
-	emptyDirs := []string{
+	emptyDirs = []string{
 		TestEmptyDir,
 		TestBuildDir,
 		TestTmpDir,
 	}
 
-	for _, dir := range emptyDirs {
+	for _, dir = range emptyDirs {
 		err = os.MkdirAll(filepath.Join(testDirPath, dir), 0755)
 		if err != nil {
 			goto end

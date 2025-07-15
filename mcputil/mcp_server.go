@@ -9,7 +9,7 @@ import (
 
 // Server represents an MCP server
 type Server interface {
-	AddTool(handler ToolHandler, opts ToolOptions) error
+	AddTool(Tool) error
 	ServeStdio() error
 	Shutdown(ctx context.Context) error
 }
@@ -52,12 +52,13 @@ func NewServer(opts ServerOpts) Server {
 	return &mcpServer{srv: srv}
 }
 
-func (s *mcpServer) AddTool(handler ToolHandler, opts ToolOptions) (err error) {
-	var tool mcp.Tool
+func (s *mcpServer) AddTool(tool Tool) (err error) {
+	var mcpTool mcp.Tool
 
 	errs := make([]error, 0)
+	opts := tool.Options()
 
-	// Build mcp tool options
+	// Build mcp mcpTool options
 	var toolOpts []mcp.ToolOption
 	toolOpts = append(toolOpts, mcp.WithDescription(opts.Description))
 
@@ -69,11 +70,11 @@ func (s *mcpServer) AddTool(handler ToolHandler, opts ToolOptions) (err error) {
 		goto end
 	}
 
-	// Create the tool
-	tool = mcp.NewTool(opts.Name, toolOpts...)
+	// Create the mcpTool
+	mcpTool = mcp.NewTool(opts.Name, toolOpts...)
 
-	// Add the tool with wrapper handler
-	s.srv.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (tr *mcp.CallToolResult, err error) {
+	// Add the mcpTool with wrapper handler
+	s.srv.AddTool(mcpTool, func(ctx context.Context, req mcp.CallToolRequest) (tr *mcp.CallToolResult, err error) {
 		var txtRes *textResult
 		var errRes *errorResult
 		var ok bool
@@ -82,7 +83,7 @@ func (s *mcpServer) AddTool(handler ToolHandler, opts ToolOptions) (err error) {
 		wrappedReq := &toolRequest{req: req}
 
 		// Call user handler
-		result, err := handler(ctx, wrappedReq)
+		result, err := tool.Handle(ctx, wrappedReq)
 		if err != nil {
 			goto end
 		}

@@ -5,6 +5,27 @@ import (
 	"encoding/json"
 )
 
+// ToolHandler is the function signature for tool handlers
+type ToolHandler func(context.Context, ToolRequest) (ToolResult, error)
+
+type Config interface {
+	IsAllowedPath(string) (bool, error)
+	AllowedPaths() []string
+	ServerPort() string
+	AllowedOrigins() []string
+}
+
+type Tool interface {
+	Name() string
+	Options() ToolOptions
+	Handle(context.Context, ToolRequest) (ToolResult, error)
+	SetConfig(c Config)
+}
+
+type tool struct {
+	options ToolOptions
+}
+
 // ToolOptions contains options for defining a tool
 type ToolOptions struct {
 	Name        string
@@ -13,6 +34,13 @@ type ToolOptions struct {
 }
 
 // ToolRequest represents a tool call request
+// TODO: Why do we need both Request*() and Get*() methods?
+//
+//	Seems Get has a default and ignores errors (bad software engineering) and
+//	Request has errors but no default? Why not just have Get*() with defaults that
+//	returns errors? Oh. Wait! It seems we have this because of the shitty API
+//	created bv mcp-go? Well, let's clean it up, not replicate his bad design
+//	decisions.
 type ToolRequest interface {
 	RequireString(key string) (string, error)
 	RequireInt(key string) (int, error)
@@ -31,9 +59,6 @@ type ToolRequest interface {
 type ToolResult interface {
 	ToolResult() // Marker method
 }
-
-// ToolHandler is the function signature for tool handlers
-type ToolHandler func(ctx context.Context, req ToolRequest) (ToolResult, error)
 
 // ToolResult implementations
 type textResult struct {
