@@ -6,14 +6,6 @@ type ToolDefinition struct {
 	InputSchema map[string]any `json:"inputSchema"`
 }
 
-type FileSearchResult struct {
-	Path     string `json:"path"`
-	Name     string `json:"name"`
-	Size     int64  `json:"size"`
-	Modified string `json:"modified"`
-	IsDir    bool   `json:"is_directory"`
-}
-
 type ClientInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`

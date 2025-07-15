@@ -1,14 +1,14 @@
 # Scout-MCP: Secure File Search Server
 
-Scout-MCP is a secure Model Context Protocol (MCP) server that allows Claude to search your whitelisted directories through stdio transport. Built with explicit directory whitelisting and robust security features.
+Scout-MCP is a secure Model Context Protocol (MCP) server that allows Claude to search your allowed directories through stdio transport. Built with explicit directory whitelisting and robust security features.
 
 ## Features
 
 - **Explicit Directory Whitelisting**: Only specified directories are accessible
 - **Two Main Tools**:
-  - `list_files`: List and search for files by name pattern in whitelisted directories  
-  - `read_file`: Read contents of files from whitelisted directories
-- **Security**: Path validation prevents access outside whitelisted directories
+  - `list_files`: List and search for files by name pattern in allowed directories  
+  - `read_file`: Read contents of files from allowed directories
+- **Security**: Path validation prevents access outside allowed directories
 - **stdio Transport**: Direct integration with Claude Desktop via subprocess
 
 ## Quick Start
@@ -75,7 +75,7 @@ Edit (or create) the Claude Desktop config file:
 
 **Configuration Notes:**
 - Use **absolute paths** for both the command and arguments
-- The `args` array should contain your whitelisted directories
+- The `args` array should contain your allowed directories
 - Scout-MCP runs as a subprocess of Claude Desktop
 - No URL or network configuration needed
 
@@ -111,12 +111,12 @@ In a new Claude conversation, try:
 
 **Tools not available in Claude:**
 - Verify the binary path is correct and executable
-- Check that whitelisted directories exist
+- Check that allowed directories exist
 - Restart Claude Desktop after config changes
 - Check Claude Desktop logs for error messages
 
 **"Access denied" errors:**
-- Ensure requested paths are within whitelisted directories
+- Ensure requested paths are within allowed directories
 - Use absolute paths in configuration
 - Verify directory permissions
 
@@ -159,7 +159,7 @@ The configuration file is automatically created at `~/.config/scout-mcp/scout-mc
 
 ```json
 {
-  "whitelisted_paths": [
+  "allowed_paths": [
     "/home/yourusername/Projects"
   ],
   "port": "8754",
@@ -180,7 +180,7 @@ The configuration file is automatically created at `~/.config/scout-mcp/scout-mc
 **Security Notes:**
 - Only add directories you want Claude to access
 - Use absolute paths for clarity
-- Subdirectories of whitelisted paths are automatically accessible
+- Subdirectories of allowed paths are automatically accessible
 - All paths are validated at startup
 
 ## Usage Examples
@@ -201,7 +201,7 @@ Once connected to Claude Desktop, you can use commands like:
 Scout-MCP provides two main tools to Claude:
 
 ### `list_files`
-List and search for files by name pattern in whitelisted directories
+List and search for files by name pattern in allowed directories
 - **Parameters**: 
   - `path` (required): Directory path to list
   - `recursive` (optional): Enable recursive listing (default: false)
@@ -210,7 +210,7 @@ List and search for files by name pattern in whitelisted directories
 - **Returns**: JSON with file information (path, name, size, modified date, is_directory)
 
 ### `read_file`
-Read contents of files from whitelisted directories
+Read contents of files from allowed directories
 - **Parameters**: `path` (required): File path to read
 - **Returns**: File contents as text
 
@@ -219,7 +219,7 @@ Read contents of files from whitelisted directories
 ### Path Validation
 - All file access requests are validated against the whitelist
 - Absolute path resolution prevents directory traversal attacks
-- Only directories (not individual files) can be whitelisted
+- Only directories (not individual files) can be allowed
 
 ### stdio Security
 - No network exposure - communication only through Claude Desktop
@@ -227,7 +227,7 @@ Read contents of files from whitelisted directories
 - No authentication required for localhost stdio communication
 
 ### Access Logging
-- Server logs all whitelisted directories on startup
+- Server logs all allowed directories on startup
 - Invalid access attempts are logged with details
 
 ## Testing Your Setup
@@ -274,7 +274,7 @@ Verify integration works correctly:
 - Use absolute paths for clarity
 - Check permissions on the directory
 
-**"No whitelisted directories specified"**
+**"No allowed directories specified"**
 - Run `scout-mcp init` to create default config
 - Or specify a path: `scout-mcp /your/project/path`
 - Check config file exists: `cat ~/.config/scout-mcp/scout-mcp.json`
@@ -285,10 +285,10 @@ Verify integration works correctly:
 - Verify binary path in claude_desktop_config.json is correct and absolute
 - Check that the binary is executable: `chmod +x /path/to/scout-mcp`
 - Restart Claude Desktop completely after config changes
-- Verify whitelisted directories exist and are readable
+- Verify allowed directories exist and are readable
 
-**"Access denied: path not whitelisted"**
-- Check that the requested path is within a whitelisted directory
+**"Access denied: path not allowed"**
+- Check that the requested path is within a allowed directory
 - Verify paths in config are absolute and exist
 - Ensure Claude Desktop config args match your intended directories
 
@@ -310,7 +310,7 @@ Verify integration works correctly:
 
 **File Location**: `~/.config/scout-mcp/scout-mcp.json`
 
-- `whitelisted_paths`: Array of directory paths that Claude can access
+- `allowed_paths`: Array of directory paths that Claude can access
 - `port`: Port number (legacy - not used for stdio transport)
 - `allowed_origins`: CORS origins (legacy - not used for stdio transport)
 
@@ -319,12 +319,12 @@ Verify integration works correctly:
 **File Location**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 - `command`: Absolute path to scout-mcp binary
-- `args`: Array of whitelisted directory paths
+- `args`: Array of allowed directory paths
 - Server runs as subprocess of Claude Desktop
 
 ### Environment Considerations
 
-- Ensure the user running Claude Desktop has read access to whitelisted directories
+- Ensure the user running Claude Desktop has read access to allowed directories
 - Command line paths are not persisted to config file
 - Use absolute paths to avoid working directory issues
 

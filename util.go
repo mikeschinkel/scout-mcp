@@ -1,16 +1,12 @@
 package scout
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 func mustClose(c io.Closer) {
@@ -61,27 +57,4 @@ func homeRelativePath(path string) string {
 	}
 
 	return path
-}
-
-func convertSlice[T any](input []any) (output []T, err error) {
-	var t T
-	var errs []error
-
-	output = make([]T, len(input))
-	for i, item := range input {
-		converted, ok := item.(T)
-		if !ok {
-			errs = append(errs, fmt.Errorf("error converting item %d: item a '%T', not a '%T'", i, item, t))
-			continue
-		}
-		output[i] = converted
-	}
-	if len(errs) > 0 {
-		err = errors.Join(errs...)
-	}
-	return output, err
-}
-
-func titleCase(s string) string {
-	return cases.Title(language.English).String(s)
 }

@@ -8,7 +8,7 @@ type Args struct {
 	AdditionalPaths []string
 	ServerOpts      MCPServerOpts
 	IsInit          bool
-	ConfigArgs      ConfigArgs
+	InitialPath     string
 }
 
 func ParseArgs() (args Args, err error) {
@@ -26,7 +26,7 @@ func ParseArgs() (args Args, err error) {
 	if osArgs[0] == "init" {
 		args.IsInit = true
 		if len(osArgs) > 1 {
-			args.ConfigArgs.InitialPath = osArgs[1]
+			args.InitialPath = osArgs[1]
 		}
 		goto end
 	}

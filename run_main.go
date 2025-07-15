@@ -5,19 +5,22 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+
+	"github.com/mikeschinkel/scout-mcp/mcptools"
 )
 
 func RunMain() (err error) {
 	var server *MCPServer
 	var args Args
-	var opts Opts
+	var serverOpts Opts
 
 	// Initialize logger to file
 	err = InitializeFileLogger()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
 		goto end
 	}
+	logger.Info("CLI Args:", "args", os.Args[1:])
 
 	args, err = ParseArgs()
 	if err != nil {
@@ -26,7 +29,7 @@ func RunMain() (err error) {
 	}
 
 	if args.IsInit {
-		err = CreateDefaultConfig(args.ConfigArgs)
+		err = CreateDefaultConfig(args)
 		if err != nil {
 			logger.Error("Failed to create config", "error", err)
 			goto end
@@ -35,14 +38,15 @@ func RunMain() (err error) {
 	}
 
 	// Convert MCPServerOpts to Opts
-	opts = Opts{
-		OnlyMode: args.ServerOpts.OnlyMode,
+	serverOpts = Opts{
+		OnlyMode:        args.ServerOpts.OnlyMode,
+		AdditionalPaths: args.AdditionalPaths,
 	}
 
-	server, err = NewMCPServer(args.AdditionalPaths, opts)
+	server, err = NewMCPServer(serverOpts)
 	if err != nil {
-		if len(args.AdditionalPaths) == 0 && !opts.OnlyMode {
-			ShowUsageError()
+		if len(serverOpts.AdditionalPaths) == 0 && !serverOpts.OnlyMode {
+			ShowUsageError(err)
 			goto end
 		}
 		logger.Error("Failed to create server", "error", err)
@@ -50,9 +54,9 @@ func RunMain() (err error) {
 	}
 
 	logger.Info("Scout-MCP File Operations Server starting")
-	logger.Info("Whitelisted directories:")
-	for dir := range server.WhitelistedDirs() {
-		logger.Info("Directory", "path", dir)
+	logger.Info("Allowed directories:")
+	for path := range server.AllowedPaths() {
+		logger.Info("Directory", "path", path)
 	}
 
 	err = server.StartMCP()
@@ -66,6 +70,7 @@ end:
 }
 
 func InitializeFileLogger() (err error) {
+	var logger *slog.Logger
 	var logDir string
 	var logPath string
 	var logFile *os.File
@@ -88,10 +93,13 @@ func InitializeFileLogger() (err error) {
 		goto end
 	}
 
-	// Use JSON logging for structured logs
-	SetLogger(slog.New(slog.NewJSONHandler(logFile, &slog.HandlerOptions{
+	logger = slog.New(slog.NewJSONHandler(logFile, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
-	})))
+	}))
+
+	// Use JSON logging for structured logs
+	SetLogger(logger)
+	mcptools.SetLogger(logger)
 
 	logger.Info("Logger initialized", "log_file", logPath)
 
@@ -99,12 +107,12 @@ end:
 	return err
 }
 
-func ShowUsageError() {
+func ShowUsageError(err error) {
 	var displayPath string
 
 	displayPath = filepath.Join("~", ConfigBaseDirName, ConfigDirName, ConfigFileName)
 
-	fmt.Printf(`ERROR: No whitelisted directories specified.
+	fmt.Printf(`ERROR: %[3]s.
 
 Usage options:
   %[1]s <path>              Add path to config file paths
@@ -118,5 +126,5 @@ Examples:
   %[1]s ~/MyProjects
   %[1]s --only /tmp/safe-dir
   %[1]s init ~/Code
-`, AppName, displayPath)
+`, AppName, displayPath, err.Error())
 }
