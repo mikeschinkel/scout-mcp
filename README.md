@@ -1,14 +1,17 @@
-# Scout-MCP: Secure File Search Server
+# Scout-MCP: Secure File Operations Server
 
-Scout-MCP is a secure Model Context Protocol (MCP) server that allows Claude to search your allowed directories through stdio transport. Built with explicit directory whitelisting and robust security features.
+Scout-MCP is a comprehensive Model Context Protocol (MCP) server that provides Claude with secure file access and manipulation capabilities through stdio transport. Built with explicit directory whitelisting, user approval system, and advanced file operations including AST-based editing.
 
 ## Features
 
 - **Explicit Directory Whitelisting**: Only specified directories are accessible
-- **Two Main Tools**:
-  - `list_files`: List and search for files by name pattern in allowed directories  
-  - `read_file`: Read contents of files from allowed directories
-- **Security**: Path validation prevents access outside allowed directories
+- **Comprehensive File Operations**: 18 tools for reading, writing, editing, and analyzing files
+  - **Basic Operations**: read, create, update, delete files and search directories
+  - **Advanced Editing**: Line-based operations, pattern replacement, AST-based editing
+  - **Language-Aware**: Syntax-aware editing for Go, Python, JavaScript, and more
+  - **Analysis Tools**: File validation, content analysis, and structure inspection
+- **User Approval System**: Write operations require explicit user confirmation with risk assessment
+- **Security**: Multi-layered security with path validation, operation classification, and approval workflows
 - **stdio Transport**: Direct integration with Claude Desktop via subprocess
 
 ## Quick Start
@@ -49,8 +52,8 @@ Scout-MCP uses stdio transport for direct integration with Claude Desktop. This 
 
 #### 1. Build Scout-MCP
 ```bash
-cd /path/to/scout-mcp/cmd
-go build -o bin/scout-mcp
+cd /path/to/scout-mcp
+go build -o bin/scout-mcp ./cmd/main.go
 ```
 
 #### 2. Find Claude Desktop Config File
@@ -66,7 +69,7 @@ Edit (or create) the Claude Desktop config file:
 {
   "mcpServers": {
     "scout-mcp": {
-      "command": "/absolute/path/to/scout-mcp/cmd/bin/scout-mcp",
+      "command": "/absolute/path/to/scout-mcp/bin/scout-mcp",
       "args": ["/Users/yourusername/Projects"]
     }
   }
@@ -97,7 +100,7 @@ In a new Claude conversation, try:
 {
   "mcpServers": {
     "scout-mcp": {
-      "command": "/Users/mike/Projects/scout-mcp/cmd/bin/scout-mcp",
+      "command": "/Users/mike/Projects/scout-mcp/bin/scout-mcp",
       "args": [
         "/Users/mike/Projects",
         "/Users/mike/Documents/Code"
@@ -198,28 +201,57 @@ Once connected to Claude Desktop, you can use commands like:
 
 ## API Tools
 
-Scout-MCP provides two main tools to Claude:
+Scout-MCP provides 18 comprehensive tools to Claude:
 
-### `list_files`
-List and search for files by name pattern in allowed directories
-- **Parameters**: 
-  - `path` (required): Directory path to list
-  - `recursive` (optional): Enable recursive listing (default: false)
-  - `pattern` (optional): Name pattern to match
-  - `extensions` (optional): Filter by file extensions
-- **Returns**: JSON with file information (path, name, size, modified date, is_directory)
+### Basic File Operations
+- **`read_file`**: Read contents of files from allowed directories
+- **`create_file`**: Create new files in allowed directories (requires approval)
+- **`update_file`**: Replace entire file contents (requires approval)
+- **`delete_file`**: Delete files or directories (requires approval)
+- **`search_files`**: List and search for files by name pattern in allowed directories
 
-### `read_file`
-Read contents of files from allowed directories
-- **Parameters**: `path` (required): File path to read
-- **Returns**: File contents as text
+### Advanced Editing Operations
+- **`update_file_lines`**: Replace specific lines in a file (requires approval)
+- **`delete_file_lines`**: Delete specific line ranges from a file (requires approval)
+- **`insert_file_lines`**: Insert content at specific line numbers (requires approval)
+- **`insert_at_pattern`**: Insert content before/after pattern matches (requires approval)
+- **`replace_pattern`**: Find and replace text patterns with regex support (requires approval)
+
+### Language-Aware Operations (AST-based)
+- **`find_file_part`**: Find specific language constructs (functions, types, etc.)
+- **`replace_file_part`**: Replace language constructs using syntax-aware parsing (requires approval)
+- **`validate_files`**: Validate syntax of source code files
+
+### Analysis and System Tools
+- **`analyze_files`**: Analyze file structure and provide insights
+- **`get_config`**: Show current Scout-MCP configuration
+- **`tool_help`**: Get detailed documentation for all tools
+
+### Approval System
+- **`request_approval`**: Request user approval for risky operations
+- **`generate_approval_token`**: Generate approval tokens after user confirmation
 
 ## Security Features
+
+### Multi-Layered Security Model
+Scout-MCP implements comprehensive security through multiple mechanisms:
 
 ### Path Validation
 - All file access requests are validated against the whitelist
 - Absolute path resolution prevents directory traversal attacks
 - Only directories (not individual files) can be allowed
+
+### User Approval System
+- **Write operations require explicit user confirmation** via stdio prompts
+- **Risk assessment**: Operations are classified as low, medium, or high risk
+- **Operation preview**: Users see exactly what will be changed before approval
+- **Approval tokens**: Generated after user confirmation for secure operation execution
+- **Interactive prompts**: Clear descriptions of what each operation will do
+
+### Operation Classification
+- **Read operations**: Automatically allowed for files in whitelisted directories
+- **Write operations**: Require user approval with risk-based warnings
+- **Analysis operations**: Safe read-only analysis and validation tools
 
 ### stdio Security
 - No network exposure - communication only through Claude Desktop
@@ -229,6 +261,7 @@ Read contents of files from allowed directories
 ### Access Logging
 - Server logs all allowed directories on startup
 - Invalid access attempts are logged with details
+- Approval requests and responses are logged for audit trails
 
 ## Testing Your Setup
 
@@ -244,14 +277,20 @@ After configuring Claude Desktop integration:
 
 ### Local Development Testing
 
-Test the server standalone before Claude integration:
+Test the server and run the comprehensive test suite:
 
 ```bash
-# Start Scout-MCP (will wait for stdio input)
-./cmd/bin/scout-mcp ~/Projects
+# Run the comprehensive test suite
+./test/run_tests.sh
+
+# Run individual Go tests
+go test ./...
+
+# Test the server standalone before Claude integration
+./bin/scout-mcp ~/Projects
 
 # Test with manual JSON (in another terminal, pipe input)
-echo '{"id":1,"method":"tools/list","params":{}}' | ./cmd/bin/scout-mcp ~/Projects
+echo '{"id":1,"method":"tools/list","params":{}}' | ./bin/scout-mcp ~/Projects
 ```
 
 ### Integration Testing
@@ -328,16 +367,9 @@ Verify integration works correctly:
 - Command line paths are not persisted to config file
 - Use absolute paths to avoid working directory issues
 
-## Future Development
+## Architecture and Development
 
-This is an initial implementation. Planned enhancements include:
-
-- **mcputil Integration**: Clean property-based API architecture
-- **Enhanced tools**: File writing, git operations, project analysis  
-- **User approval system**: For write operations with conversational prompts
-- **Command execution**: Git commands with read/write classification
-- **Logging and monitoring**: Structured logging and metrics
-- **Security enhancements**: File size limits, operation timeouts
+Scout-MCP follows a "Clear Path" coding style with comprehensive security and testing:
 
 ## Contributing
 

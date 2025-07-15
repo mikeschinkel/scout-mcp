@@ -24,7 +24,10 @@ go run ./cmd/main.go --only /tmp/safe-dir
 
 ### Testing and Linting
 ```bash
-# Run tests
+# Run comprehensive test suite
+./test/run_tests.sh
+
+# Run individual tests
 go test ./...
 
 # Run tests with verbose output
@@ -51,6 +54,7 @@ Scout-MCP is a secure Model Context Protocol (MCP) server that provides Claude w
 - **scout/**: Main package containing MCP server implementation and configuration
 - **mcputil/**: MCP server utilities and abstractions over mark3labs/mcp-go
 - **mcptools/**: Individual tool implementations with approval system
+- **langutil/**: Language-specific parsing utilities for AST-based operations
 
 #### MCP Server Architecture
 The server uses `github.com/mark3labs/mcp-go` for MCP protocol implementation:
@@ -69,6 +73,8 @@ All tools follow a consistent pattern in mcptools/:
 - Inherit from `ToolBase` for common functionality
 - Implement approval workflow for risky operations
 - Use `FileAction` enum for operation classification
+- Support both text-based and AST-based editing operations
+- Language-aware tools use `langutil/` for syntax-aware parsing
 - Follow "Clear Path" style with single return points
 
 ### Configuration System
@@ -80,6 +86,8 @@ All tools follow a consistent pattern in mcptools/:
 - **run_main.go**: Entry point and argument parsing (parseArgs function)
 - **mcp.go**: Core MCP server setup and tool registration
 - **config.go**: Configuration loading and path validation
+- **const.go**: Application constants and default values
+- **logger.go**: Logging utilities and configuration
 - **mcptools/tool_base.go**: Base class for all tools with approval system
 - **mcptools/types.go**: Common types and enums for tool system
 
@@ -96,6 +104,12 @@ The server communicates with Claude Desktop via stdio transport:
 - No network configuration required
 - Runs as subprocess of Claude Desktop
 - Configuration via Claude Desktop's `claude_desktop_config.json`
-- Tools available: read_file, search_files, create_file, update_file, delete_file, analyze_files
+- Tools available: 18 comprehensive tools including:
+  - **Basic file operations**: read_file, create_file, update_file, delete_file, search_files
+  - **Advanced editing**: update_file_lines, delete_file_lines, insert_file_lines, insert_at_pattern, replace_pattern
+  - **Language-aware editing**: find_file_part, replace_file_part (AST-based)
+  - **Analysis and validation**: analyze_files, validate_files
+  - **System tools**: get_config, tool_help
+  - **Approval system**: request_approval, generate_approval_token
 
 When making changes, ensure they maintain the existing security model and follow the "Clear Path" coding style established throughout the codebase.
