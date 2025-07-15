@@ -36,7 +36,7 @@ const (
 	// Build commands and messages
 
 	BuildCommand       = "go build -o bin/scout-mcp cmd/main.go"
-	BinaryNotFoundMsg  = "Scout-mcp binary not found. Please run: " + BuildCommand
+	BinaryNotFoundMsg  = "scout-mcp binary not found. Please run: " + BuildCommand
 	SourceNotFoundMsg  = "Cannot find scout-mcp binary or source"
 	BuildFromSourceMsg = "Binary not found, will need to build from source"
 
