@@ -284,7 +284,7 @@ You should receive a JSON response listing the available tools.
 ## Security Notes
 
 - Your tunnel URL will be publicly accessible but requires MCP authentication
-- Only whitelisted directories are accessible through Scout-MCP
+- Only allowed directories are accessible through Scout-MCP
 - Consider using CloudFlare Access for additional authentication layers
 - Monitor tunnel logs for any suspicious activity
 
