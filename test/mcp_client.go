@@ -45,29 +45,39 @@ type MCPError struct {
 }
 
 // NewMCPClient creates a new MCP client connected to the scout-mcp server
-func NewMCPClient(serverPath string, args ...string) (*MCPClient, error) {
-	cmd := exec.Command(serverPath, args...)
+func NewMCPClient(serverPath string, args ...string) (client *MCPClient, err error) {
+	var cmd *exec.Cmd
+	var stdin io.WriteCloser
+	var stdout io.ReadCloser
+	var stderr io.ReadCloser
 
-	stdin, err := cmd.StdinPipe()
+	cmd = exec.Command(serverPath, args...)
+
+	stdin, err = cmd.StdinPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create stdin pipe: %w", err)
+		err = fmt.Errorf("failed to create stdin pipe: %w", err)
+		goto end
 	}
 
-	stdout, err := cmd.StdoutPipe()
+	stdout, err = cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create stdout pipe: %w", err)
+		err = fmt.Errorf("failed to create stdout pipe: %w", err)
+		goto end
 	}
 
-	stderr, err := cmd.StderrPipe()
+	stderr, err = cmd.StderrPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create stderr pipe: %w", err)
+		err = fmt.Errorf("failed to create stderr pipe: %w", err)
+		goto end
 	}
 
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start server: %w", err)
+	err = cmd.Start()
+	if err != nil {
+		err = fmt.Errorf("failed to start server: %w", err)
+		goto end
 	}
 
-	client := &MCPClient{
+	client = &MCPClient{
 		cmd:    cmd,
 		stdin:  stdin,
 		stdout: stdout,
@@ -75,12 +85,17 @@ func NewMCPClient(serverPath string, args ...string) (*MCPClient, error) {
 		nextID: 1,
 	}
 
-	return client, nil
+end:
+	return client, err
 }
 
 // Initialize sends the MCP initialization handshake
-func (c *MCPClient) Initialize(ctx context.Context) error {
-	req := MCPRequest{
+func (c *MCPClient) Initialize(ctx context.Context) (err error) {
+	var req MCPRequest
+	var resp *MCPResponse
+	var notif MCPRequest
+
+	req = MCPRequest{
 		JSONRPC: "2.0",
 		ID:      c.getNextID(),
 		Method:  "initialize",
@@ -94,27 +109,34 @@ func (c *MCPClient) Initialize(ctx context.Context) error {
 		},
 	}
 
-	resp, err := c.sendRequest(ctx, req)
+	resp, err = c.sendRequest(ctx, req)
 	if err != nil {
-		return fmt.Errorf("initialization failed: %w", err)
+		err = fmt.Errorf("initialization failed: %w", err)
+		goto end
 	}
 
 	if resp.Error != nil {
-		return fmt.Errorf("initialization error: %s", resp.Error.Message)
+		err = fmt.Errorf("initialization error: %s", resp.Error.Message)
+		goto end
 	}
 
 	// Send initialized notification
-	notif := MCPRequest{
+	notif = MCPRequest{
 		JSONRPC: "2.0",
 		Method:  "notifications/initialized",
 	}
 
-	return c.sendNotification(notif)
+	err = c.sendNotification(notif)
+
+end:
+	return err
 }
 
 // CallTool calls an MCP tool with the given name and arguments
-func (c *MCPClient) CallTool(ctx context.Context, toolName string, arguments map[string]interface{}) (*MCPResponse, error) {
-	req := MCPRequest{
+func (c *MCPClient) CallTool(ctx context.Context, toolName string, arguments map[string]interface{}) (result *MCPResponse, err error) {
+	var req MCPRequest
+
+	req = MCPRequest{
 		JSONRPC: "2.0",
 		ID:      c.getNextID(),
 		Method:  "tools/call",
@@ -124,98 +146,121 @@ func (c *MCPClient) CallTool(ctx context.Context, toolName string, arguments map
 		},
 	}
 
-	return c.sendRequest(ctx, req)
+	result, err = c.sendRequest(ctx, req)
+
+	return result, err
 }
 
 // ListTools requests the list of available tools
-func (c *MCPClient) ListTools(ctx context.Context) (*MCPResponse, error) {
-	req := MCPRequest{
+func (c *MCPClient) ListTools(ctx context.Context) (result *MCPResponse, err error) {
+	var req MCPRequest
+
+	req = MCPRequest{
 		JSONRPC: "2.0",
 		ID:      c.getNextID(),
 		Method:  "tools/list",
 	}
 
-	return c.sendRequest(ctx, req)
+	result, err = c.sendRequest(ctx, req)
+
+	return result, err
 }
 
 // Close shuts down the MCP client and server
-func (c *MCPClient) Close() error {
+func (c *MCPClient) Close() (err error) {
 	if c.stdin != nil {
-		c.stdin.Close()
+		_ = c.stdin.Close()
 	}
 	if c.stdout != nil {
-		c.stdout.Close()
+		_ = c.stdout.Close()
 	}
 	if c.stderr != nil {
-		c.stderr.Close()
+		_ = c.stderr.Close()
 	}
 
 	if c.cmd != nil && c.cmd.Process != nil {
-		c.cmd.Process.Kill()
-		c.cmd.Wait()
+		_ = c.cmd.Process.Kill()
+		_ = c.cmd.Wait()
 	}
 
-	return nil
+	return err
 }
 
 // getNextID returns the next request ID
-func (c *MCPClient) getNextID() int64 {
+func (c *MCPClient) getNextID() (id int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	id := c.nextID
+	id = c.nextID
 	c.nextID++
+
 	return id
 }
 
 // sendRequest sends a request and waits for a response
-func (c *MCPClient) sendRequest(ctx context.Context, req MCPRequest) (*MCPResponse, error) {
-	data, err := json.Marshal(req)
+func (c *MCPClient) sendRequest(ctx context.Context, req MCPRequest) (response *MCPResponse, err error) {
+	var data []byte
+	var errChan chan error
+	var resp MCPResponse
+	var scanner *bufio.Scanner
+
+	data, err = json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+		err = fmt.Errorf("failed to marshal request: %w", err)
+		goto end
 	}
 
 	// Send request
-	if _, err := c.stdin.Write(append(data, '\n')); err != nil {
-		return nil, fmt.Errorf("failed to write request: %w", err)
+	_, err = c.stdin.Write(append(data, '\n'))
+	if err != nil {
+		err = fmt.Errorf("failed to write request: %w", err)
+		goto end
 	}
 
 	// Read response
-	scanner := bufio.NewScanner(c.stdout)
+	scanner = bufio.NewScanner(c.stdout)
 
 	// Set timeout
-	done := make(chan bool, 1)
-	var resp MCPResponse
-	var scanErr error
+	errChan = make(chan error, 1)
 
 	go func() {
 		if scanner.Scan() {
-			scanErr = json.Unmarshal(scanner.Bytes(), &resp)
+			err := json.Unmarshal(scanner.Bytes(), &resp)
+			errChan <- err
 		} else {
-			scanErr = fmt.Errorf("failed to read response")
+			errChan <- fmt.Errorf("failed to read response")
 		}
-		done <- true
 	}()
 
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		err = ctx.Err()
+		goto end
 	case <-time.After(5 * time.Second):
-		return nil, fmt.Errorf("request timeout")
-	case <-done:
-		if scanErr != nil {
-			return nil, scanErr
+		err = fmt.Errorf("request timeout")
+		goto end
+	case err = <-errChan:
+		if err != nil {
+			goto end
 		}
-		return &resp, nil
+		response = &resp
 	}
+
+end:
+	return response, err
 }
 
 // sendNotification sends a notification (no response expected)
-func (c *MCPClient) sendNotification(req MCPRequest) error {
-	data, err := json.Marshal(req)
+func (c *MCPClient) sendNotification(req MCPRequest) (err error) {
+	var data []byte
+
+	data, err = json.Marshal(req)
 	if err != nil {
-		return fmt.Errorf("failed to marshal notification: %w", err)
+		err = fmt.Errorf("failed to marshal notification: %w", err)
+		goto end
 	}
 
 	_, err = c.stdin.Write(append(data, '\n'))
+
+end:
 	return err
 }

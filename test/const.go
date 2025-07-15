@@ -3,21 +3,24 @@ package test
 // File paths used throughout the test suite
 const (
 	// Binary paths
+
 	ServerBinaryPath         = "../bin/scout-mcp"
 	ServerBinaryPathFallback = "../../bin/scout-mcp" // For running from subdirectories
 	ServerSourcePath         = "../cmd/main.go"
 
 	// Test file names and paths
+
 	TestConfigFile    = "test_config.json"
 	TestReadmeFile    = "README.md"
 	TestMainGoFile    = "src/main.go"
-	TestUtilsGoFile   = "src/utils.go"
+	TestUtilsGoFile   = "src/util.go"
 	TestGuideFile     = "docs/guide.md"
 	TestAPIFile       = "docs/api.md"
 	TestGitignoreFile = ".gitignore"
 	TestSampleFile    = "data/sample.txt"
 
 	// Test directories
+
 	TestSrcDir   = "src"
 	TestDocsDir  = "docs"
 	TestDataDir  = "data"
@@ -26,16 +29,19 @@ const (
 	TestTmpDir   = "tmp"
 
 	// Test file content
+
 	TestProjectName = "scout-mcp-test"
 	TestFilePrefix  = "scout-mcp-test-"
 
 	// Build commands and messages
+
 	BuildCommand       = "go build -o bin/scout-mcp cmd/main.go"
 	BinaryNotFoundMsg  = "Scout-mcp binary not found. Please run: " + BuildCommand
 	SourceNotFoundMsg  = "Cannot find scout-mcp binary or source"
 	BuildFromSourceMsg = "Binary not found, will need to build from source"
 
 	// Test file extensions for filtering
+
 	GoExtension   = ".go"
 	JSONExtension = ".json"
 	MDExtension   = ".md"
