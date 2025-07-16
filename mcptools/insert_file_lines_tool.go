@@ -15,6 +15,12 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "insert_file_lines",
 			Description: "Insert content at a specific line number in a file",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+				FilepathProperty.Required(),
+				NewContentProperty.Required(),
+				mcputil.String("position", "Position at which to insert").Required(),
+			},
 		}),
 	})
 }
@@ -31,18 +37,18 @@ func (t *InsertFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "insert_file_lines")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = req.RequireString("filepath")
 	if err != nil {
 		goto end
 	}
 
-	content, err = req.RequireString("content")
+	content, err = req.RequireString("new_content")
 	if err != nil {
 		goto end
 	}
 
 	// TODO Change back to checking error here
-	position = req.GetString("position", "after")
+	position = req.GetString("position", string(AfterPosition))
 
 	err = t.validatePosition(position)
 	if err != nil {
@@ -62,13 +68,7 @@ end:
 }
 
 func (t *InsertFileLinesTool) validatePosition(position string) (err error) {
-	if position != "before" && position != "after" {
-		err = fmt.Errorf("position must be 'before' or 'after', got '%s'", position)
-		goto end
-	}
-
-end:
-	return err
+	return RelativePosition(position).Validate()
 }
 
 func (t *InsertFileLinesTool) insertAtLine(filePath string, lineNumber int, content, position string) (err error) {

@@ -1,6 +1,7 @@
 package mcptools
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,6 +32,20 @@ func (b *toolBase) Name() string {
 	return b.options.Name
 }
 
+func (b *toolBase) ToMap() (m map[string]any, err error) {
+	var bytes []byte
+	bytes, err = json.Marshal(b)
+	if err != nil {
+		goto end
+	}
+	err = json.Unmarshal(bytes, &m)
+	if err != nil {
+		goto end
+	}
+end:
+	return m, err
+}
+
 func (b *toolBase) SetConfig(c Config) {
 	b.config = c
 }
@@ -41,6 +56,29 @@ func (b *toolBase) Config() Config {
 
 func (b *toolBase) Options() mcputil.ToolOptions {
 	return b.options
+}
+
+// EnsurePreconditions checks all shared preconditions for tools
+func (b *toolBase) EnsurePreconditions(req mcputil.ToolRequest) (err error) {
+	var sessionToken string
+
+	// Session validation (skip for start_session tool)
+	if b.options.Name != "start_session" {
+		sessionToken = req.GetString("session_token", "")
+		err = RequireValidSession(sessionToken)
+		if err != nil {
+			goto end
+		}
+	}
+
+	// Future preconditions can be added here:
+	// - Rate limiting checks
+	// - User permission validation
+	// - Feature flag checks
+	// - etc.
+
+end:
+	return err
 }
 
 // File system operations

@@ -17,6 +17,14 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "validate_files",
 			Description: "Validate syntax of source code files using language-specific parsers",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+				FilesProperty,
+				PathsProperty,
+				LanguageProperty,
+				RecursiveProperty,
+				mcputil.Array("extensions", "Extensions of files to process for this tool"),
+			},
 		}),
 	})
 }
@@ -40,19 +48,9 @@ type ValidationSummary struct {
 	OverallValid bool               `json:"overall_valid"`
 }
 
-func (t *ValidateFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
-	var files []string
-	var paths []string
-	var languageOverride string
-	var recursive bool
-	var extensions []string
-	var summary ValidationSummary
+func (t *ValidateFilesTool) parseFilesOrPaths(req mcputil.ToolRequest) (files []string, paths []string, err error) {
 	var filesParam []any
 	var pathsParam []any
-	var extensionsParam []any
-
-	logger.Info("Tool called", "tool", "validate_files")
-
 	// Parse parameters - files takes precedence over paths
 	filesParam = req.GetArray("files", nil)
 	if len(filesParam) > 0 {
@@ -61,18 +59,36 @@ func (t *ValidateFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (
 				files = append(files, str)
 			}
 		}
-	} else {
-		// If no files specified, use paths
-		pathsParam = req.GetArray("paths", nil)
-		if len(pathsParam) == 0 {
-			err = fmt.Errorf("either 'files' (array of file paths) or 'paths' (array of directory paths) parameter is required")
-			goto end
-		}
+		goto end
+	}
+	// If no files specified, use paths
+	pathsParam = req.GetArray("paths", nil)
+	if len(pathsParam) > 0 {
 		for _, p := range pathsParam {
 			if str, ok := p.(string); ok {
 				paths = append(paths, str)
 			}
 		}
+		goto end
+	}
+	err = fmt.Errorf("either 'files' (array of file paths) or 'paths' (array of directory paths) parameter is required")
+end:
+	return files, paths, err
+}
+func (t *ValidateFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+	var files []string
+	var paths []string
+	var languageOverride string
+	var recursive bool
+	var extensions []string
+	var summary ValidationSummary
+	var extensionsParam []any
+
+	logger.Info("Tool called", "tool", "validate_files")
+
+	files, paths, err = t.parseFilesOrPaths(req)
+	if err != nil {
+		goto end
 	}
 
 	languageOverride = req.GetString("language", "")

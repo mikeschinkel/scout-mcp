@@ -15,6 +15,13 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "update_file_lines",
 			Description: "Update specific lines in a file by line number range",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+				FilepathProperty.Required(),
+				NewContentProperty.Required(),
+				StartLineProperty.Required(),
+				EndLineProperty.Required(),
+			},
 		}),
 	})
 }
@@ -30,7 +37,7 @@ func (t *UpdateFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "update_file_lines")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = req.RequireString("filepath")
 	if err != nil {
 		goto end
 	}

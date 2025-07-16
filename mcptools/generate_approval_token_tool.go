@@ -16,9 +16,9 @@ func init() {
 			Name:        "generate_approval_token",
 			Description: "Generate approval token after user confirmation",
 			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
 				mcputil.Array("file_actions", "File actions approved").Required(),
 				mcputil.Array("operations", "Operations approved (create, update, delete)").Required(),
-				mcputil.String("session_id", "Session identifier for this approval"),
 			},
 		}),
 	})

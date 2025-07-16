@@ -15,6 +15,13 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "find_file_part",
 			Description: "Find specific language constructs by name and return their location and content",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+				PathProperty.Required(),
+				LanguageProperty.Required(),
+				PartTypeProperty.Required(),
+				PartNameProperty.Required(),
+			},
 		}),
 	})
 }

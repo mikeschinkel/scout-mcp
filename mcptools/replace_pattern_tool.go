@@ -16,6 +16,13 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "replace_pattern",
 			Description: "Find and replace text patterns in a file with support for regex",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+				PathProperty.Required(),
+				LanguageProperty.Required(),
+				PartTypeProperty.Required(),
+				PartNameProperty.Required(),
+			},
 		}),
 	})
 }

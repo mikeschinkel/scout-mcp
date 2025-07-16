@@ -14,8 +14,9 @@ func init() {
 			Name:        "request_approval",
 			Description: "Request user approval with rich visual formatting",
 			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
 				mcputil.String("operation", "Brief operation description").Required(),
-				mcputil.Array("files", "List of files to be affected").Required(),
+				FilesProperty.Required(),
 				mcputil.String("preview_content", "Code preview or diff content"),
 				mcputil.String("risk_level", "Risk level: low, medium, or high"),
 				mcputil.String("impact_summary", "Summary of what will change"),

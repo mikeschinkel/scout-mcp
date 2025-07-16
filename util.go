@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func mustClose(c io.Closer) {
@@ -39,22 +38,4 @@ func validatePath(path string) (err error) {
 
 end:
 	return err
-}
-
-// Add this utility function (probably in util.go)
-func homeRelativePath(path string) string {
-	var homeDir string
-	var err error
-
-	homeDir, err = os.UserHomeDir()
-	if err != nil {
-		return path // Return original path if we can't get home dir
-	}
-
-	// Check if path starts with home directory
-	if strings.HasPrefix(path, homeDir) {
-		return "~" + path[len(homeDir):]
-	}
-
-	return path
 }

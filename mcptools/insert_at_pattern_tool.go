@@ -16,6 +16,9 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "insert_at_pattern",
 			Description: "Insert content before or after a code pattern match",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+			},
 		}),
 	})
 }
@@ -87,13 +90,7 @@ end:
 }
 
 func (t *InsertAtPatternTool) validatePosition(position string) (err error) {
-	if position != "before" && position != "after" {
-		err = fmt.Errorf("position must be 'before' or 'after', got '%s'", position)
-		goto end
-	}
-
-end:
-	return err
+	return RelativePosition(position).Validate()
 }
 
 func (t *InsertAtPatternTool) insertAtPattern(filePath, beforePattern, afterPattern, content, position string, useRegex bool) (err error) {

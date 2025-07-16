@@ -47,6 +47,39 @@ type TestSearchResponse struct {
 	Truncated   bool             `json:"truncated"`
 }
 
+// TestReadFilesResult represents the structure returned by read_files
+type TestReadFilesResult struct {
+	Path    string `json:"path"`
+	Name    string `json:"name"`
+	Content string `json:"content"`
+	Size    int64  `json:"size"`
+	Error   string `json:"error,omitempty"`
+}
+
+// TestReadFilesResponse represents read_files response
+type TestReadFilesResponse struct {
+	Files      []TestReadFilesResult `json:"files"`
+	TotalFiles int                   `json:"total_files"`
+	TotalSize  int64                 `json:"total_size"`
+	Errors     []string              `json:"errors"`
+	Paths      []string              `json:"paths"`
+	Extensions []string              `json:"extensions"`
+	Recursive  bool                  `json:"recursive"`
+	Pattern    string                `json:"pattern"`
+	MaxFiles   int                   `json:"max_files"`
+	Truncated  bool                  `json:"truncated"`
+}
+
+// TestSessionResponse represents start_session response
+type TestSessionResponse struct {
+	SessionToken   string                 `json:"session_token"`
+	TokenExpiresAt string                 `json:"token_expires_at"`
+	ToolHelp       string                 `json:"tool_help"`
+	ServerConfig   map[string]interface{} `json:"server_config"`
+	Instructions   map[string]interface{} `json:"instructions"`
+	Message        string                 `json:"message"`
+}
+
 func TestListTools(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
@@ -64,14 +97,16 @@ func TestListTools(t *testing.T) {
 	require.True(t, ok, "Tools should be an array")
 	require.Greater(t, len(tools), 0, "Should have at least one tool")
 
-	// Check for expected tools
+	// Check for expected tools including session management and new read_files
 	expectedTools := []string{
+		"start_session",
 		"get_config",
 		"search_files",
-		"read_file",
+		"read_files", // Updated from read_file
 		"create_file",
 		"update_file",
-		"delete_file",
+		"delete_files",
+		"tool_help",
 	}
 
 	foundTools := make(map[string]bool)
@@ -88,14 +123,46 @@ func TestListTools(t *testing.T) {
 	for _, expectedTool := range expectedTools {
 		assert.True(t, foundTools[expectedTool], "Expected tool %s should be available", expectedTool)
 	}
+
+	// Ensure we have a reasonable number of tools (should be 19 total)
+	assert.GreaterOrEqual(t, len(foundTools), 15, "Should have at least 15 tools")
 }
 
-func TestGetConfig(t *testing.T) {
+func TestStartSession(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
 
+	resp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, resp.Error, "start_session returned error: %v", resp.Error)
+
+	var sessionResp TestSessionResponse
+	parseToolResponse(t, resp, &sessionResp)
+
+	// Validate session response structure
+	assert.NotEmpty(t, sessionResp.SessionToken, "Session token should not be empty")
+	assert.NotEmpty(t, sessionResp.TokenExpiresAt, "Token expiration should not be empty")
+	assert.NotEmpty(t, sessionResp.ToolHelp, "Tool help should not be empty")
+	assert.NotEmpty(t, sessionResp.ServerConfig, "Server config should not be empty")
+	assert.NotEmpty(t, sessionResp.Instructions, "Instructions should not be empty")
+	assert.Contains(t, sessionResp.Message, "Session Started Successfully", "Should contain success message")
+}
+
+func TestGetConfigWithSession(t *testing.T) {
+	client := GetTestClient()
+	ctx := GetTestContext()
+
+	// First get a session token
+	sessionResp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, sessionResp.Error, "start_session returned error: %v", sessionResp.Error)
+
+	var session TestSessionResponse
+	parseToolResponse(t, sessionResp, &session)
+
+	// Now call get_config with session token
 	resp, err := client.CallTool(ctx, "get_config", map[string]interface{}{
-		"show_relative": true,
+		"session_token": session.SessionToken,
 	})
 	require.NoError(t, err, "Failed to call get_config")
 	require.Nil(t, resp.Error, "get_config returned error: %v", resp.Error)
@@ -128,15 +195,24 @@ func TestGetConfig(t *testing.T) {
 	assert.Contains(t, config.AllowedOrigins, "https://claude.ai", "Should allow claude.ai")
 }
 
-func TestSearchFiles(t *testing.T) {
+func TestSearchFilesWithSession(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
 	testDir := GetTestDir()
 
+	// Get session token first
+	sessionResp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, sessionResp.Error, "start_session returned error: %v", sessionResp.Error)
+
+	var session TestSessionResponse
+	parseToolResponse(t, sessionResp, &session)
+
 	t.Run("BasicSearch", func(t *testing.T) {
 		resp, err := client.CallTool(ctx, "search_files", map[string]interface{}{
-			"path":      testDir,
-			"recursive": true,
+			"session_token": session.SessionToken,
+			"path":          testDir,
+			"recursive":     true,
 		})
 		require.NoError(t, err, "Failed to call search_files")
 		require.Nil(t, resp.Error, "search_files returned error: %v", resp.Error)
@@ -152,9 +228,10 @@ func TestSearchFiles(t *testing.T) {
 
 	t.Run("PatternSearch", func(t *testing.T) {
 		resp, err := client.CallTool(ctx, "search_files", map[string]interface{}{
-			"path":      testDir,
-			"pattern":   "main",
-			"recursive": true,
+			"session_token": session.SessionToken,
+			"path":          testDir,
+			"pattern":       "main",
+			"recursive":     true,
 		})
 		require.NoError(t, err, "Failed to call search_files")
 		require.Nil(t, resp.Error, "search_files returned error: %v", resp.Error)
@@ -170,9 +247,10 @@ func TestSearchFiles(t *testing.T) {
 
 	t.Run("ExtensionFilter", func(t *testing.T) {
 		resp, err := client.CallTool(ctx, "search_files", map[string]interface{}{
-			"path":       testDir,
-			"extensions": []string{".go"},
-			"recursive":  true,
+			"session_token": session.SessionToken,
+			"path":          testDir,
+			"extensions":    []string{".go"},
+			"recursive":     true,
 		})
 		require.NoError(t, err, "Failed to call search_files")
 		require.Nil(t, resp.Error, "search_files returned error: %v", resp.Error)
@@ -190,45 +268,103 @@ func TestSearchFiles(t *testing.T) {
 	})
 }
 
-func TestReadFile(t *testing.T) {
+func TestReadFilesWithSession(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
 	testDir := GetTestDir()
 
-	// Test reading an existing file
-	testFilePath := filepath.Join(testDir, "README.md")
+	// Get session token first
+	sessionResp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, sessionResp.Error, "start_session returned error: %v", sessionResp.Error)
 
-	resp, err := client.CallTool(ctx, "read_file", map[string]interface{}{
-		"path": testFilePath,
+	var session TestSessionResponse
+	parseToolResponse(t, sessionResp, &session)
+
+	t.Run("ReadSingleFile", func(t *testing.T) {
+		testFilePath := filepath.Join(testDir, "README.md")
+
+		resp, err := client.CallTool(ctx, "read_files", map[string]interface{}{
+			"session_token": session.SessionToken,
+			"paths":         []string{testFilePath},
+		})
+		require.NoError(t, err, "Failed to call read_files")
+		require.Nil(t, resp.Error, "read_files returned error: %v", resp.Error)
+
+		var readResp TestReadFilesResponse
+		parseToolResponse(t, resp, &readResp)
+
+		assert.Equal(t, 1, readResp.TotalFiles, "Should read exactly one file")
+		assert.Greater(t, len(readResp.Files), 0, "Should have file results")
+		assert.Contains(t, readResp.Files[0].Content, "Test Project", "File content should contain expected text")
+		assert.Contains(t, readResp.Files[0].Content, "Scout MCP", "File content should contain Scout MCP reference")
 	})
-	require.NoError(t, err, "Failed to call read_file")
-	require.Nil(t, resp.Error, "read_file returned error: %v", resp.Error)
 
-	var content string
-	parseToolResponse(t, resp, &content)
+	t.Run("ReadMultipleFiles", func(t *testing.T) {
+		testFile1 := filepath.Join(testDir, "README.md")
+		testFile2 := filepath.Join(testDir, "main.go")
 
-	assert.Contains(t, content, "Test Project", "File content should contain expected text")
-	assert.Contains(t, content, "Scout MCP", "File content should contain Scout MCP reference")
+		resp, err := client.CallTool(ctx, "read_files", map[string]interface{}{
+			"session_token": session.SessionToken,
+			"paths":         []string{testFile1, testFile2},
+		})
+		require.NoError(t, err, "Failed to call read_files")
+		require.Nil(t, resp.Error, "read_files returned error: %v", resp.Error)
+
+		var readResp TestReadFilesResponse
+		parseToolResponse(t, resp, &readResp)
+
+		assert.Equal(t, 2, readResp.TotalFiles, "Should read exactly two files")
+		assert.Equal(t, len(readResp.Files), 2, "Should have two file results")
+	})
+
+	t.Run("ReadDirectory", func(t *testing.T) {
+		resp, err := client.CallTool(ctx, "read_files", map[string]interface{}{
+			"session_token": session.SessionToken,
+			"paths":         []string{testDir},
+			"extensions":    []string{".md"},
+			"recursive":     false,
+		})
+		require.NoError(t, err, "Failed to call read_files")
+		require.Nil(t, resp.Error, "read_files returned error: %v", resp.Error)
+
+		var readResp TestReadFilesResponse
+		parseToolResponse(t, resp, &readResp)
+
+		assert.Greater(t, readResp.TotalFiles, 0, "Should read at least one .md file")
+		for _, file := range readResp.Files {
+			assert.True(t, strings.HasSuffix(file.Name, ".md"), "All files should be .md files")
+		}
+	})
 }
 
-func TestCreateFile(t *testing.T) {
+func TestCreateFileWithSession(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
 	testDir := GetTestDir()
 
-	testContent := "Created by integration test"
-	testFilePath := filepath.Join(testDir, "test_created.txt")
+	// Get session token first
+	sessionResp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, sessionResp.Error, "start_session returned error: %v", sessionResp.Error)
+
+	var session TestSessionResponse
+	parseToolResponse(t, sessionResp, &session)
+
+	testContent := "Created by integration test with session"
+	testFilePath := filepath.Join(testDir, "test_created_with_session.txt")
 
 	// Ensure file doesn't exist
-	err := removeFile(testFilePath)
+	err = removeFile(testFilePath)
 	if err != nil {
 		t.Errorf("Failed to remove existing test file: %v", err)
 	}
 
-	// Test creating the file
+	// Test creating the file with session token
 	resp, err := client.CallTool(ctx, "create_file", map[string]interface{}{
-		"path":    testFilePath,
-		"content": testContent,
+		"session_token": session.SessionToken,
+		"path":          testFilePath,
+		"content":       testContent,
 	})
 	require.NoError(t, err, "Failed to call create_file")
 	require.Nil(t, resp.Error, "create_file returned error: %v", resp.Error)
@@ -239,23 +375,32 @@ func TestCreateFile(t *testing.T) {
 	assert.Equal(t, testContent, string(createdContent), "Created file content should match")
 }
 
-func TestUpdateFile(t *testing.T) {
+func TestUpdateFileWithSession(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
 	testDir := GetTestDir()
 
-	originalContent := "Original content for update test"
-	updatedContent := "Updated content for update test"
-	testFilePath := filepath.Join(testDir, "test_update.txt")
+	// Get session token first
+	sessionResp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, sessionResp.Error, "start_session returned error: %v", sessionResp.Error)
+
+	var session TestSessionResponse
+	parseToolResponse(t, sessionResp, &session)
+
+	originalContent := "Original content for update test with session"
+	updatedContent := "Updated content for update test with session"
+	testFilePath := filepath.Join(testDir, "test_update_with_session.txt")
 
 	// Create initial file
-	err := os.WriteFile(testFilePath, []byte(originalContent), 0644)
+	err = os.WriteFile(testFilePath, []byte(originalContent), 0644)
 	require.NoError(t, err, "Failed to create initial file")
 
-	// Test updating the file
+	// Test updating the file with session token
 	resp, err := client.CallTool(ctx, "update_file", map[string]interface{}{
-		"path":    testFilePath,
-		"content": updatedContent,
+		"session_token": session.SessionToken,
+		"path":          testFilePath,
+		"content":       updatedContent,
 	})
 	require.NoError(t, err, "Failed to call update_file")
 	require.Nil(t, resp.Error, "update_file returned error: %v", resp.Error)
@@ -266,49 +411,97 @@ func TestUpdateFile(t *testing.T) {
 	assert.Equal(t, updatedContent, string(finalContent), "Updated file content should match")
 }
 
-func TestDeleteFile(t *testing.T) {
+func TestDeleteFileWithSession(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
 	testDir := GetTestDir()
 
-	testFilePath := filepath.Join(testDir, "test_delete.txt")
+	// Get session token first
+	sessionResp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, sessionResp.Error, "start_session returned error: %v", sessionResp.Error)
+
+	var session TestSessionResponse
+	parseToolResponse(t, sessionResp, &session)
+
+	testFilePath := filepath.Join(testDir, "test_delete_with_session.txt")
 
 	// Create file to delete
-	err := os.WriteFile(testFilePath, []byte("Delete me"), 0644)
+	err = os.WriteFile(testFilePath, []byte("Delete me with session"), 0644)
 	require.NoError(t, err, "Failed to create file to delete")
 
 	// Verify file exists before deletion
 	_, err = os.Stat(testFilePath)
 	require.NoError(t, err, "File should exist before deletion")
 
-	// Test deleting the file
-	resp, err := client.CallTool(ctx, "delete_file", map[string]interface{}{
-		"path": testFilePath,
+	// Test deleting the file with session token
+	resp, err := client.CallTool(ctx, "delete_files", map[string]interface{}{
+		"session_token": session.SessionToken,
+		"path":          testFilePath,
 	})
-	require.NoError(t, err, "Failed to call delete_file")
-	require.Nil(t, resp.Error, "delete_file returned error: %v", resp.Error)
+	require.NoError(t, err, "Failed to call delete_files")
+	require.Nil(t, resp.Error, "delete_files returned error: %v", resp.Error)
 
 	// Verify file was deleted
 	_, err = os.Stat(testFilePath)
 	assert.True(t, os.IsNotExist(err), "File should be deleted")
 }
 
+func TestSessionTokenValidation(t *testing.T) {
+	client := GetTestClient()
+	ctx := GetTestContext()
+	testDir := GetTestDir()
+
+	t.Run("InvalidSessionToken", func(t *testing.T) {
+		resp, err := client.CallTool(ctx, "get_config", map[string]interface{}{
+			"session_token": "invalid_token",
+		})
+		require.NoError(t, err, "Failed to call get_config")
+		assert.NotNil(t, resp.Error, "get_config should return error for invalid session token")
+		assert.Contains(t, resp.Error.Message, "invalid or expired session token", "Error should mention invalid session token")
+	})
+
+	t.Run("MissingSessionToken", func(t *testing.T) {
+		resp, err := client.CallTool(ctx, "search_files", map[string]interface{}{
+			"path": testDir,
+		})
+		require.NoError(t, err, "Failed to call search_files")
+		assert.NotNil(t, resp.Error, "search_files should return error for missing session token")
+		assert.Contains(t, resp.Error.Message, "invalid or expired session token", "Error should mention missing session token")
+	})
+}
+
 func TestErrorHandling(t *testing.T) {
 	client := GetTestClient()
 	ctx := GetTestContext()
 
+	// Get session token first
+	sessionResp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+	require.NoError(t, err, "Failed to call start_session")
+	require.Nil(t, sessionResp.Error, "start_session returned error: %v", sessionResp.Error)
+
+	var session TestSessionResponse
+	parseToolResponse(t, sessionResp, &session)
+
 	t.Run("ReadNonexistentFile", func(t *testing.T) {
-		resp, err := client.CallTool(ctx, "read_file", map[string]interface{}{
-			"path": "/nonexistent/file.txt",
+		resp, err := client.CallTool(ctx, "read_files", map[string]interface{}{
+			"session_token": session.SessionToken,
+			"paths":         []string{"/nonexistent/file.txt"},
 		})
-		require.NoError(t, err, "Failed to call read_file")
-		assert.NotNil(t, resp.Error, "read_file should return error for nonexistent file")
+		require.NoError(t, err, "Failed to call read_files")
+		require.Nil(t, resp.Error, "read_files should handle nonexistent files gracefully")
+
+		// read_files should return with errors in the response, not as an MCP error
+		var readResp TestReadFilesResponse
+		parseToolResponse(t, resp, &readResp)
+		assert.Greater(t, len(readResp.Errors), 0, "Should have errors for nonexistent file")
 	})
 
 	t.Run("CreateFileInNonAllowedPath", func(t *testing.T) {
 		resp, err := client.CallTool(ctx, "create_file", map[string]interface{}{
-			"path":    "/etc/should_not_work.txt",
-			"content": "This should fail",
+			"session_token": session.SessionToken,
+			"path":          "/etc/should_not_work.txt",
+			"content":       "This should fail",
 		})
 		require.NoError(t, err, "Failed to call create_file")
 		assert.NotNil(t, resp.Error, "create_file should return error for non-allowed path")

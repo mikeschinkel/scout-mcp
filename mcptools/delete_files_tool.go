@@ -13,11 +13,12 @@ var _ mcputil.Tool = (*DeleteFileTool)(nil)
 func init() {
 	mcputil.RegisterTool(&DeleteFileTool{
 		toolBase: newToolBase(mcputil.ToolOptions{
-			Name:        "delete_file",
+			Name:        "delete_files",
 			Description: "Delete file or directory from allowed directories",
 			Properties: []mcputil.Property{
-				mcputil.String("path", "File or directory path to delete").Required(),
-				mcputil.Bool("recursive", "Delete directory recursively"),
+				RequiredSessionTokenProperty,
+				PathProperty.Required(),
+				RecursiveProperty,
 			},
 		}),
 	})
@@ -34,7 +35,7 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	var fileInfo os.FileInfo
 	var fileType string
 
-	logger.Info("Tool called", "tool", "delete_file")
+	logger.Info("Tool called", "tool", "delete_files")
 
 	filePath, err = req.RequireString("path")
 	if err != nil {
@@ -44,7 +45,7 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	recursive = req.GetBool("recursive", false)
 
-	logger.Info("Tool arguments parsed", "tool", "delete_file", "path", filePath, "recursive", recursive)
+	logger.Info("Tool arguments parsed", "tool", "delete_files", "path", filePath, "recursive", recursive)
 
 	// Check path is allowed
 	allowed, err = t.IsAllowedPath(filePath)
@@ -88,7 +89,7 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 		goto end
 	}
 
-	logger.Info("Tool completed", "tool", "delete_file", "success", true, "path", filePath, "type", fileType)
+	logger.Info("Tool completed", "tool", "delete_files", "success", true, "path", filePath, "type", fileType)
 	result = mcputil.NewToolResultText(fmt.Sprintf("%s deleted successfully: %s",
 		titleCase(fileType),
 		filePath,

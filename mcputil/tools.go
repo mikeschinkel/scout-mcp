@@ -10,15 +10,19 @@ type ToolHandler func(context.Context, ToolRequest) (ToolResult, error)
 
 type Config interface {
 	IsAllowedPath(string) (bool, error)
+	Path() string
 	AllowedPaths() []string
 	ServerPort() string
+	ServerName() string
 	AllowedOrigins() []string
+	ToMap() (map[string]any, error)
 }
 
 type Tool interface {
 	Name() string
 	Options() ToolOptions
 	Handle(context.Context, ToolRequest) (ToolResult, error)
+	EnsurePreconditions(ToolRequest) error
 	SetConfig(c Config)
 }
 

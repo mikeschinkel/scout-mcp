@@ -15,6 +15,12 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "delete_file_lines",
 			Description: "Delete specific lines from a file by line number range",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+				FilepathProperty.Required(),
+				StartLineProperty.Required(),
+				EndLineProperty.Required(),
+			},
 		}),
 	})
 }
@@ -29,7 +35,7 @@ func (t *DeleteFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "delete_file_lines")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = req.RequireString("filepath")
 	if err != nil {
 		goto end
 	}

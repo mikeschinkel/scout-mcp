@@ -15,7 +15,8 @@ func init() {
 			// TODO: Add a better description
 			Description: "Analyze files",
 			Properties: []mcputil.Property{
-				mcputil.Array("files", "List of files to analyze").Required(),
+				RequiredSessionTokenProperty,
+				FilesProperty.Required(),
 			},
 		}),
 	})

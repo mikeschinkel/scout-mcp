@@ -16,8 +16,9 @@ func init() {
 			Name:        "update_file",
 			Description: "Update existing file in allowed directories",
 			Properties: []mcputil.Property{
-				mcputil.String("path", "File path to update").Required(),
-				mcputil.String("content", "New file content").Required(),
+				RequiredSessionTokenProperty,
+				FilepathProperty.Required(),
+				NewContentProperty.Required(),
 			},
 		}),
 	})
@@ -36,13 +37,13 @@ func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	logger.Info("Tool called", "tool", "update_file")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = req.RequireString("filepath")
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	content, err = req.RequireString("content")
+	content, err = req.RequireString("new_content")
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end

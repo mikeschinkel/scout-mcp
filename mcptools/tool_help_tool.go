@@ -18,6 +18,9 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "tool_help",
 			Description: "Get detailed documentation for MCP tools and best practices",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+			},
 		}),
 	})
 }
@@ -124,7 +127,7 @@ func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
 	var availableTools []string
 
 	availableTools = []string{
-		"read_file", "create_file", "update_file", "delete_file",
+		"read_file", "create_file", "update_file", "delete_files",
 		"search_files", "update_file_lines", "insert_file_lines",
 		"insert_at_pattern", "delete_file_lines", "replace_pattern",
 		"get_config", "tool_help",

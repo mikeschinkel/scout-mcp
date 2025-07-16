@@ -18,6 +18,14 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "replace_file_part",
 			Description: "Replace specific language constructs (functions, types, constants) by name using AST parsing",
+			Properties: []mcputil.Property{
+				RequiredSessionTokenProperty,
+				PathProperty.Required(),
+				LanguageProperty.Required(),
+				PartTypeProperty.Required(),
+				PartNameProperty.Required(),
+				NewContentProperty.Required(),
+			},
 		}),
 	})
 }
@@ -368,11 +376,4 @@ func (t *ReplaceFilePartTool) validateGoSyntax(content string) (err error) {
 	}
 
 	return err
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

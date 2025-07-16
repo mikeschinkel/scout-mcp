@@ -1,6 +1,7 @@
 package scout
 
 const (
+	ServerName = "Scout MCP Server"
 	AppName    = "scout-mcp"
 	AppVersion = "0.0.1"
 )

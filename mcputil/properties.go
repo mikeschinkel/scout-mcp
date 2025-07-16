@@ -15,6 +15,7 @@ type propertyEmbed interface {
 	Required() Property
 	Name(string) Property
 	Description(string) Property
+	PropertyOptions() []PropertyOption
 	mcpPropertyOptions() []mcp.PropertyOption
 }
 
@@ -37,11 +38,11 @@ func (p *property) GetName() string {
 
 func (p *property) PropertyOptions() []PropertyOption {
 	opts := []PropertyOption{
-		nameProperty{p.name},
-		descriptionProperty{p.description},
+		NameProperty{p.name},
+		DescriptionProperty{p.description},
 	}
 	if p.required {
-		opts = append(opts, requiredProperty{true})
+		opts = append(opts, RequiredProperty{true})
 	}
 	return opts
 }
@@ -69,20 +70,20 @@ func (p *property) Description(desc string) Property {
 	return p.parent
 }
 
-type requiredProperty struct {
-	required bool
+type RequiredProperty struct {
+	Required bool
 }
 
-func (requiredProperty) PropertyOption() {}
+func (RequiredProperty) PropertyOption() {}
 
-type nameProperty struct {
-	name string
+type NameProperty struct {
+	Name string
 }
 
-func (nameProperty) PropertyOption() {}
+func (NameProperty) PropertyOption() {}
 
-type descriptionProperty struct {
-	description string
+type DescriptionProperty struct {
+	Description string
 }
 
-func (descriptionProperty) PropertyOption() {}
+func (DescriptionProperty) PropertyOption() {}

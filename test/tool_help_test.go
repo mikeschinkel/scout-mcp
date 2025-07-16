@@ -190,7 +190,7 @@ func testNonExistentTool(t *testing.T, client *MCPClient, ctx context.Context) {
 
 	// Verify it lists actual available tools
 	expectedTools := []string{
-		"read_file", "create_file", "update_file", "delete_file",
+		"read_file", "create_file", "update_file", "delete_files",
 		"search_files", "update_file_lines", "insert_file_lines",
 		"replace_pattern", "get_config", "tool_help",
 	}
@@ -259,7 +259,7 @@ func testDocumentationContent(t *testing.T, client *MCPClient, ctx context.Conte
 	t.Run("AllToolsCovered", func(t *testing.T) {
 		// Verify all major tools are documented
 		majorTools := []string{
-			"`read_file`", "`create_file`", "`update_file`", "`delete_file`",
+			"`read_file`", "`create_file`", "`update_file`", "`delete_files`",
 			"`search_files`", "`update_file_lines`", "`insert_file_lines`",
 			"`insert_at_pattern`", "`delete_file_lines`", "`replace_pattern`",
 			"`get_config`",

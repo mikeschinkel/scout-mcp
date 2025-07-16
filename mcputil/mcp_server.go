@@ -78,12 +78,20 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 		var txtRes *textResult
 		var errRes *errorResult
 		var ok bool
+		var result ToolResult
 
 		// Wrap the request
 		wrappedReq := &toolRequest{req: req}
 
+		// Check preconditions first
+		err = tool.EnsurePreconditions(wrappedReq)
+		if err != nil {
+			tr = mcp.NewToolResultError(err.Error())
+			goto end
+		}
+
 		// Call user handler
-		result, err := tool.Handle(ctx, wrappedReq)
+		result, err = tool.Handle(ctx, wrappedReq)
 		if err != nil {
 			goto end
 		}

@@ -2,92 +2,103 @@
 
 This document provides comprehensive documentation for all available MCP tools in the Scout MCP server.
 
-## File Management Tools
+## Session Management
 
-### `read_file`
-Reads the contents of a file from an allowed directory.
+### `start_session`
+**⭐ START HERE:** Creates a session token and provides comprehensive instructions for using Scout-MCP effectively. **This must be called first.**
 
 **Parameters:**
-- `path` (required): Full path to the file to read
+- None required
+
+**Returns:**
+- Session token (valid for 24 hours)
+- Complete tool documentation
+- Server configuration
+- Language-specific coding instructions
+- Usage guidelines
 
 **Example:**
 ```json
 {
-  "tool": "read_file",
-  "parameters": {
-    "path": "/Users/mike/project/src/main.go"
-  }
+  "tool": "start_session",
+  "parameters": {}
 }
 ```
 
-### `create_file`
-Creates a new file with specified content. Requires user approval.
+**⚠️ IMPORTANT:** All other tools require the `session_token` parameter returned by this tool.
+
+## File Reading Tools
+
+### `read_files`
+Read contents of multiple files and/or directories with filtering options. Much more efficient than reading files individually.
 
 **Parameters:**
-- `path` (required): Full path where the file should be created
-- `content` (required): Content to write to the file
-- `create_dirs` (optional): Create parent directories if they don't exist
+- `session_token` (required): Session token from start_session
+- `paths` (required): Array of file paths and/or directory paths to read
+- `extensions` (optional): Filter by file extensions (e.g., [".go", ".txt"]) - applies to directories only
+- `recursive` (optional): Include subdirectories (default: false) - applies to directories only
+- `pattern` (optional): Filename pattern to match (case-insensitive substring) - applies to directories only
+- `max_files` (optional): Maximum number of files to read (default: 100)
 
-**Example:**
+**Usage Examples:**
 ```json
 {
-  "tool": "create_file",
+  "tool": "read_files",
   "parameters": {
-    "path": "/Users/mike/project/new_file.go",
-    "content": "package main\n\nfunc main() {\n\tprintln(\"Hello, World!\")\n}",
-    "create_dirs": true
+    "session_token": "your-session-token",
+    "paths": ["main.go", "config.go", "README.md"]
   }
 }
 ```
 
-### `update_file`
-**⚠️ DANGEROUS: Replaces entire file content. Use granular editing tools for safer changes.**
-
-Completely replaces the content of an existing file. Use this ONLY when you intend to replace the entire file.
-
-**Parameters:**
-- `path` (required): Full path to the file to update
-- `content` (required): New content that will replace ALL existing content
-
-**Example:**
 ```json
 {
-  "tool": "update_file",
+  "tool": "read_files", 
   "parameters": {
-    "path": "/Users/mike/project/config.json",
-    "content": "{\"version\": \"2.0\", \"name\": \"updated-config\"}"
+    "session_token": "your-session-token",
+    "paths": ["./mcptools", "./langutil"],
+    "extensions": [".go"],
+    "recursive": true
   }
 }
 ```
 
-**⚠️ WARNING:** This tool replaces the ENTIRE file. For code changes, use granular editing tools instead:
-- `update_file_lines` - Update specific line ranges
-- `insert_file_lines` - Insert content at specific lines
-- `replace_pattern` - Find and replace patterns
-
-### `delete_file`
-Deletes a file or directory. Requires user approval.
-
-**Parameters:**
-- `path` (required): Full path to the file or directory to delete
-- `recursive` (optional): Delete directory recursively if it's a directory
-
-**Example:**
 ```json
 {
-  "tool": "delete_file",
+  "tool": "read_files",
   "parameters": {
-    "path": "/Users/mike/project/old_file.txt"
+    "session_token": "your-session-token", 
+    "paths": ["README.md", "./src", "package.json"],
+    "recursive": true,
+    "max_files": 50
   }
 }
 ```
 
-## File Search Tools
+**Response Format:**
+```json
+{
+  "files": [
+    {
+      "path": "/full/path/to/file.go",
+      "name": "file.go", 
+      "content": "package main...",
+      "size": 1234,
+      "error": null
+    }
+  ],
+  "total_files": 3,
+  "total_size": 5678,
+  "errors": ["could not read protected.txt: permission denied"],
+  "truncated": false
+}
+```
 
 ### `search_files`
 Search for files and directories with various filtering options.
 
 **Parameters:**
+- `session_token` (required): Session token from start_session
 - `path` (required): Directory path to search in
 - `recursive` (optional): Search subdirectories recursively (default: false)
 - `pattern` (optional): Case-insensitive substring to match in filenames
@@ -102,10 +113,81 @@ Search for files and directories with various filtering options.
 {
   "tool": "search_files",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/Users/mike/project",
     "recursive": true,
     "extensions": [".go"],
     "pattern": "test"
+  }
+}
+```
+
+## File Management Tools
+
+### `create_file`
+Creates a new file with specified content. Requires user approval.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `path` (required): Full path where the file should be created
+- `content` (required): Content to write to the file
+- `create_dirs` (optional): Create parent directories if they don't exist
+
+**Example:**
+```json
+{
+  "tool": "create_file",
+  "parameters": {
+    "session_token": "your-session-token",
+    "path": "/Users/mike/project/new_file.go",
+    "content": "package main\n\nfunc main() {\n\tprintln(\"Hello, World!\")\n}",
+    "create_dirs": true
+  }
+}
+```
+
+### `update_file`
+**⚠️ DANGEROUS: Replaces entire file content. Use granular editing tools for safer changes.**
+
+Completely replaces the content of an existing file. Use this ONLY when you intend to replace the entire file.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `path` (required): Full path to the file to update
+- `content` (required): New content that will replace ALL existing content
+
+**Example:**
+```json
+{
+  "tool": "update_file",
+  "parameters": {
+    "session_token": "your-session-token",
+    "path": "/Users/mike/project/config.json",
+    "content": "{\"version\": \"2.0\", \"name\": \"updated-config\"}"
+  }
+}
+```
+
+**⚠️ WARNING:** This tool replaces the ENTIRE file. For code changes, use granular editing tools instead:
+- `update_file_lines` - Update specific line ranges
+- `insert_file_lines` - Insert content at specific lines
+- `replace_pattern` - Find and replace patterns
+
+### `delete_files`
+Deletes a file or directory. Requires user approval.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `path` (required): Full path to the file or directory to delete
+- `recursive` (optional): Delete directory recursively if it's a directory
+
+**Example:**
+```json
+{
+  "tool": "delete_files",
+  "parameters": {
+    "session_token": "your-session-token",
+    "path": "/Users/mike/project/old_file.txt"
   }
 }
 ```
@@ -118,6 +200,7 @@ Search for files and directories with various filtering options.
 Update specific lines in a file by line number range. Much safer than `update_file`.
 
 **Parameters:**
+- `session_token` (required): Session token from start_session
 - `path` (required): Full path to the file
 - `start_line` (required): Starting line number (1-based)
 - `end_line` (required): Ending line number (1-based, inclusive)
@@ -128,6 +211,7 @@ Update specific lines in a file by line number range. Much safer than `update_fi
 {
   "tool": "update_file_lines",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
     "start_line": "15",
     "end_line": "18",
@@ -140,6 +224,7 @@ Update specific lines in a file by line number range. Much safer than `update_fi
 Insert content at a specific line number.
 
 **Parameters:**
+- `session_token` (required): Session token from start_session
 - `path` (required): Full path to the file
 - `line_number` (required): Line number where to insert (1-based)
 - `content` (required): Content to insert
@@ -150,6 +235,7 @@ Insert content at a specific line number.
 {
   "tool": "insert_file_lines",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
     "line_number": "1",
     "content": "import \"fmt\"",
@@ -162,6 +248,7 @@ Insert content at a specific line number.
 Insert content before or after a pattern match in the file.
 
 **Parameters:**
+- `session_token` (required): Session token from start_session
 - `path` (required): Full path to the file
 - `before_pattern` OR `after_pattern` (required): Pattern to search for
 - `content` (required): Content to insert
@@ -173,6 +260,7 @@ Insert content before or after a pattern match in the file.
 {
   "tool": "insert_at_pattern",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
     "after_pattern": "package main",
     "content": "\nimport \"fmt\"",
@@ -185,6 +273,7 @@ Insert content before or after a pattern match in the file.
 Delete specific lines from a file.
 
 **Parameters:**
+- `session_token` (required): Session token from start_session
 - `path` (required): Full path to the file
 - `start_line` (required): Starting line number to delete (1-based)
 - `end_line` (optional): Ending line number to delete (defaults to start_line for single line)
@@ -194,6 +283,7 @@ Delete specific lines from a file.
 {
   "tool": "delete_file_lines",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
     "start_line": "25",
     "end_line": "30"
@@ -205,6 +295,7 @@ Delete specific lines from a file.
 Find and replace text patterns with support for regex.
 
 **Parameters:**
+- `session_token` (required): Session token from start_session
 - `path` (required): Full path to the file
 - `pattern` (required): Text pattern to find
 - `replacement` (required): Text to replace the pattern with
@@ -216,6 +307,7 @@ Find and replace text patterns with support for regex.
 {
   "tool": "replace_pattern",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
     "pattern": "oldFunctionName",
     "replacement": "newFunctionName",
@@ -229,6 +321,7 @@ Find and replace text patterns with support for regex.
 {
   "tool": "replace_pattern",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
     "pattern": "func (\\w+)\\(",
     "replacement": "// $1 function\nfunc $1(",
@@ -238,43 +331,194 @@ Find and replace text patterns with support for regex.
 }
 ```
 
-## Configuration Tools
+## Language-Aware Tools (AST-Based)
+
+### `find_file_part`
+Find specific language constructs (functions, types, constants) by name using AST parsing.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `path` (required): Full path to the source code file
+- `part_type` (required): Type of construct to find ("function", "type", "const", "var")
+- `part_name` (required): Name of the construct to find
+- `language` (optional): Programming language (auto-detected from file extension)
+
+**Example:**
+```json
+{
+  "tool": "find_file_part",
+  "parameters": {
+    "session_token": "your-session-token",
+    "path": "/Users/mike/project/main.go",
+    "part_type": "function",
+    "part_name": "main"
+  }
+}
+```
+
+### `replace_file_part`
+Replace specific language constructs using syntax-aware parsing. Requires user approval.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `path` (required): Full path to the source code file
+- `part_type` (required): Type of construct to replace ("function", "type", "const", "var")
+- `part_name` (required): Name of the construct to replace
+- `new_content` (required): New implementation content
+- `language` (optional): Programming language (auto-detected from file extension)
+
+**Example:**
+```json
+{
+  "tool": "replace_file_part",
+  "parameters": {
+    "session_token": "your-session-token",
+    "path": "/Users/mike/project/main.go",
+    "part_type": "function",
+    "part_name": "processData",
+    "new_content": "func processData(input string) (string, error) {\n\treturn strings.ToUpper(input), nil\n}"
+  }
+}
+```
+
+### `validate_files`
+Validate syntax of source code files using language-specific parsers.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `files` (required): Array of file paths to validate
+- `language` (optional): Programming language (auto-detected from file extensions)
+
+**Example:**
+```json
+{
+  "tool": "validate_files",
+  "parameters": {
+    "session_token": "your-session-token",
+    "files": ["/Users/mike/project/main.go", "/Users/mike/project/config.go"]
+  }
+}
+```
+
+## Analysis Tools
+
+### `analyze_files`
+Analyze file structure and provide insights about the codebase.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `files` (required): Array of file paths to analyze
+
+**Example:**
+```json
+{
+  "tool": "analyze_files",
+  "parameters": {
+    "session_token": "your-session-token",
+    "files": ["/Users/mike/project/main.go", "/Users/mike/project/utils.go"]
+  }
+}
+```
+
+## Configuration and Help Tools
 
 ### `get_config`
 Get information about the Scout MCP server configuration.
 
 **Parameters:**
-- `show_relative` (optional): Show paths relative to home directory (default: false)
+- `session_token` (required): Session token from start_session
 
 **Example:**
 ```json
 {
   "tool": "get_config",
   "parameters": {
-    "show_relative": true
+    "session_token": "your-session-token"
+  }
+}
+```
+
+### `tool_help`
+Get detailed documentation for all available tools.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+
+**Example:**
+```json
+{
+  "tool": "tool_help",
+  "parameters": {
+    "session_token": "your-session-token"
+  }
+}
+```
+
+## Approval System Tools
+
+### `request_approval`
+Request user approval for risky operations with risk assessment.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `operation` (required): Brief description of the operation
+- `files` (required): Array of files that will be affected
+- `impact_summary` (required): Summary of what will change
+- `risk_level` (required): Risk level ("low", "medium", "high")
+- `preview_content` (optional): Code preview or diff content
+
+**Example:**
+```json
+{
+  "tool": "request_approval",
+  "parameters": {
+    "session_token": "your-session-token",
+    "operation": "Update configuration file",
+    "files": ["/Users/mike/project/config.json"],
+    "impact_summary": "Change database connection settings",
+    "risk_level": "medium"
+  }
+}
+```
+
+### `generate_approval_token`
+Generate approval tokens after user confirmation for secure operation execution.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `file_actions` (required): Array of file actions that were approved
+- `operations` (required): Array of operations approved ("create", "update", "delete")
+- `session_id` (optional): Session identifier for this approval
+
+**Example:**
+```json
+{
+  "tool": "generate_approval_token",
+  "parameters": {
+    "session_token": "your-session-token",
+    "file_actions": ["update_config.json"],
+    "operations": ["update"]
   }
 }
 ```
 
 ## Best Practices
 
-### When to Use Each Tool
+### Getting Started
+1. **Always start with `start_session`** to get your session token and instructions
+2. **Use `read_files`** to examine multiple files efficiently before making changes
+3. **Use `search_files`** to find files matching criteria
 
-**For Reading Files:**
-- Use `read_file` to examine file contents before making changes
-- Use `search_files` to find files matching criteria
-
-**For Creating New Content:**
-- Use `create_file` for entirely new files
-
-**For Editing Existing Code:**
+### For Editing Existing Code
 - ✅ **PREFERRED:** Use granular editing tools (`update_file_lines`, `insert_file_lines`, etc.)
 - ⚠️ **AVOID:** `update_file` unless you truly want to replace the entire file
-
-**For Large Changes:**
-- Break down into multiple granular operations
-- Use `read_file` first to understand the current content
+- Use `read_files` first to understand the current content
 - Make incremental changes rather than wholesale replacements
+
+### For Large Changes
+- Break down into multiple granular operations
+- Use the approval system for write operations
+- Test changes incrementally
 
 ### Common Patterns
 
@@ -283,6 +527,7 @@ Get information about the Scout MCP server configuration.
 {
   "tool": "insert_at_pattern",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/path/to/file.go",
     "after_pattern": "package main",
     "content": "\nimport \"fmt\"",
@@ -291,16 +536,31 @@ Get information about the Scout MCP server configuration.
 }
 ```
 
+**Reading multiple related files:**
+```json
+{
+  "tool": "read_files",
+  "parameters": {
+    "session_token": "your-session-token",
+    "paths": ["./mcptools"],
+    "extensions": [".go"],
+    "pattern": "tool",
+    "recursive": true
+  }
+}
+```
+
 **Updating a function implementation:**
-1. Use `read_file` to see the current function
-2. Use `update_file_lines` to replace just the function lines
-3. Or use `replace_pattern` to replace the entire function
+1. Use `find_file_part` to locate the function
+2. Use `replace_file_part` to replace the entire function
+3. Or use `update_file_lines` to replace just the function body
 
 **Refactoring variable names:**
 ```json
 {
   "tool": "replace_pattern",
   "parameters": {
+    "session_token": "your-session-token",
     "path": "/path/to/file.go",
     "pattern": "oldVariableName",
     "replacement": "newVariableName",
@@ -309,16 +569,18 @@ Get information about the Scout MCP server configuration.
 }
 ```
 
-## Safety Notes
+## Security Notes
 
-- All write operations (create, update, delete) require user approval
+- All tools (except `start_session`) require a valid session token
+- Session tokens expire after 24 hours
+- Write operations require user approval with risk assessment
 - All operations respect the configured allowed paths
-- File operations validate line numbers and patterns before execution
-- Large changes may require explicit confirmation
+- File operations validate parameters before execution
 
 ## Error Handling
 
 Tools will return descriptive error messages for common issues:
+- Invalid or expired session tokens
 - Path not in allowed directories
 - File not found
 - Invalid line numbers
@@ -326,3 +588,21 @@ Tools will return descriptive error messages for common issues:
 - Permission errors
 
 Always check the error field in tool responses and handle failures gracefully.
+
+## On Incorrect Usage
+
+When you attempt to use a tool but learn that the way you attempted to use it is not the way the MCP Server works, add an "entry" in a file named `./MCP_USABILITY_CONCERNS.md` explaining:
+
+1. Which MCP Server you used.
+2. What tool for the MCP Server you called.
+3. How you called the tool.
+4. What error the MCP Server responded with.
+5. Why you expected it to work as you called it.
+6. How would you change the tool to improve its usability for your use.
+
+## Session Management
+
+- Session tokens are valid for 24 hours
+- Tokens are invalidated when the server restarts
+- If you get "invalid session token" errors, call `start_session` again
+- Each session provides fresh instructions and tool documentation

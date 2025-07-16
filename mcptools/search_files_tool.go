@@ -19,8 +19,9 @@ func init() {
 			Name:        "search_files",
 			Description: "Search for files and directories in allowed paths with filtering options",
 			Properties: []mcputil.Property{
-				mcputil.String("path", "Directory path to search").Required(),
-				mcputil.Bool("recursive", "Search subdirectories recursively"),
+				RequiredSessionTokenProperty,
+				PathProperty.Required(),
+				RecursiveProperty,
 				mcputil.Array("extensions", "Filter by file extensions (e.g., ['.go', '.txt'])"),
 				mcputil.String("pattern", "Name pattern to match (case-insensitive substring)"),
 				mcputil.String("name_pattern", "Exact filename pattern to match"),

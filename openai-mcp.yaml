@@ -1,0 +1,252 @@
+openapi: 3.1.0
+info:
+  title: Scout MCP Tool Suite
+  version: 1.0.0
+paths:
+  /read_file:
+    post:
+      operationId: read_file
+      description: Reads the contents of a file from an allowed directory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: Full path to the file to read
+              required: [path]
+      responses:
+        '200':
+          description: File contents
+  /create_file:
+    post:
+      operationId: create_file
+      description: Creates a new file with specified content. Requires user approval.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                content:
+                  type: string
+                create_dirs:
+                  type: boolean
+              required: [path, content]
+      responses:
+        '200':
+          description: File created
+  /update_file:
+    post:
+      operationId: update_file
+      description: Replaces the entire content of a file. ⚠️ DANGEROUS OPERATION.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                content:
+                  type: string
+              required: [path, content]
+      responses:
+        '200':
+          description: File updated
+  /delete_files:
+    post:
+      operationId: delete_files
+      description: Deletes a file or directory. Requires user approval.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                recursive:
+                  type: boolean
+              required: [path]
+      responses:
+        '200':
+          description: File or directory deleted
+  /search_files:
+    post:
+      operationId: search_files
+      description: Search for files and directories with filters.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                recursive:
+                  type: boolean
+                pattern:
+                  type: string
+                name_pattern:
+                  type: string
+                extensions:
+                  type: array
+                  items:
+                    type: string
+                files_only:
+                  type: boolean
+                dirs_only:
+                  type: boolean
+                max_results:
+                  type: integer
+              required: [path]
+      responses:
+        '200':
+          description: List of files
+  /update_file_lines:
+    post:
+      operationId: update_file_lines
+      description: Update specific lines in a file by line number range.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                start_line:
+                  type: integer
+                end_line:
+                  type: integer
+                content:
+                  type: string
+              required: [path, start_line, end_line, content]
+      responses:
+        '200':
+          description: Lines updated
+  /insert_file_lines:
+    post:
+      operationId: insert_file_lines
+      description: Insert content at a specific line number in a file.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                line_number:
+                  type: integer
+                content:
+                  type: string
+                position:
+                  type: string
+                  enum: [before, after]
+              required: [path, line_number, content]
+      responses:
+        '200':
+          description: Content inserted
+  /insert_at_pattern:
+    post:
+      operationId: insert_at_pattern
+      description: Insert content before or after a pattern match in the file.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                before_pattern:
+                  type: string
+                after_pattern:
+                  type: string
+                content:
+                  type: string
+                position:
+                  type: string
+                  enum: [before, after]
+                regex:
+                  type: boolean
+              required: [path, content]
+      responses:
+        '200':
+          description: Content inserted
+  /delete_file_lines:
+    post:
+      operationId: delete_file_lines
+      description: Delete specific lines from a file.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                start_line:
+                  type: integer
+                end_line:
+                  type: integer
+              required: [path, start_line]
+      responses:
+        '200':
+          description: Lines deleted
+  /replace_pattern:
+    post:
+      operationId: replace_pattern
+      description: Find and replace patterns in a file, optionally using regex.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                pattern:
+                  type: string
+                replacement:
+                  type: string
+                regex:
+                  type: boolean
+                all_occurrences:
+                  type: boolean
+              required: [path, pattern, replacement]
+      responses:
+        '200':
+          description: Pattern replaced
+  /get_config:
+    post:
+      operationId: get_config
+      description: Get configuration of the Scout MCP server.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                show_relative:
+                  type: boolean
+      responses:
+        '200':
+          description: Configuration returned
