@@ -129,8 +129,8 @@ Creates a new file with specified content. Requires user approval.
 
 **Parameters:**
 - `session_token` (required): Session token from start_session
-- `path` (required): Full path where the file should be created
-- `content` (required): Content to write to the file
+- `filepath` (required): Full path where the file should be created
+- `new_content` (required): Content to write to the file
 - `create_dirs` (optional): Create parent directories if they don't exist
 
 **Example:**
@@ -139,8 +139,8 @@ Creates a new file with specified content. Requires user approval.
   "tool": "create_file",
   "parameters": {
     "session_token": "your-session-token",
-    "path": "/Users/mike/project/new_file.go",
-    "content": "package main\n\nfunc main() {\n\tprintln(\"Hello, World!\")\n}",
+    "filepath": "/Users/mike/project/new_file.go",
+    "new_content": "package main\n\nfunc main() {\n\tprintln(\"Hello, World!\")\n}",
     "create_dirs": true
   }
 }
@@ -153,8 +153,8 @@ Completely replaces the content of an existing file. Use this ONLY when you inte
 
 **Parameters:**
 - `session_token` (required): Session token from start_session
-- `path` (required): Full path to the file to update
-- `content` (required): New content that will replace ALL existing content
+- `filepath` (required): Full path to the file to update
+- `new_content` (required): New content that will replace ALL existing content
 
 **Example:**
 ```json
@@ -162,8 +162,8 @@ Completely replaces the content of an existing file. Use this ONLY when you inte
   "tool": "update_file",
   "parameters": {
     "session_token": "your-session-token",
-    "path": "/Users/mike/project/config.json",
-    "content": "{\"version\": \"2.0\", \"name\": \"updated-config\"}"
+    "filepath": "/Users/mike/project/config.json",
+    "new_content": "{\"version\": \"2.0\", \"name\": \"updated-config\"}"
   }
 }
 ```
@@ -201,10 +201,10 @@ Update specific lines in a file by line number range. Much safer than `update_fi
 
 **Parameters:**
 - `session_token` (required): Session token from start_session
-- `path` (required): Full path to the file
+- `filepath` (required): Full path to the file
 - `start_line` (required): Starting line number (1-based)
 - `end_line` (required): Ending line number (1-based, inclusive)
-- `content` (required): New content to replace the specified line range
+- `new_content` (required): New content to replace the specified line range
 
 **Example:**
 ```json
@@ -212,10 +212,10 @@ Update specific lines in a file by line number range. Much safer than `update_fi
   "tool": "update_file_lines",
   "parameters": {
     "session_token": "your-session-token",
-    "path": "/Users/mike/project/main.go",
-    "start_line": "15",
-    "end_line": "18",
-    "content": "\tfmt.Println(\"Updated function\")\n\treturn nil"
+    "filepath": "/Users/mike/project/main.go",
+    "start_line": 15,
+    "end_line": 18,
+    "new_content": "\tfmt.Println(\"Updated function\")\n\treturn nil"
   }
 }
 ```
@@ -225,10 +225,10 @@ Insert content at a specific line number.
 
 **Parameters:**
 - `session_token` (required): Session token from start_session
-- `path` (required): Full path to the file
+- `filepath` (required): Full path to the file
 - `line_number` (required): Line number where to insert (1-based)
-- `content` (required): Content to insert
-- `position` (optional): "before" or "after" the specified line (default: "after")
+- `new_content` (required): Content to insert
+- `position` (required): "before" or "after" the specified line
 
 **Example:**
 ```json
@@ -236,9 +236,9 @@ Insert content at a specific line number.
   "tool": "insert_file_lines",
   "parameters": {
     "session_token": "your-session-token",
-    "path": "/Users/mike/project/main.go",
-    "line_number": "1",
-    "content": "import \"fmt\"",
+    "filepath": "/Users/mike/project/main.go",
+    "line_number": 1,
+    "new_content": "import \"fmt\"",
     "position": "after"
   }
 }
@@ -251,7 +251,7 @@ Insert content before or after a pattern match in the file.
 - `session_token` (required): Session token from start_session
 - `path` (required): Full path to the file
 - `before_pattern` OR `after_pattern` (required): Pattern to search for
-- `content` (required): Content to insert
+- `new_content` (required): Content to insert
 - `position` (optional): "before" or "after" the pattern (default: "before")
 - `regex` (optional): Use regex pattern matching (default: false)
 
@@ -263,7 +263,7 @@ Insert content before or after a pattern match in the file.
     "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
     "after_pattern": "package main",
-    "content": "\nimport \"fmt\"",
+    "new_content": "\nimport \"fmt\"",
     "position": "after"
   }
 }
@@ -274,7 +274,7 @@ Delete specific lines from a file.
 
 **Parameters:**
 - `session_token` (required): Session token from start_session
-- `path` (required): Full path to the file
+- `filepath` (required): Full path to the file
 - `start_line` (required): Starting line number to delete (1-based)
 - `end_line` (optional): Ending line number to delete (defaults to start_line for single line)
 
@@ -284,9 +284,9 @@ Delete specific lines from a file.
   "tool": "delete_file_lines",
   "parameters": {
     "session_token": "your-session-token",
-    "path": "/Users/mike/project/main.go",
-    "start_line": "25",
-    "end_line": "30"
+    "filepath": "/Users/mike/project/main.go",
+    "start_line": 25,
+    "end_line": 30
   }
 }
 ```
@@ -339,9 +339,9 @@ Find specific language constructs (functions, types, constants) by name using AS
 **Parameters:**
 - `session_token` (required): Session token from start_session
 - `path` (required): Full path to the source code file
-- `part_type` (required): Type of construct to find ("function", "type", "const", "var")
+- `language` (required): Programming language ("go" currently supported)
+- `part_type` (required): Type of construct to find ("func", "type", "const", "var")
 - `part_name` (required): Name of the construct to find
-- `language` (optional): Programming language (auto-detected from file extension)
 
 **Example:**
 ```json
@@ -350,7 +350,8 @@ Find specific language constructs (functions, types, constants) by name using AS
   "parameters": {
     "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
-    "part_type": "function",
+    "language": "go",
+    "part_type": "func",
     "part_name": "main"
   }
 }
@@ -362,10 +363,10 @@ Replace specific language constructs using syntax-aware parsing. Requires user a
 **Parameters:**
 - `session_token` (required): Session token from start_session
 - `path` (required): Full path to the source code file
-- `part_type` (required): Type of construct to replace ("function", "type", "const", "var")
+- `language` (required): Programming language ("go" currently supported)
+- `part_type` (required): Type of construct to replace ("func", "type", "const", "var")
 - `part_name` (required): Name of the construct to replace
 - `new_content` (required): New implementation content
-- `language` (optional): Programming language (auto-detected from file extension)
 
 **Example:**
 ```json
@@ -374,7 +375,8 @@ Replace specific language constructs using syntax-aware parsing. Requires user a
   "parameters": {
     "session_token": "your-session-token",
     "path": "/Users/mike/project/main.go",
-    "part_type": "function",
+    "language": "go",
+    "part_type": "func",
     "part_name": "processData",
     "new_content": "func processData(input string) (string, error) {\n\treturn strings.ToUpper(input), nil\n}"
   }
@@ -387,7 +389,8 @@ Validate syntax of source code files using language-specific parsers.
 **Parameters:**
 - `session_token` (required): Session token from start_session
 - `files` (required): Array of file paths to validate
-- `language` (optional): Programming language (auto-detected from file extensions)
+- `paths` (required): Array of file or directory paths to validate
+- `language` (required): Programming language ("go" currently supported)
 
 **Example:**
 ```json
@@ -530,7 +533,7 @@ Generate approval tokens after user confirmation for secure operation execution.
     "session_token": "your-session-token",
     "path": "/path/to/file.go",
     "after_pattern": "package main",
-    "content": "\nimport \"fmt\"",
+    "new_content": "\nimport \"fmt\"",
     "position": "after"
   }
 }
