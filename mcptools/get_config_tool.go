@@ -72,9 +72,14 @@ func (t *GetConfigTool) getConfigInfo(cfg Config) (info ConfigInfo, err error) {
 	}
 
 	// Get config path via the interface
-	configPath, err = makeRelativePath(t.Config().Path(), homeDir)
-	if err != nil {
-		goto end
+	if t.Config().Path() != "" {
+		configPath, err = makeRelativePath(t.Config().Path(), homeDir)
+		if err != nil {
+			goto end
+		}
+	} else {
+		// For tests or when no config file is used
+		configPath = "(no config file)"
 	}
 
 	info = ConfigInfo{

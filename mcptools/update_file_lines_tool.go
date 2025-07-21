@@ -42,7 +42,7 @@ func (t *UpdateFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		goto end
 	}
 
-	newContent, err = req.RequireString("content")
+	newContent, err = req.RequireString("new_content")
 	if err != nil {
 		goto end
 	}

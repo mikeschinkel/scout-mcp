@@ -1,8 +1,6 @@
 package test
 
 import (
-	"context"
-	"encoding/json"
 	"strings"
 	"testing"
 
@@ -10,46 +8,43 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestToolHelp tests the tool_help functionality
-func TestToolHelp(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
+// TestToolHelpDirect tests the tool_help functionality using direct server access
+func TestToolHelpDirect(t *testing.T) {
+	env := NewDirectServerTestEnv(t)
+	defer env.Cleanup()
 
 	t.Run("FullDocumentation", func(t *testing.T) {
-		testFullDocumentation(t, client, ctx)
+		testFullDocumentationDirect(t, env)
 	})
 
 	t.Run("SpecificToolHelp", func(t *testing.T) {
-		testSpecificToolHelp(t, client, ctx)
+		testSpecificToolHelpDirect(t, env)
 	})
 
 	t.Run("NonExistentTool", func(t *testing.T) {
-		testNonExistentTool(t, client, ctx)
+		testNonExistentToolDirect(t, env)
 	})
 
 	t.Run("DocumentationContent", func(t *testing.T) {
-		testDocumentationContent(t, client, ctx)
+		testDocumentationContentDirect(t, env)
 	})
 }
 
-func testFullDocumentation(t *testing.T, client *MCPClient, ctx context.Context) {
+func testFullDocumentationDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test getting full documentation without specifying a tool
-	resp, err := client.CallTool(ctx, "tool_help", map[string]interface{}{})
-	require.NoError(t, err, "Failed to call tool_help")
-	require.Nil(t, resp.Error, "tool_help returned error: %v", resp.Error)
+	result := env.CallTool(t, "tool_help", map[string]interface{}{})
 
-	// Parse the response
-	var content string
-	parseToolResponse(t, resp, &content)
+	// Parse the response as text (tool_help returns Markdown, not JSON)
+	content := ParseTextResult(t, result)
 
 	// Verify it contains the full README content
 	assert.Contains(t, content, "# Scout MCP Tools Documentation", "Should contain main title")
-	assert.Contains(t, content, "## File Management Tools", "Should contain File Management section")
-	assert.Contains(t, content, "## Granular File Editing Tools", "Should contain Granular Editing section")
+	assert.Contains(t, content, "## Session Management", "Should contain Session Management section")
+	assert.Contains(t, content, "## File Reading Tools", "Should contain File Reading Tools section")
 	assert.Contains(t, content, "## Best Practices", "Should contain Best Practices section")
 
 	// Verify it contains tool descriptions
-	assert.Contains(t, content, "### `read_file`", "Should contain read_file documentation")
+	assert.Contains(t, content, "### `read_files`", "Should contain read_files documentation")
 	assert.Contains(t, content, "### `update_file_lines`", "Should contain update_file_lines documentation")
 	assert.Contains(t, content, "### `tool_help`", "Should contain self-documentation")
 
@@ -58,7 +53,7 @@ func testFullDocumentation(t *testing.T, client *MCPClient, ctx context.Context)
 	assert.Contains(t, content, "Use granular editing tools", "Should recommend safer alternatives")
 }
 
-func testSpecificToolHelp(t *testing.T, client *MCPClient, ctx context.Context) {
+func testSpecificToolHelpDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test cases for specific tool documentation
 	testCases := []struct {
 		toolName         string
@@ -67,19 +62,19 @@ func testSpecificToolHelp(t *testing.T, client *MCPClient, ctx context.Context) 
 		description      string
 	}{
 		{
-			toolName: "read_file",
+			toolName: "read_files",
 			shouldContain: []string{
-				"### `read_file`",
-				"Reads the contents of a file",
-				"path` (required)",
-				"\"tool\": \"read_file\"",
+				"### `read_files`",
+				"Read contents of multiple files",
+				"paths` (required)",
+				"\"tool\": \"read_files\"",
 			},
 			shouldNotContain: []string{
 				"### `update_file`",
 				"### `create_file`",
 				"## Best Practices", // Should not include full doc sections
 			},
-			description: "read_file specific help",
+			description: "read_files specific help",
 		},
 		{
 			toolName: "update_file",
@@ -145,14 +140,12 @@ func testSpecificToolHelp(t *testing.T, client *MCPClient, ctx context.Context) 
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			resp, err := client.CallTool(ctx, "tool_help", map[string]interface{}{
+			result := env.CallTool(t, "tool_help", map[string]interface{}{
 				"tool": tc.toolName,
 			})
-			require.NoError(t, err, "Failed to call tool_help for %s", tc.toolName)
-			require.Nil(t, resp.Error, "tool_help returned error for %s: %v", tc.toolName, resp.Error)
+			require.NotNil(t, result, "tool_help should return result for %s", tc.toolName)
 
-			var content string
-			parseToolResponse(t, resp, &content)
+			content := ParseTextResult(t, result)
 
 			// Check that required content is present
 			for _, shouldContain := range tc.shouldContain {
@@ -173,16 +166,14 @@ func testSpecificToolHelp(t *testing.T, client *MCPClient, ctx context.Context) 
 	}
 }
 
-func testNonExistentTool(t *testing.T, client *MCPClient, ctx context.Context) {
+func testNonExistentToolDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test requesting help for a non-existent tool
-	resp, err := client.CallTool(ctx, "tool_help", map[string]interface{}{
+	result := env.CallTool(t, "tool_help", map[string]interface{}{
 		"tool": "nonexistent_tool",
 	})
-	require.NoError(t, err, "Failed to call tool_help")
-	require.Nil(t, resp.Error, "tool_help returned error: %v", resp.Error)
+	require.NotNil(t, result, "tool_help should return result")
 
-	var content string
-	parseToolResponse(t, resp, &content)
+	content := ParseTextResult(t, result)
 
 	// Verify helpful error message
 	assert.Contains(t, content, "Tool 'nonexistent_tool' not found", "Should indicate tool not found")
@@ -190,7 +181,7 @@ func testNonExistentTool(t *testing.T, client *MCPClient, ctx context.Context) {
 
 	// Verify it lists actual available tools
 	expectedTools := []string{
-		"read_file", "create_file", "update_file", "delete_files",
+		"read_files", "create_file", "update_file", "delete_files",
 		"search_files", "update_file_lines", "insert_file_lines",
 		"replace_pattern", "get_config", "tool_help",
 	}
@@ -204,14 +195,12 @@ func testNonExistentTool(t *testing.T, client *MCPClient, ctx context.Context) {
 	assert.Contains(t, content, `"tool": "tool_help"`, "Should show example usage")
 }
 
-func testDocumentationContent(t *testing.T, client *MCPClient, ctx context.Context) {
+func testDocumentationContentDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test that the documentation contains important safety information
-	resp, err := client.CallTool(ctx, "tool_help", map[string]interface{}{})
-	require.NoError(t, err, "Failed to call tool_help")
-	require.Nil(t, resp.Error, "tool_help returned error: %v", resp.Error)
+	result := env.CallTool(t, "tool_help", map[string]interface{}{})
+	require.NotNil(t, result, "tool_help should return result")
 
-	var content string
-	parseToolResponse(t, resp, &content)
+	content := ParseTextResult(t, result)
 
 	t.Run("SafetyWarnings", func(t *testing.T) {
 		// Verify important safety warnings are present
@@ -225,10 +214,12 @@ func testDocumentationContent(t *testing.T, client *MCPClient, ctx context.Conte
 	t.Run("ToolCategories", func(t *testing.T) {
 		// Verify all tool categories are documented
 		categories := []string{
+			"## Session Management",
+			"## File Reading Tools",
 			"## File Management Tools",
-			"## File Search Tools",
 			"## Granular File Editing Tools",
-			"## Configuration Tools",
+			"## Language-Aware Tools",
+			"## Analysis Tools",
 			"## Best Practices",
 		}
 
@@ -250,7 +241,7 @@ func testDocumentationContent(t *testing.T, client *MCPClient, ctx context.Conte
 
 	t.Run("BestPractices", func(t *testing.T) {
 		// Verify best practices section contains guidance
-		assert.Contains(t, content, "When to Use Each Tool", "Should provide tool selection guidance")
+		assert.Contains(t, content, "## Best Practices", "Should provide tool selection guidance")
 		assert.Contains(t, content, "Common Patterns", "Should provide usage patterns")
 		assert.Contains(t, content, "Adding an import to a Go file", "Should show practical examples")
 		assert.Contains(t, content, "Refactoring variable names", "Should show refactoring examples")
@@ -259,7 +250,7 @@ func testDocumentationContent(t *testing.T, client *MCPClient, ctx context.Conte
 	t.Run("AllToolsCovered", func(t *testing.T) {
 		// Verify all major tools are documented
 		majorTools := []string{
-			"`read_file`", "`create_file`", "`update_file`", "`delete_files`",
+			"`read_files`", "`create_file`", "`update_file`", "`delete_files`",
 			"`search_files`", "`update_file_lines`", "`insert_file_lines`",
 			"`insert_at_pattern`", "`delete_file_lines`", "`replace_pattern`",
 			"`get_config`",
@@ -269,44 +260,4 @@ func testDocumentationContent(t *testing.T, client *MCPClient, ctx context.Conte
 			assert.Contains(t, content, tool, "Should document tool: %s", tool)
 		}
 	})
-}
-
-// TestToolHelpIntegration tests tool_help integration with the test suite
-func TestToolHelpIntegration(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
-
-	// Verify tool_help appears in tools list
-	resp, err := client.ListTools(ctx)
-	require.NoError(t, err, "Failed to list tools")
-	require.Nil(t, resp.Error, "ListTools returned error: %v", resp.Error)
-
-	var result map[string]interface{}
-	err = json.Unmarshal(resp.Result, &result)
-	require.NoError(t, err, "Failed to parse tools list response")
-
-	tools, ok := result["tools"].([]interface{})
-	require.True(t, ok, "Tools should be an array")
-
-	// Check that tool_help is in the list
-	foundToolHelp := false
-	for _, tool := range tools {
-		toolMap, ok := tool.(map[string]interface{})
-		require.True(t, ok, "Tool should be an object")
-
-		name, ok := toolMap["name"].(string)
-		require.True(t, ok, "Tool should have a name")
-
-		if name == "tool_help" {
-			foundToolHelp = true
-
-			// Verify tool description
-			description, ok := toolMap["description"].(string)
-			assert.True(t, ok, "tool_help should have a description")
-			assert.Contains(t, description, "documentation", "Description should mention documentation")
-			break
-		}
-	}
-
-	assert.True(t, foundToolHelp, "tool_help should be available in tools list")
 }

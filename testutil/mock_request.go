@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
@@ -20,28 +21,47 @@ func (m *MockRequest) RequireString(key string) (string, error) {
 	return "", fmt.Errorf("required argument %q not found", key)
 }
 
-func (m *MockRequest) RequireInt(key string) (int, error) {
-	if val, exists := m.params[key]; exists {
-		if i, ok := val.(int); ok {
-			return i, nil
-		}
-		if str, ok := val.(string); ok {
-			// Try to parse string as int for convenience
-			if str == "1" {
-				return 1, nil
-			}
-			if str == "2" {
-				return 2, nil
-			}
-			if str == "3" {
-				return 3, nil
-			}
-			if str == "4" {
-				return 4, nil
-			}
-		}
+func (m *MockRequest) RequireInt(key string) (result int, err error) {
+	var val any
+	var exists bool
+	var i int
+	var f float64
+	var str string
+	var ok bool
+	var parseErr error
+
+	val, exists = m.params[key]
+	if !exists {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
 	}
-	return 0, fmt.Errorf("required argument %q not found", key)
+
+	i, ok = val.(int)
+	if ok {
+		result = i
+		goto end
+	}
+
+	f, ok = val.(float64)
+	if ok {
+		result = int(f)
+		goto end
+	}
+
+	str, ok = val.(string)
+	if !ok {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
+	}
+
+	result, parseErr = strconv.Atoi(str)
+	if parseErr != nil {
+		err = fmt.Errorf("'%s' must be a valid number: %w", key, parseErr)
+		goto end
+	}
+
+end:
+	return result, err
 }
 
 func (m *MockRequest) RequireBool(key string) (bool, error) {
@@ -72,9 +92,16 @@ func (m *MockRequest) GetString(key, defaultValue string) string {
 }
 
 func (m *MockRequest) GetInt(key string, defaultValue int) int {
-	if val, exists := m.params[key]; exists {
-		if i, ok := val.(int); ok {
-			return i
+	if val, ok := m.params[key]; ok {
+		switch v := val.(type) {
+		case int:
+			return v
+		case float64:
+			return int(v)
+		case string:
+			if i, err := strconv.Atoi(v); err == nil {
+				return i
+			}
 		}
 	}
 	return defaultValue

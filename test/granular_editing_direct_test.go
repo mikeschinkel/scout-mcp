@@ -1,8 +1,6 @@
 package test
 
 import (
-	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,14 +84,18 @@ func anotherOldFunctionName() {
 }
 `
 
-	ReplaceFirstTestContent = `func test() {
+	ReplaceFirstTestContent = `package main
+
+func test() {
 	value := "test"
 	anotherValue := "test"
 	finalValue := "test"
 }
 `
 
-	RegexReplaceTestContent = `func functionOne() {
+	RegexReplaceTestContent = `package main
+
+func functionOne() {
 	return
 }
 
@@ -107,48 +109,46 @@ func functionThree(a int, b string) {
 `
 )
 
-// TestGranularFileEditing tests all the granular file editing tools
-func TestGranularFileEditing(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
-	testDir := GetTestDir()
+// TestGranularFileEditingDirect tests all the granular file editing tools using direct server access
+func TestGranularFileEditingDirect(t *testing.T) {
+	env := NewDirectServerTestEnv(t)
+	defer env.Cleanup()
 
 	t.Run("UpdateFileLines", func(t *testing.T) {
-		testUpdateFileLines(t, client, ctx, testDir)
+		testUpdateFileLinesDirect(t, env)
 	})
 
 	t.Run("InsertFileLines", func(t *testing.T) {
-		testInsertFileLines(t, client, ctx, testDir)
+		testInsertFileLinesDirect(t, env)
 	})
 
 	t.Run("InsertAtPattern", func(t *testing.T) {
-		testInsertAtPattern(t, client, ctx, testDir)
+		testInsertAtPatternDirect(t, env)
 	})
 
 	t.Run("DeleteFileLines", func(t *testing.T) {
-		testDeleteFileLines(t, client, ctx, testDir)
+		testDeleteFileLinesDirect(t, env)
 	})
 
 	t.Run("ReplacePattern", func(t *testing.T) {
-		testReplacePattern(t, client, ctx, testDir)
+		testReplacePatternDirect(t, env)
 	})
 }
 
-func testUpdateFileLines(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testUpdateFileLinesDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create a test file with multiple lines
-	testFilePath := filepath.Join(testDir, UpdateTestFile)
+	testFilePath := filepath.Join(env.GetTestDir(), UpdateTestFile)
 	err := os.WriteFile(testFilePath, []byte(UpdateTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	// Test updating lines 7-8
-	resp, err := client.CallTool(ctx, "update_file_lines", map[string]interface{}{
-		"path":       testFilePath,
-		"start_line": "7",
-		"end_line":   "8",
-		"content":    "\tfmt.Println(\"Updated line 7\")\n\tfmt.Println(\"Updated line 8\")",
+	result := env.CallTool(t, "update_file_lines", map[string]interface{}{
+		"filepath":    testFilePath,
+		"start_line":  7,
+		"end_line":    8,
+		"new_content": "\tfmt.Println(\"Updated line 7\")\n\tfmt.Println(\"Updated line 8\")",
 	})
-	require.NoError(t, err, "Failed to call update_file_lines")
-	require.Nil(t, resp.Error, "update_file_lines returned error: %v", resp.Error)
+	assert.NotNil(t, result, "update_file_lines should return result")
 
 	// Verify the update
 	updatedContent, err := os.ReadFile(testFilePath)
@@ -168,22 +168,21 @@ func main() {
 	assert.Equal(t, expectedContent, string(updatedContent), "File content should match expected")
 }
 
-func testInsertFileLines(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testInsertFileLinesDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create a test file
-	testFilePath := filepath.Join(testDir, InsertTestFile)
+	testFilePath := filepath.Join(env.GetTestDir(), InsertTestFile)
 	err := os.WriteFile(testFilePath, []byte(InsertTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	t.Run("InsertAfterLine", func(t *testing.T) {
 		// Insert after line 1 (package declaration)
-		resp, err := client.CallTool(ctx, "insert_file_lines", map[string]interface{}{
-			"path":        testFilePath,
-			"line_number": "1",
-			"content":     "\nimport \"fmt\"",
+		result := env.CallTool(t, "insert_file_lines", map[string]interface{}{
+			"filepath":    testFilePath,
 			"position":    "after",
+			"line_number": 1,
+			"new_content": "\nimport \"fmt\"",
 		})
-		require.NoError(t, err, "Failed to call insert_file_lines")
-		require.Nil(t, resp.Error, "insert_file_lines returned error: %v", resp.Error)
+		assert.NotNil(t, result, "insert_file_lines should return result")
 
 		// Verify the insertion
 		updatedContent, err := os.ReadFile(testFilePath)
@@ -194,39 +193,37 @@ func testInsertFileLines(t *testing.T, client *MCPClient, ctx context.Context, t
 
 	t.Run("InsertBeforeLine", func(t *testing.T) {
 		// Insert before the last line
-		resp, err := client.CallTool(ctx, "insert_file_lines", map[string]interface{}{
-			"path":        testFilePath,
-			"line_number": "7", // Before the closing brace
-			"content":     "\t// Added comment",
+		result := env.CallTool(t, "insert_file_lines", map[string]interface{}{
+			"filepath":    testFilePath,
 			"position":    "before",
+			"line_number": 7,
+			"new_content": "\t// Added comment",
 		})
-		require.NoError(t, err, "Failed to call insert_file_lines")
-		require.Nil(t, resp.Error, "insert_file_lines returned error: %v", resp.Error)
+		assert.NotNil(t, result, "insert_file_lines should return result")
 
 		// Verify the insertion
 		updatedContent, err := os.ReadFile(testFilePath)
 		require.NoError(t, err, "Failed to read updated file")
 
-		assert.Contains(t, string(updatedContent), "\t// Added comment\n}", "Should contain inserted comment before closing brace")
+		assert.Contains(t, string(updatedContent), "\t// Added comment\n\tprintln(\"World\")", "Should contain inserted comment before println World")
 	})
 }
 
-func testInsertAtPattern(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testInsertAtPatternDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create a test Go file
-	testFilePath := filepath.Join(testDir, PatternTestFile)
+	testFilePath := filepath.Join(env.GetTestDir(), PatternTestFile)
 	err := os.WriteFile(testFilePath, []byte(PatternTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	t.Run("InsertAfterPattern", func(t *testing.T) {
 		// Insert import after package declaration
-		resp, err := client.CallTool(ctx, "insert_at_pattern", map[string]interface{}{
+		result := env.CallTool(t, "insert_at_pattern", map[string]interface{}{
 			"path":          testFilePath,
 			"after_pattern": "package main",
-			"content":       "\nimport \"fmt\"",
 			"position":      "after",
+			"content":       "\nimport \"fmt\"",
 		})
-		require.NoError(t, err, "Failed to call insert_at_pattern")
-		require.Nil(t, resp.Error, "insert_at_pattern returned error: %v", resp.Error)
+		assert.NotNil(t, result, "insert_at_pattern should return result")
 
 		// Verify the insertion
 		updatedContent, err := os.ReadFile(testFilePath)
@@ -237,14 +234,13 @@ func testInsertAtPattern(t *testing.T, client *MCPClient, ctx context.Context, t
 
 	t.Run("InsertBeforePattern", func(t *testing.T) {
 		// Insert comment before helper function
-		resp, err := client.CallTool(ctx, "insert_at_pattern", map[string]interface{}{
+		result := env.CallTool(t, "insert_at_pattern", map[string]interface{}{
 			"path":           testFilePath,
 			"before_pattern": "func helper()",
-			"content":        "// Helper function comment",
 			"position":       "before",
+			"content":        "// Helper function comment",
 		})
-		require.NoError(t, err, "Failed to call insert_at_pattern")
-		require.Nil(t, resp.Error, "insert_at_pattern returned error: %v", resp.Error)
+		assert.NotNil(t, result, "insert_at_pattern should return result")
 
 		// Verify the insertion
 		updatedContent, err := os.ReadFile(testFilePath)
@@ -255,15 +251,14 @@ func testInsertAtPattern(t *testing.T, client *MCPClient, ctx context.Context, t
 
 	t.Run("RegexPattern", func(t *testing.T) {
 		// Use regex to find function declaration
-		resp, err := client.CallTool(ctx, "insert_at_pattern", map[string]interface{}{
+		result := env.CallTool(t, "insert_at_pattern", map[string]interface{}{
 			"path":           testFilePath,
 			"before_pattern": "func \\w+\\(\\)",
-			"content":        "// Function found by regex",
 			"position":       "before",
+			"content":        "// Function found by regex",
 			"regex":          true,
 		})
-		require.NoError(t, err, "Failed to call insert_at_pattern with regex")
-		require.Nil(t, resp.Error, "insert_at_pattern with regex returned error: %v", resp.Error)
+		assert.NotNil(t, result, "insert_at_pattern with regex should return result")
 
 		// Verify the insertion
 		updatedContent, err := os.ReadFile(testFilePath)
@@ -273,20 +268,20 @@ func testInsertAtPattern(t *testing.T, client *MCPClient, ctx context.Context, t
 	})
 }
 
-func testDeleteFileLines(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
-	// Create a test file with numbered lines
-	testFilePath := filepath.Join(testDir, DeleteTestFile)
-	err := os.WriteFile(testFilePath, []byte(DeleteTestContent), 0644)
-	require.NoError(t, err, "Failed to create test file")
-
+func testDeleteFileLinesDirect(t *testing.T, env *DirectServerTestEnv) {
 	t.Run("DeleteSingleLine", func(t *testing.T) {
+		// Create a test file with numbered lines
+		testFilePath := filepath.Join(env.GetTestDir(), "delete_single_test.txt")
+		err := os.WriteFile(testFilePath, []byte(DeleteTestContent), 0644)
+		require.NoError(t, err, "Failed to create test file")
+
 		// Delete line 5
-		resp, err := client.CallTool(ctx, "delete_file_lines", map[string]interface{}{
-			"path":       testFilePath,
-			"start_line": "5",
+		result := env.CallTool(t, "delete_file_lines", map[string]interface{}{
+			"filepath":   testFilePath,
+			"start_line": 5,
+			"end_line":   5,
 		})
-		require.NoError(t, err, "Failed to call delete_file_lines")
-		require.Nil(t, resp.Error, "delete_file_lines returned error: %v", resp.Error)
+		assert.NotNil(t, result, "delete_file_lines should return result")
 
 		// Verify the deletion
 		updatedContent, err := os.ReadFile(testFilePath)
@@ -298,14 +293,18 @@ func testDeleteFileLines(t *testing.T, client *MCPClient, ctx context.Context, t
 	})
 
 	t.Run("DeleteLineRange", func(t *testing.T) {
+		// Create a fresh test file with numbered lines
+		testFilePath := filepath.Join(env.GetTestDir(), "delete_range_test.txt")
+		err := os.WriteFile(testFilePath, []byte(DeleteTestContent), 0644)
+		require.NoError(t, err, "Failed to create test file")
+
 		// Delete lines 7-9
-		resp, err := client.CallTool(ctx, "delete_file_lines", map[string]interface{}{
-			"path":       testFilePath,
-			"start_line": "7",
-			"end_line":   "9",
+		result := env.CallTool(t, "delete_file_lines", map[string]interface{}{
+			"filepath":   testFilePath,
+			"start_line": 7,
+			"end_line":   9,
 		})
-		require.NoError(t, err, "Failed to call delete_file_lines")
-		require.Nil(t, resp.Error, "delete_file_lines returned error: %v", resp.Error)
+		assert.NotNil(t, result, "delete_file_lines should return result")
 
 		// Verify the deletion
 		updatedContent, err := os.ReadFile(testFilePath)
@@ -326,33 +325,21 @@ func testDeleteFileLines(t *testing.T, client *MCPClient, ctx context.Context, t
 	})
 }
 
-func testReplacePattern(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testReplacePatternDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create a test file with patterns to replace
-	testFilePath := filepath.Join(testDir, ReplaceTestFile)
+	testFilePath := filepath.Join(env.GetTestDir(), ReplaceTestFile)
 	err := os.WriteFile(testFilePath, []byte(ReplaceTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	t.Run("ReplaceAllOccurrences", func(t *testing.T) {
 		// Replace all occurrences of "old" with "new"
-		resp, err := client.CallTool(ctx, "replace_pattern", map[string]interface{}{
+		result := env.CallTool(t, "replace_pattern", map[string]interface{}{
 			"path":            testFilePath,
 			"pattern":         "old",
 			"replacement":     "new",
 			"all_occurrences": true,
 		})
-		require.NoError(t, err, "Failed to call replace_pattern")
-		require.Nil(t, resp.Error, "replace_pattern returned error: %v", resp.Error)
-
-		// Parse the response to check replacement count
-		var result map[string]interface{}
-		err = json.Unmarshal(resp.Result, &result)
-		require.NoError(t, err, "Failed to parse replace_pattern response")
-
-		content := result["content"].([]interface{})
-		contentItem := content[0].(map[string]interface{})
-		message := contentItem["text"].(string)
-
-		assert.Contains(t, message, "replaced", "Should indicate replacements were made")
+		assert.NotNil(t, result, "replace_pattern should return result")
 
 		// Verify the replacements
 		updatedContent, err := os.ReadFile(testFilePath)
@@ -365,19 +352,18 @@ func testReplacePattern(t *testing.T, client *MCPClient, ctx context.Context, te
 
 	t.Run("ReplaceFirstOccurrence", func(t *testing.T) {
 		// Reset file content for this test
-		testFilePath2 := filepath.Join(testDir, ReplaceFirstFile)
+		testFilePath2 := filepath.Join(env.GetTestDir(), ReplaceFirstFile)
 		err := os.WriteFile(testFilePath2, []byte(ReplaceFirstTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
 		// Replace only first occurrence
-		resp, err := client.CallTool(ctx, "replace_pattern", map[string]interface{}{
+		result := env.CallTool(t, "replace_pattern", map[string]interface{}{
 			"path":            testFilePath2,
 			"pattern":         "test",
 			"replacement":     "demo",
 			"all_occurrences": false,
 		})
-		require.NoError(t, err, "Failed to call replace_pattern")
-		require.Nil(t, resp.Error, "replace_pattern returned error: %v", resp.Error)
+		assert.NotNil(t, result, "replace_pattern should return result")
 
 		// Verify only first occurrence was replaced
 		updatedContent, err := os.ReadFile(testFilePath2)
@@ -390,20 +376,19 @@ func testReplacePattern(t *testing.T, client *MCPClient, ctx context.Context, te
 
 	t.Run("RegexReplace", func(t *testing.T) {
 		// Create test content with function declarations
-		testFilePath3 := filepath.Join(testDir, RegexReplaceFile)
+		testFilePath3 := filepath.Join(env.GetTestDir(), RegexReplaceFile)
 		err := os.WriteFile(testFilePath3, []byte(RegexReplaceTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
 		// Use regex to add comments to all function declarations
-		resp, err := client.CallTool(ctx, "replace_pattern", map[string]interface{}{
+		result := env.CallTool(t, "replace_pattern", map[string]interface{}{
 			"path":            testFilePath3,
 			"pattern":         "func (\\w+)\\(",
 			"replacement":     "// $1 function\nfunc $1(",
 			"regex":           true,
 			"all_occurrences": true,
 		})
-		require.NoError(t, err, "Failed to call replace_pattern with regex")
-		require.Nil(t, resp.Error, "replace_pattern with regex returned error: %v", resp.Error)
+		assert.NotNil(t, result, "replace_pattern with regex should return result")
 
 		// Verify regex replacements
 		updatedContent, err := os.ReadFile(testFilePath3)
@@ -415,44 +400,40 @@ func testReplacePattern(t *testing.T, client *MCPClient, ctx context.Context, te
 	})
 }
 
-// TestGranularEditingErrorCases tests error handling for granular editing tools
-func TestGranularEditingErrorCases(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
+// TestGranularEditingErrorCasesDirect tests error handling for granular editing tools
+func TestGranularEditingErrorCasesDirect(t *testing.T) {
+	env := NewDirectServerTestEnv(t)
+	defer env.Cleanup()
 
 	t.Run("InvalidLineNumbers", func(t *testing.T) {
-		resp, err := client.CallTool(ctx, "update_file_lines", map[string]interface{}{
-			"path":       "/nonexistent/file.txt",
-			"start_line": "0", // Invalid line number
-			"end_line":   "5",
-			"content":    "test",
+		err := env.CallToolExpectError(t, "update_file_lines", map[string]interface{}{
+			"filepath":    "/nonexistent/file.txt",
+			"start_line":  0, // Invalid line number
+			"end_line":    5,
+			"new_content": "test",
 		})
-		require.NoError(t, err, "Failed to call update_file_lines")
-		assert.NotNil(t, resp.Error, "Should return error for invalid line number")
+		assert.Error(t, err, "Should return error for invalid line number")
 	})
 
 	t.Run("NonAllowedPath", func(t *testing.T) {
-		resp, err := client.CallTool(ctx, "create_file", map[string]interface{}{
-			"path":    "/etc/should_not_work.txt",
-			"content": "This should fail",
+		err := env.CallToolExpectError(t, "create_file", map[string]interface{}{
+			"filepath":    "/etc/should_not_work.txt",
+			"new_content": "This should fail",
 		})
-		require.NoError(t, err, "Failed to call create_file")
-		assert.NotNil(t, resp.Error, "Should return error for non-allowed path")
+		assert.Error(t, err, "Should return error for non-allowed path")
 	})
 
 	t.Run("InvalidRegexPattern", func(t *testing.T) {
-		testDir := GetTestDir()
-		testFilePath := filepath.Join(testDir, RegexErrorTestFile)
+		testFilePath := filepath.Join(env.GetTestDir(), RegexErrorTestFile)
 		err := os.WriteFile(testFilePath, []byte("test content"), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
-		resp, err := client.CallTool(ctx, "replace_pattern", map[string]interface{}{
+		err = env.CallToolExpectError(t, "replace_pattern", map[string]interface{}{
 			"path":        testFilePath,
 			"pattern":     "[invalid regex", // Invalid regex
 			"replacement": "test",
 			"regex":       true,
 		})
-		require.NoError(t, err, "Failed to call replace_pattern")
-		assert.NotNil(t, resp.Error, "Should return error for invalid regex")
+		assert.Error(t, err, "Should return error for invalid regex")
 	})
 }

@@ -37,7 +37,7 @@ func TestUpdateFileLinesTool(t *testing.T) {
 			"filepath":      testFile,
 			"start_line":    "2",
 			"end_line":      "2",
-			"content":       "Updated Line 2",
+			"new_content":   "Updated Line 2",
 		})
 
 		result, err := testutil.CallTool(tool, req)
@@ -63,7 +63,7 @@ func TestUpdateFileLinesTool(t *testing.T) {
 			"filepath":      testFile,
 			"start_line":    "2",
 			"end_line":      "4",
-			"content":       "Updated Lines 2-4",
+			"new_content":   "Updated Lines 2-4",
 		})
 
 		result, err := testutil.CallTool(tool, req)
@@ -109,8 +109,6 @@ func TestInsertFileLinesTool(t *testing.T) {
 	tool.SetConfig(config)
 
 	t.Run("InsertAfterLine", func(t *testing.T) {
-		// NOTE: This tool has a bug - it doesn't parse the line_number parameter
-		// The lineNumber variable stays 0, causing validation errors
 		testFile := filepath.Join(tempDir, "insert_test.txt")
 		content := "Line 1\nLine 2\nLine 3\n"
 		err := os.WriteFile(testFile, []byte(content), 0644)
@@ -120,20 +118,22 @@ func TestInsertFileLinesTool(t *testing.T) {
 			"session_token": token,
 			"filepath":      testFile,
 			"position":      "after",
-			"line_number":   "1", // Tool expects this but doesn't parse it (bug)
+			"line_number":   "1", // String should be parsed as int
 			"new_content":   "Inserted after line 1",
 		})
 
 		result, err := testutil.CallTool(tool, req)
-		// Tool has implementation bug - lineNumber stays 0, fails validation
-		assert.Error(t, err, "Tool fails due to implementation bug")
-		assert.Nil(t, result, "Result should be nil on error")
-		assert.Contains(t, err.Error(), "line_number must be >= 1, got 0", "Should mention validation error")
+		require.NoError(t, err, "Should successfully insert after line")
+		assert.NotNil(t, result, "Result should not be nil")
+
+		// Verify the insertion
+		updatedContent, err := os.ReadFile(testFile)
+		require.NoError(t, err, "Should be able to read updated file")
+		expected := "Line 1\nInserted after line 1\nLine 2\nLine 3\n"
+		assert.Equal(t, expected, string(updatedContent), "Content should be inserted after line 1")
 	})
 
 	t.Run("InsertBeforeLine", func(t *testing.T) {
-		// NOTE: This tool has a bug - it doesn't parse the line_number parameter
-		// The lineNumber variable stays 0, causing validation errors
 		testFile := filepath.Join(tempDir, "insert_before_test.txt")
 		content := "Line 1\nLine 2\nLine 3\n"
 		err := os.WriteFile(testFile, []byte(content), 0644)
@@ -143,15 +143,19 @@ func TestInsertFileLinesTool(t *testing.T) {
 			"session_token": token,
 			"filepath":      testFile,
 			"position":      "before",
-			"line_number":   "2", // Tool expects this but doesn't parse it (bug)
+			"line_number":   "2", // String should be parsed as int
 			"new_content":   "Inserted before line 2",
 		})
 
 		result, err := testutil.CallTool(tool, req)
-		// Tool has implementation bug - lineNumber stays 0, fails validation
-		assert.Error(t, err, "Tool fails due to implementation bug")
-		assert.Nil(t, result, "Result should be nil on error")
-		assert.Contains(t, err.Error(), "line_number must be >= 1, got 0", "Should mention validation error")
+		require.NoError(t, err, "Should successfully insert before line")
+		assert.NotNil(t, result, "Result should not be nil")
+
+		// Verify the insertion
+		updatedContent, err := os.ReadFile(testFile)
+		require.NoError(t, err, "Should be able to read updated file")
+		expected := "Line 1\nInserted before line 2\nLine 2\nLine 3\n"
+		assert.Equal(t, expected, string(updatedContent), "Content should be inserted before line 2")
 	})
 }
 

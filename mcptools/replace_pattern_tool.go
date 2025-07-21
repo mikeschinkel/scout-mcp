@@ -19,9 +19,10 @@ func init() {
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				PathProperty.Required(),
-				LanguageProperty.Required(),
-				PartTypeProperty.Required(),
-				PartNameProperty.Required(),
+				mcputil.String("pattern", "Text pattern to find").Required(),
+				mcputil.String("replacement", "Text to replace the pattern with").Required(),
+				mcputil.Bool("regex", "Whether to treat pattern as regular expression"),
+				mcputil.Bool("all_occurrences", "Whether to replace all occurrences (default: true)"),
 			},
 		}),
 	})

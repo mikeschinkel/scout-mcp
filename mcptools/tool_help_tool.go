@@ -127,10 +127,18 @@ func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
 	var availableTools []string
 
 	availableTools = []string{
-		"read_file", "create_file", "update_file", "delete_files",
-		"search_files", "update_file_lines", "insert_file_lines",
-		"insert_at_pattern", "delete_file_lines", "replace_pattern",
-		"get_config", "tool_help",
+		"read_files",
+		"create_file",
+		"update_file",
+		"delete_files",
+		"search_files",
+		"update_file_lines",
+		"insert_file_lines",
+		"insert_at_pattern",
+		"delete_file_lines",
+		"replace_pattern",
+		"get_config",
+		"tool_help",
 	}
 
 	helpText = "Tool '" + toolName + "' not found.\n\n"
@@ -141,7 +149,7 @@ func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
 	}
 
 	helpText += "\nCall tool_help without parameters to see full documentation, or specify a tool name:\n"
-	helpText += `{"tool": "tool_help", "parameters": {"tool": "read_file"}}`
+	helpText += `{"tool": "tool_help", "parameters": {"tool": "read_files"}}`
 
 	return helpText
 }

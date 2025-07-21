@@ -18,6 +18,12 @@ func init() {
 			Description: "Insert content before or after a code pattern match",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
+				PathProperty.Required(),
+				mcputil.String("content", "Content to insert").Required(),
+				mcputil.String("before_pattern", "Pattern to find - insert content before this pattern"),
+				mcputil.String("after_pattern", "Pattern to find - insert content after this pattern"),
+				mcputil.String("position", "Position relative to pattern (before/after, default: before)"),
+				mcputil.Bool("regex", "Whether to treat pattern as regular expression"),
 			},
 		}),
 	})

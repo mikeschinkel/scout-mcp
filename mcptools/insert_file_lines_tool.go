@@ -20,6 +20,7 @@ func init() {
 				FilepathProperty.Required(),
 				NewContentProperty.Required(),
 				mcputil.String("position", "Position at which to insert").Required(),
+				mcputil.Number("line_number", "Line number where to insert content").Required(),
 			},
 		}),
 	})
@@ -43,6 +44,11 @@ func (t *InsertFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 	}
 
 	content, err = req.RequireString("new_content")
+	if err != nil {
+		goto end
+	}
+
+	lineNumber, err = req.RequireInt("line_number")
 	if err != nil {
 		goto end
 	}

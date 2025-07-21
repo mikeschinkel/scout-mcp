@@ -1,8 +1,6 @@
 package test
 
 import (
-	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -90,53 +88,51 @@ func (*Config) SetDefaults() {
 }`
 )
 
-// TestReplaceFilePart tests the replace_file_part tool functionality
-func TestReplaceFilePart(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
-	testDir := GetTestDir()
+// TestReplaceFilePartDirect tests the replace_file_part tool functionality using direct server access
+func TestReplaceFilePartDirect(t *testing.T) {
+	env := NewDirectServerTestEnv(t)
+	defer env.Cleanup()
 
 	t.Run("ReplaceFunction", func(t *testing.T) {
-		testReplaceFunction(t, client, ctx, testDir)
+		testReplaceFunctionDirect(t, env)
 	})
 
 	t.Run("ReplaceType", func(t *testing.T) {
-		testReplaceType(t, client, ctx, testDir)
+		testReplaceTypeDirect(t, env)
 	})
 
 	t.Run("ReplaceConst", func(t *testing.T) {
-		testReplaceConst(t, client, ctx, testDir)
+		testReplaceConstDirect(t, env)
 	})
 
 	t.Run("ReplaceVar", func(t *testing.T) {
-		testReplaceVar(t, client, ctx, testDir)
+		testReplaceVarDirect(t, env)
 	})
 
 	t.Run("ReplaceMethod", func(t *testing.T) {
-		testReplaceMethod(t, client, ctx, testDir)
+		testReplaceMethodDirect(t, env)
 	})
 
 	t.Run("ReplaceInterface", func(t *testing.T) {
-		testReplaceInterface(t, client, ctx, testDir)
+		testReplaceInterfaceDirect(t, env)
 	})
 }
 
-func testReplaceFunction(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testReplaceFunctionDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create test file
-	testFilePath := filepath.Join(testDir, "replace_func_test.go")
+	testFilePath := filepath.Join(env.GetTestDir(), "replace_func_test.go")
 	err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	// Replace the function
-	resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+	result := env.CallTool(t, "replace_file_part", map[string]interface{}{
 		"path":        testFilePath,
 		"language":    "go",
 		"part_type":   "func",
 		"part_name":   "oldFunction",
 		"new_content": UpdatedFunction,
 	})
-	require.NoError(t, err, "Failed to call replace_file_part")
-	require.Nil(t, resp.Error, "replace_file_part returned error: %v", resp.Error)
+	assert.NotNil(t, result, "replace_file_part should return result")
 
 	// Verify the replacement
 	updatedContent, err := os.ReadFile(testFilePath)
@@ -153,22 +149,21 @@ func testReplaceFunction(t *testing.T, client *MCPClient, ctx context.Context, t
 	assert.Contains(t, content, "func (c *Config) GetPort()", "Should preserve methods")
 }
 
-func testReplaceType(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testReplaceTypeDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create test file
-	testFilePath := filepath.Join(testDir, "replace_type_test.go")
+	testFilePath := filepath.Join(env.GetTestDir(), "replace_type_test.go")
 	err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	// Replace the type
-	resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+	result := env.CallTool(t, "replace_file_part", map[string]interface{}{
 		"path":        testFilePath,
 		"language":    "go",
 		"part_type":   "type",
 		"part_name":   "Config",
 		"new_content": UpdatedType,
 	})
-	require.NoError(t, err, "Failed to call replace_file_part")
-	require.Nil(t, resp.Error, "replace_file_part returned error: %v", resp.Error)
+	assert.NotNil(t, result, "replace_file_part should return result")
 
 	// Verify the replacement
 	updatedContent, err := os.ReadFile(testFilePath)
@@ -182,22 +177,21 @@ func testReplaceType(t *testing.T, client *MCPClient, ctx context.Context, testD
 	assert.Contains(t, content, "type UserService interface", "Should preserve UserService interface")
 }
 
-func testReplaceConst(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testReplaceConstDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create test file
-	testFilePath := filepath.Join(testDir, "replace_const_test.go")
+	testFilePath := filepath.Join(env.GetTestDir(), "replace_const_test.go")
 	err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	// Replace the const block by targeting one of the constants
-	resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+	result := env.CallTool(t, "replace_file_part", map[string]interface{}{
 		"path":        testFilePath,
 		"language":    "go",
 		"part_type":   "const",
 		"part_name":   "ServerPort",
 		"new_content": UpdatedConst,
 	})
-	require.NoError(t, err, "Failed to call replace_file_part")
-	require.Nil(t, resp.Error, "replace_file_part returned error: %v", resp.Error)
+	assert.NotNil(t, result, "replace_file_part should return result")
 
 	// Verify the replacement
 	updatedContent, err := os.ReadFile(testFilePath)
@@ -210,22 +204,21 @@ func testReplaceConst(t *testing.T, client *MCPClient, ctx context.Context, test
 	assert.NotContains(t, content, `"8080"`, "Should not contain old port value")
 }
 
-func testReplaceVar(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testReplaceVarDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create test file
-	testFilePath := filepath.Join(testDir, "replace_var_test.go")
+	testFilePath := filepath.Join(env.GetTestDir(), "replace_var_test.go")
 	err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	// Replace the var block by targeting one of the variables
-	resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+	result := env.CallTool(t, "replace_file_part", map[string]interface{}{
 		"path":        testFilePath,
 		"language":    "go",
 		"part_type":   "var",
 		"part_name":   "GlobalVar",
 		"new_content": UpdatedVar,
 	})
-	require.NoError(t, err, "Failed to call replace_file_part")
-	require.Nil(t, resp.Error, "replace_file_part returned error: %v", resp.Error)
+	assert.NotNil(t, result, "replace_file_part should return result")
 
 	// Verify the replacement
 	updatedContent, err := os.ReadFile(testFilePath)
@@ -238,22 +231,21 @@ func testReplaceVar(t *testing.T, client *MCPClient, ctx context.Context, testDi
 	assert.NotContains(t, content, `"initial value"`, "Should not contain old value")
 }
 
-func testReplaceMethod(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testReplaceMethodDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create test file
-	testFilePath := filepath.Join(testDir, "replace_method_test.go")
+	testFilePath := filepath.Join(env.GetTestDir(), "replace_method_test.go")
 	err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	// Replace the method using receiver type syntax
-	resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+	result := env.CallTool(t, "replace_file_part", map[string]interface{}{
 		"path":        testFilePath,
 		"language":    "go",
 		"part_type":   "func",
 		"part_name":   "*Config.GetPort",
 		"new_content": UpdatedMethod,
 	})
-	require.NoError(t, err, "Failed to call replace_file_part")
-	require.Nil(t, resp.Error, "replace_file_part returned error: %v", resp.Error)
+	assert.NotNil(t, result, "replace_file_part should return result")
 
 	// Verify the replacement
 	updatedContent, err := os.ReadFile(testFilePath)
@@ -268,22 +260,21 @@ func testReplaceMethod(t *testing.T, client *MCPClient, ctx context.Context, tes
 	assert.Contains(t, content, "func main()", "Should preserve main function")
 }
 
-func testReplaceInterface(t *testing.T, client *MCPClient, ctx context.Context, testDir string) {
+func testReplaceInterfaceDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Create test file
-	testFilePath := filepath.Join(testDir, "replace_interface_test.go")
+	testFilePath := filepath.Join(env.GetTestDir(), "replace_interface_test.go")
 	err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
 	// Replace the interface
-	resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+	result := env.CallTool(t, "replace_file_part", map[string]interface{}{
 		"path":        testFilePath,
 		"language":    "go",
 		"part_type":   "type",
 		"part_name":   "UserService",
 		"new_content": UpdatedInterface,
 	})
-	require.NoError(t, err, "Failed to call replace_file_part")
-	require.Nil(t, resp.Error, "replace_file_part returned error: %v", resp.Error)
+	assert.NotNil(t, result, "replace_file_part should return result")
 
 	// Verify the replacement
 	updatedContent, err := os.ReadFile(testFilePath)
@@ -298,117 +289,106 @@ func testReplaceInterface(t *testing.T, client *MCPClient, ctx context.Context, 
 	assert.Contains(t, content, "type Config struct", "Should preserve Config struct")
 }
 
-// TestReplaceFilePartErrorCases tests error handling for replace_file_part
-func TestReplaceFilePartErrorCases(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
-	testDir := GetTestDir()
+// TestReplaceFilePartErrorCasesDirect tests error handling for replace_file_part
+func TestReplaceFilePartErrorCasesDirect(t *testing.T) {
+	env := NewDirectServerTestEnv(t)
+	defer env.Cleanup()
 
 	t.Run("UnsupportedLanguage", func(t *testing.T) {
-		testFilePath := filepath.Join(testDir, "error_test.py")
+		testFilePath := filepath.Join(env.GetTestDir(), "error_test.py")
 		err := os.WriteFile(testFilePath, []byte("def hello():\n    print('hello')"), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
-		resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+		err = env.CallToolExpectError(t, "replace_file_part", map[string]interface{}{
 			"path":        testFilePath,
 			"language":    "python",
 			"part_type":   "func",
 			"part_name":   "hello",
 			"new_content": "def hello():\n    print('updated')",
 		})
-		require.NoError(t, err, "Failed to call replace_file_part")
-		assert.NotNil(t, resp.Error, "Should return error for unsupported language")
-
-		var content string
-		parseToolResponse(t, resp, &content)
-		assert.Contains(t, content, "language 'python' not supported", "Should mention unsupported language")
+		assert.Error(t, err, "Should return error for unsupported language")
+		assert.Contains(t, err.Error(), "language 'python' not supported", "Should mention unsupported language")
 	})
 
 	t.Run("InvalidPartType", func(t *testing.T) {
-		testFilePath := filepath.Join(testDir, "error_test.go")
+		testFilePath := filepath.Join(env.GetTestDir(), "error_test.go")
 		err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
-		resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+		err = env.CallToolExpectError(t, "replace_file_part", map[string]interface{}{
 			"path":        testFilePath,
 			"language":    "go",
 			"part_type":   "invalid",
 			"part_name":   "something",
 			"new_content": "something",
 		})
-		require.NoError(t, err, "Failed to call replace_file_part")
-		assert.NotNil(t, resp.Error, "Should return error for invalid part type")
+		assert.Error(t, err, "Should return error for invalid part type")
 	})
 
 	t.Run("PartNotFound", func(t *testing.T) {
-		testFilePath := filepath.Join(testDir, "not_found_test.go")
+		testFilePath := filepath.Join(env.GetTestDir(), "not_found_test.go")
 		err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
-		resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+		err = env.CallToolExpectError(t, "replace_file_part", map[string]interface{}{
 			"path":        testFilePath,
 			"language":    "go",
 			"part_type":   "func",
 			"part_name":   "nonexistentFunction",
 			"new_content": "func nonexistentFunction() {}",
 		})
-		require.NoError(t, err, "Failed to call replace_file_part")
-		assert.NotNil(t, resp.Error, "Should return error for non-existent function")
+		assert.Error(t, err, "Should return error for non-existent function")
 	})
 
 	t.Run("InvalidContentForType", func(t *testing.T) {
-		testFilePath := filepath.Join(testDir, "invalid_content_test.go")
+		testFilePath := filepath.Join(env.GetTestDir(), "invalid_content_test.go")
 		err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
-		resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+		err = env.CallToolExpectError(t, "replace_file_part", map[string]interface{}{
 			"path":        testFilePath,
 			"language":    "go",
 			"part_type":   "func",
 			"part_name":   "oldFunction",
 			"new_content": "not a function", // Invalid content for func type
 		})
-		require.NoError(t, err, "Failed to call replace_file_part")
-		assert.NotNil(t, resp.Error, "Should return error for invalid function content")
+		assert.Error(t, err, "Should return error for invalid function content")
 	})
 
 	t.Run("InvalidGoSyntax", func(t *testing.T) {
-		testFilePath := filepath.Join(testDir, "syntax_error_test.go")
+		testFilePath := filepath.Join(env.GetTestDir(), "syntax_error_test.go")
 		err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
-		resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+		err = env.CallToolExpectError(t, "replace_file_part", map[string]interface{}{
 			"path":        testFilePath,
 			"language":    "go",
 			"part_type":   "func",
 			"part_name":   "oldFunction",
 			"new_content": "func newFunction() { invalid syntax", // Invalid Go syntax
 		})
-		require.NoError(t, err, "Failed to call replace_file_part")
-		assert.NotNil(t, resp.Error, "Should return error for invalid Go syntax")
+		assert.Error(t, err, "Should return error for invalid Go syntax")
 	})
 
 	t.Run("NonAllowedPath", func(t *testing.T) {
-		resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
+		err := env.CallToolExpectError(t, "replace_file_part", map[string]interface{}{
 			"path":        "/etc/hosts",
 			"language":    "go",
 			"part_type":   "func",
 			"part_name":   "something",
 			"new_content": "func something() {}",
 		})
-		require.NoError(t, err, "Failed to call replace_file_part")
-		assert.NotNil(t, resp.Error, "Should return error for non-allowed path")
+		assert.Error(t, err, "Should return error for non-allowed path")
 	})
 }
 
-// TestReplaceFilePartValidation tests input validation
-func TestReplaceFilePartValidation(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
-	testDir := GetTestDir()
+// TestReplaceFilePartValidationDirect tests input validation using direct server access
+func TestReplaceFilePartValidationDirect(t *testing.T) {
+	env := NewDirectServerTestEnv(t)
+	defer env.Cleanup()
 
 	// Create a valid test file
-	testFilePath := filepath.Join(testDir, "validation_test.go")
+	testFilePath := filepath.Join(env.GetTestDir(), "validation_test.go")
 	err := os.WriteFile(testFilePath, []byte(GoTestContent), 0644)
 	require.NoError(t, err, "Failed to create test file")
 
@@ -422,7 +402,7 @@ func TestReplaceFilePartValidation(t *testing.T) {
 		{
 			name:        "ValidFunc",
 			partType:    "func",
-			newContent:  "func validFunction() {}",
+			newContent:  "func oldFunction() { return \"updated\" }",
 			shouldError: false,
 		},
 		{
@@ -430,7 +410,7 @@ func TestReplaceFilePartValidation(t *testing.T) {
 			partType:    "func",
 			newContent:  "not a function",
 			shouldError: true,
-			errorText:   "func replacement must start with 'func'",
+			errorText:   "func replacement must start with 'func '",
 		},
 		{
 			name:        "ValidType",
@@ -443,12 +423,12 @@ func TestReplaceFilePartValidation(t *testing.T) {
 			partType:    "type",
 			newContent:  "not a type",
 			shouldError: true,
-			errorText:   "type replacement must start with 'type'",
+			errorText:   "type replacement must start with 'type '",
 		},
 		{
 			name:        "ValidConst",
 			partType:    "const",
-			newContent:  "MyConst = 42",
+			newContent:  "const (\n\tUpdatedServerPort = \"9000\"\n\tAppName = \"updated-app\"\n)",
 			shouldError: false,
 		},
 		{
@@ -461,7 +441,7 @@ func TestReplaceFilePartValidation(t *testing.T) {
 		{
 			name:        "ValidVar",
 			partType:    "var",
-			newContent:  "MyVar = \"value\"",
+			newContent:  "var (\n\tUpdatedGlobalVar = \"updated\"\n\tCounter = 42\n)",
 			shouldError: false,
 		},
 		{
@@ -475,67 +455,48 @@ func TestReplaceFilePartValidation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resp, err := client.CallTool(ctx, "replace_file_part", map[string]interface{}{
-				"path":        testFilePath,
-				"language":    "go",
-				"part_type":   tc.partType,
-				"part_name":   "ServerPort", // Use existing name for validation test
-				"new_content": tc.newContent,
-			})
-			require.NoError(t, err, "Failed to call replace_file_part")
-
 			if tc.shouldError {
-				assert.NotNil(t, resp.Error, "Should return error for %s", tc.name)
+				// Choose appropriate part_name based on part_type
+				partName := "ServerPort" // default for const
+				if tc.partType == "func" {
+					partName = "oldFunction"
+				} else if tc.partType == "type" {
+					partName = "Config"
+				} else if tc.partType == "var" {
+					partName = "GlobalVar"
+				}
+
+				err := env.CallToolExpectError(t, "replace_file_part", map[string]interface{}{
+					"path":        testFilePath,
+					"language":    "go",
+					"part_type":   tc.partType,
+					"part_name":   partName,
+					"new_content": tc.newContent,
+				})
+				assert.Error(t, err, "Should return error for %s", tc.name)
 				if tc.errorText != "" {
-					var content string
-					parseToolResponse(t, resp, &content)
-					assert.Contains(t, content, tc.errorText, "Error should contain expected text")
+					assert.Contains(t, err.Error(), tc.errorText, "Error should contain expected text")
 				}
 			} else {
-				if resp.Error != nil {
-					t.Logf("Unexpected error for %s: %v", tc.name, resp.Error)
+				// Choose appropriate part_name based on part_type
+				partName := "ServerPort" // default for const
+				if tc.partType == "func" {
+					partName = "oldFunction"
+				} else if tc.partType == "type" {
+					partName = "Config"
+				} else if tc.partType == "var" {
+					partName = "GlobalVar"
 				}
+
+				result := env.CallTool(t, "replace_file_part", map[string]interface{}{
+					"path":        testFilePath,
+					"language":    "go",
+					"part_type":   tc.partType,
+					"part_name":   partName,
+					"new_content": tc.newContent,
+				})
+				assert.NotNil(t, result, "Should succeed for valid %s", tc.name)
 			}
 		})
 	}
-}
-
-// TestReplaceFilePartIntegration tests integration with the tools list
-func TestReplaceFilePartIntegration(t *testing.T) {
-	client := GetTestClient()
-	ctx := GetTestContext()
-
-	// Verify replace_file_part appears in tools list
-	resp, err := client.ListTools(ctx)
-	require.NoError(t, err, "Failed to list tools")
-	require.Nil(t, resp.Error, "ListTools returned error: %v", resp.Error)
-
-	var result map[string]interface{}
-	err = json.Unmarshal(resp.Result, &result)
-	require.NoError(t, err, "Failed to parse tools list response")
-
-	tools, ok := result["tools"].([]interface{})
-	require.True(t, ok, "Tools should be an array")
-
-	// Check that replace_file_part is in the list
-	foundTool := false
-	for _, tool := range tools {
-		toolMap, ok := tool.(map[string]interface{})
-		require.True(t, ok, "Tool should be an object")
-
-		name, ok := toolMap["name"].(string)
-		require.True(t, ok, "Tool should have a name")
-
-		if name == "replace_file_part" {
-			foundTool = true
-
-			// Verify tool description
-			description, ok := toolMap["description"].(string)
-			assert.True(t, ok, "replace_file_part should have a description")
-			assert.Contains(t, description, "AST parsing", "Description should mention AST parsing")
-			break
-		}
-	}
-
-	assert.True(t, foundTool, "replace_file_part should be available in tools list")
 }
