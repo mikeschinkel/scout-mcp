@@ -152,8 +152,8 @@ func (sm *Sessions) ClearExpiredSessions() {
 	}
 }
 
-// ClearAllSessions removes all sessions (used on server restart)
-func (sm *Sessions) ClearAllSessions() {
+// ClearSessions removes all sessions (used on server restart)
+func (sm *Sessions) ClearSessions() {
 	sm.mutex.Lock()
 	sm.sessions = make(map[string]*Session)
 	sm.mutex.Unlock()
