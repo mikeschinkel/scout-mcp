@@ -114,9 +114,18 @@ func (c *Config) ServerName() string {
 	return ServerName
 }
 
-func (c *Config) ToMap() (map[string]any, error) {
-	//TODO implement me
-	panic("implement me")
+func (c *Config) ToMap() (m map[string]any, err error) {
+	var b []byte
+	b, err = json.Marshal(c)
+	if err != nil {
+		goto end
+	}
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		goto end
+	}
+end:
+	return m, err
 }
 
 // JSONConfig for serialization (exported fields)
