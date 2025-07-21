@@ -62,8 +62,8 @@ func GetSessions() *Sessions {
 	return sessions
 }
 
-// CreateSession creates a new session and returns the token
-func (sm *Sessions) CreateSession() (token string, expiresAt time.Time, err error) {
+// NewSession creates a new session and returns the token
+func (sm *Sessions) NewSession() (token string, expiresAt time.Time, err error) {
 	var tokenBytes []byte
 
 	// Generate random token
