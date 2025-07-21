@@ -8,7 +8,7 @@ import (
 
 // MockRequest implements mcputil.ToolRequest for testing
 type MockRequest struct {
-	params map[string]interface{}
+	params map[string]any
 }
 
 func (m *MockRequest) RequireString(key string) (string, error) {
@@ -98,13 +98,22 @@ func (m *MockRequest) GetFloat(key string, defaultValue float64) float64 {
 	return defaultValue
 }
 
-func (m *MockRequest) GetArray(key string, defaultValue []any) []any {
-	if val, exists := m.params[key]; exists {
-		if arr, ok := val.([]any); ok {
-			return arr
-		}
+func (m *MockRequest) GetArray(key string, defaultValue []any) (a []any) {
+	var ok bool
+	var arr []any
+	var val any
+
+	a = defaultValue
+	val, ok = m.params[key]
+	if !ok {
+		goto end
 	}
-	return defaultValue
+	arr = convertSlice(val)
+	if arr != nil {
+		a = arr
+	}
+end:
+	return a
 }
 
 func (m *MockRequest) GetArguments() map[string]any {
