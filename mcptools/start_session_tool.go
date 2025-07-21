@@ -39,7 +39,7 @@ func (t *StartSessionTool) EnsurePreconditions(req mcputil.ToolRequest) (err err
 var instructionsMsg string
 
 func (t *StartSessionTool) Handle(_ context.Context, _ mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
-	var sessionManager *Sessions
+	var ss *Sessions
 	var token string
 	var expiresAt time.Time
 	var response SessionResponse
@@ -50,8 +50,8 @@ func (t *StartSessionTool) Handle(_ context.Context, _ mcputil.ToolRequest) (res
 	logger.Info("Tool called", "tool", "start_session")
 
 	// Get session manager and create new session
-	sessionManager = GetSessions()
-	token, expiresAt, err = sessionManager.CreateSession()
+	ss = GetSessions()
+	token, expiresAt, err = ss.NewSession()
 	if err != nil {
 		result = mcputil.NewToolResultError(fmt.Errorf("failed to create session: %v", err))
 		goto end
