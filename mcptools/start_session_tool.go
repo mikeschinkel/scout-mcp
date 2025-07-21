@@ -349,7 +349,8 @@ func getDefaultExtensionMappings() map[string]string {
 }
 
 // Helper functions for property information (simplified versions from tool_help)
-func getPropertyType(prop mcputil.Property) string {
+func getPropertyType(_ mcputil.Property) string {
+	panic("IMPLEMENT ME")
 	// This is a simplified version - you may need to implement based on your property types
 	return "string" // Default, should be enhanced based on actual property type
 }
