@@ -40,14 +40,14 @@ func (t *DeleteFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		goto end
 	}
 
-	startLine, err = getNumberAsInt(req, "start_line")
+	startLine, err = getNumberAsInt(req, "start_line", true)
 	if err != nil {
 		err = fmt.Errorf("start_line must be a valid number: %w", err)
 		goto end
 	}
 
 	// TODO Make sure endLine defaults to startLine
-	endLine, err = getNumberAsInt(req, "end_line")
+	endLine, err = getNumberAsInt(req, "end_line", true)
 	if err != nil {
 		err = fmt.Errorf("end_line must be a valid number: %w", err)
 		goto end

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"strconv"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"golang.org/x/text/cases"
@@ -18,14 +17,12 @@ func getStringSlice(req mcputil.ToolRequest, prop string) ([]string, error) {
 	return convertSlice[string](req.GetArray(prop, nil))
 }
 
-func getNumberAsInt(req mcputil.ToolRequest, prop string) (n int, err error) {
-	var s string
-	s, err = req.RequireString(prop)
-	if err != nil {
+func getNumberAsInt(req mcputil.ToolRequest, prop string, nonZero bool) (n int, err error) {
+	n = req.GetInt(prop, 0)
+	if n != 0 {
 		goto end
 	}
-	n, err = strconv.Atoi(s)
-	if err != nil {
+	if nonZero {
 		err = fmt.Errorf("'%s' must be a valid number: %w", prop, err)
 		goto end
 	}
