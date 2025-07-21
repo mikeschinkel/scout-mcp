@@ -26,7 +26,7 @@ type GetConfigTool struct {
 	*toolBase
 }
 
-func (t *GetConfigTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+func (t *GetConfigTool) Handle(_ context.Context, _ mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var config ConfigInfo
 
 	logger.Info("Tool called", "tool", "get_config")
