@@ -19,6 +19,7 @@ type toolBase struct {
 }
 
 func newToolBase(options mcputil.ToolOptions) *toolBase {
+	options.Name = strings.ToLower(options.Name)
 	return &toolBase{
 		options: options,
 	}
