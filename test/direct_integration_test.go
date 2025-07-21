@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -236,7 +237,7 @@ func TestFileOperationsDirect(t *testing.T) {
 		testContent := "This is a test file created by direct integration test"
 
 		// Remove file if it exists
-		os.Remove(testFilePath)
+		testutil.Must(t, os.Remove(testFilePath))
 
 		result := env.CallTool(t, "create_file", map[string]interface{}{
 			"filepath":    testFilePath,

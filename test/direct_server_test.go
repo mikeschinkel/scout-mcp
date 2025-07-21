@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	scout "github.com/mikeschinkel/scout-mcp"
+	"github.com/mikeschinkel/scout-mcp"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"github.com/mikeschinkel/scout-mcp/testutil"
@@ -90,7 +90,7 @@ func NewDirectServerTestEnv(t *testing.T) *DirectServerTestEnv {
 	// Setup cleanup
 	cleanup := func() {
 		if testDir != "" {
-			os.RemoveAll(testDir)
+			testutil.Must(t, os.RemoveAll(testDir))
 		}
 	}
 
