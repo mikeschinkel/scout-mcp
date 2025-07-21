@@ -1,13 +1,8 @@
 package mcptools_test
 
 import (
-	"maps"
-	"slices"
-
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 )
-
-var toolNames = slices.Collect(maps.Keys(toolNamesMap))
 
 // Create set of expected tools
 var toolNamesMap = map[string]struct{}{
