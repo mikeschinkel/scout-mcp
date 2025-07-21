@@ -439,3 +439,44 @@ MIT
 ## TODO (notes for me and Claude)
 
 - Add capability to specify where the logs go, via environment variable, via CLI switch, and/or via config file. And I want it to be easy to say "In the current directory" or in the `./log` directory.
+
+### JSON Schema
+# TODO: JSON Schema Support for MCP Tools
+
+## Requirements
+
+### Core Implementation
+- [ ] Add `Schema() map[string]any` method to Tool interface
+- [ ] Generate JSON Schema from existing `Properties` structures (don't duplicate definitions)
+- [ ] Return schema in MCP `list_tools` response for protocol compliance
+
+### Schema Features
+- [ ] **Type validation**: string, number, boolean, array, object types
+- [ ] **Required vs optional parameters**: Mark session_token and core params as required
+- [ ] **Default values**: Specify defaults for optional parameters (e.g., recursive: false)
+- [ ] **Parameter descriptions**: Human-readable descriptions for each parameter
+- [ ] **Array item types**: Specify types for array elements (e.g., paths array contains strings)
+
+### Tool-Specific Schema Requirements
+- [ ] **start_session**: No required parameters, returns session_token
+- [ ] **read_files**: paths (required string array), session_token (required string)
+- [ ] **search_files**: path (required string), pattern/extensions (optional), session_token (required)
+- [ ] **File editing tools**: filepath + content + session_token (all required)
+- [ ] **All tools except start_session**: session_token parameter marked as required
+
+### Integration Benefits
+- [ ] **Client validation**: Parameters validated before sending to server
+- [ ] **Auto-completion**: IDEs and Claude Desktop can suggest parameters
+- [ ] **Documentation**: tool_help can generate parameter docs from schema
+- [ ] **Error messages**: Better validation errors for malformed requests
+
+### Implementation Strategy
+- [ ] Generate schema from existing Properties rather than hand-coding
+- [ ] Keep Go-native Properties for internal use, schema for MCP protocol
+- [ ] Add schema validation tests alongside existing unit tests
+- [ ] Ensure backward compatibility with current tool implementations
+
+### Future Considerations
+- [ ] Schema versioning if tool parameters evolve
+- [ ] Complex validation rules (e.g., path whitelist validation in schema)
+- [ ] Conditional parameters (e.g., recursive only valid for directory operations)
