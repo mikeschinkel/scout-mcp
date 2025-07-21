@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+var NULL struct{}
+
 type RelativePosition string
 
 const (
