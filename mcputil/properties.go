@@ -12,6 +12,7 @@ type Property interface {
 
 type propertyEmbed interface {
 	GetName() string
+	GetType() PropertyType
 	Required() Property
 	Name(string) Property
 	Description(string) Property
@@ -34,6 +35,10 @@ func (p *property) Property() {}
 
 func (p *property) GetName() string {
 	return p.name
+}
+
+func (p *property) GetType() PropertyType {
+	return p.dataType
 }
 
 func (p *property) PropertyOptions() []PropertyOption {

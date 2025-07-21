@@ -114,7 +114,7 @@ func (t *StartSessionTool) generateToolHelp() (helpText string, err error) {
 			helpText += "### Parameters\n\n"
 			for _, prop = range options.Properties {
 				propOptions = prop.PropertyOptions()
-				helpText += fmt.Sprintf("- **%s** (%s)", prop.GetName(), getPropertyType(prop))
+				helpText += fmt.Sprintf("- **%s** (%s)", prop.GetName(), prop.GetType())
 
 				// Check if required
 				for _, opt := range propOptions {
@@ -346,13 +346,6 @@ func getDefaultExtensionMappings() map[string]string {
 		".h":    "c",
 		".hpp":  "cpp",
 	}
-}
-
-// Helper functions for property information (simplified versions from tool_help)
-func getPropertyType(_ mcputil.Property) string {
-	panic("IMPLEMENT ME")
-	// This is a simplified version - you may need to implement based on your property types
-	return "string" // Default, should be enhanced based on actual property type
 }
 
 func getPropertyDescription(prop mcputil.Property) string {
