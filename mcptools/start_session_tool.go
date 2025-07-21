@@ -29,7 +29,7 @@ type StartSessionTool struct {
 }
 
 // EnsurePreconditions bypasses session validation for start_session but runs other preconditions
-func (t *StartSessionTool) EnsurePreconditions(req mcputil.ToolRequest) (err error) {
+func (t *StartSessionTool) EnsurePreconditions(_ mcputil.ToolRequest) (err error) {
 	// start_session tool doesn't require any preconditions
 	// Future non-session preconditions could be added here if needed
 	return nil
