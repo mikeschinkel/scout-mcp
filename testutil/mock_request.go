@@ -12,13 +12,25 @@ type MockRequest struct {
 	params map[string]any
 }
 
-func (m *MockRequest) RequireString(key string) (string, error) {
-	if val, exists := m.params[key]; exists {
-		if str, ok := val.(string); ok {
-			return str, nil
-		}
+func (m *MockRequest) RequireString(key string) (result string, err error) {
+	var val any
+	var exists bool
+	var ok bool
+
+	val, exists = m.params[key]
+	if !exists {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
 	}
-	return "", fmt.Errorf("required argument %q not found", key)
+
+	result, ok = val.(string)
+	if !ok {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
+	}
+
+end:
+	return result, err
 }
 
 func (m *MockRequest) RequireInt(key string) (result int, err error) {
@@ -64,22 +76,46 @@ end:
 	return result, err
 }
 
-func (m *MockRequest) RequireBool(key string) (bool, error) {
-	if val, exists := m.params[key]; exists {
-		if b, ok := val.(bool); ok {
-			return b, nil
-		}
+func (m *MockRequest) RequireBool(key string) (result bool, err error) {
+	var val any
+	var exists bool
+	var ok bool
+
+	val, exists = m.params[key]
+	if !exists {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
 	}
-	return false, fmt.Errorf("required argument %q not found", key)
+
+	result, ok = val.(bool)
+	if !ok {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
+	}
+
+end:
+	return result, err
 }
 
-func (m *MockRequest) RequireFloat(key string) (float64, error) {
-	if val, exists := m.params[key]; exists {
-		if f, ok := val.(float64); ok {
-			return f, nil
-		}
+func (m *MockRequest) RequireFloat(key string) (result float64, err error) {
+	var val any
+	var exists bool
+	var ok bool
+
+	val, exists = m.params[key]
+	if !exists {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
 	}
-	return 0, fmt.Errorf("required argument %q not found", key)
+
+	result, ok = val.(float64)
+	if !ok {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
+	}
+
+end:
+	return result, err
 }
 
 func (m *MockRequest) GetString(key, defaultValue string) string {
@@ -147,13 +183,25 @@ func (m *MockRequest) GetArguments() map[string]any {
 	return m.params
 }
 
-func (m *MockRequest) RequireArray(key string) ([]any, error) {
-	if val, exists := m.params[key]; exists {
-		if arr, ok := val.([]any); ok {
-			return arr, nil
-		}
+func (m *MockRequest) RequireArray(key string) (result []any, err error) {
+	var val any
+	var exists bool
+	var ok bool
+
+	val, exists = m.params[key]
+	if !exists {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
 	}
-	return nil, fmt.Errorf("required argument %q not found", key)
+
+	result, ok = val.([]any)
+	if !ok {
+		err = fmt.Errorf("required argument %q not found", key)
+		goto end
+	}
+
+end:
+	return result, err
 }
 
 // NewMockRequest creates a mock request with the specified parameters
