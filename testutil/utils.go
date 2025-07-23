@@ -2,6 +2,8 @@ package testutil
 
 import (
 	"context"
+	"io/fs"
+	"os"
 	"testing"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
@@ -14,9 +16,20 @@ func CallTool(tool mcputil.Tool, req mcputil.ToolRequest) (mcputil.ToolResult, e
 	return tool.Handle(context.Background(), req)
 }
 
-// Must wraps calls that return an error and only an error and throws logs the error if it occurs
-func Must(t *testing.T, err error) {
-	if err != nil {
-		t.Error(err)
+// MaybeRemove wraps calls to os.Remove and logs errors that are other than not-exists
+func MaybeRemove(t *testing.T, fp string) {
+	var ok bool
+
+	t.Helper()
+	err := os.Remove(fp)
+	if err == nil {
+		goto end
 	}
+	_, ok = err.(*fs.PathError)
+	if ok {
+		goto end
+	}
+
+	t.Error(err)
+end:
 }

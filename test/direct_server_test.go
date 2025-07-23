@@ -90,7 +90,7 @@ func NewDirectServerTestEnv(t *testing.T) *DirectServerTestEnv {
 	// Setup cleanup
 	cleanup := func() {
 		if testDir != "" {
-			testutil.Must(t, os.RemoveAll(testDir))
+			testutil.MaybeRemove(t, testDir)
 		}
 	}
 

@@ -236,8 +236,8 @@ func TestFileOperationsDirect(t *testing.T) {
 		testFilePath := filepath.Join(env.GetTestDir(), "created_file.txt")
 		testContent := "This is a test file created by direct integration test"
 
-		// Remove file if it exists
-		testutil.Must(t, os.Remove(testFilePath))
+		// Remove file if it exists (ignore error if file doesn't exist)
+		testutil.MaybeRemove(t, testFilePath)
 
 		result := env.CallTool(t, "create_file", map[string]interface{}{
 			"filepath":    testFilePath,

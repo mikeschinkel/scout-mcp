@@ -41,7 +41,7 @@ func SetupUnitTest(t *testing.T, env Environment) (tempDir string, cleanup func(
 	require.NoError(t, err, "Failed to create Go test file")
 
 	cleanup = func() {
-		must(t, os.RemoveAll(tempDir))
+		MaybeRemove(t, tempDir)
 	}
 
 	return tempDir, cleanup
