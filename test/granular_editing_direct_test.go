@@ -271,7 +271,7 @@ func testInsertAtPatternDirect(t *testing.T, env *DirectServerTestEnv) {
 func testDeleteFileLinesDirect(t *testing.T, env *DirectServerTestEnv) {
 	t.Run("DeleteSingleLine", func(t *testing.T) {
 		// Create a test file with numbered lines
-		testFilePath := filepath.Join(env.GetTestDir(), "delete_single_test.txt")
+		testFilePath := filepath.Join(env.GetTestDir(), "single_"+DeleteTestFile)
 		err := os.WriteFile(testFilePath, []byte(DeleteTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
@@ -294,7 +294,7 @@ func testDeleteFileLinesDirect(t *testing.T, env *DirectServerTestEnv) {
 
 	t.Run("DeleteLineRange", func(t *testing.T) {
 		// Create a fresh test file with numbered lines
-		testFilePath := filepath.Join(env.GetTestDir(), "delete_range_test.txt")
+		testFilePath := filepath.Join(env.GetTestDir(), "range_"+DeleteTestFile)
 		err := os.WriteFile(testFilePath, []byte(DeleteTestContent), 0644)
 		require.NoError(t, err, "Failed to create test file")
 
