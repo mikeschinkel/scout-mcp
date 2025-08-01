@@ -15,6 +15,34 @@ var (
 	operationsProperty  = mcputil.Array("operations", "Operations approved (create, update, delete)", mcputil.DefaultArray[string]{})
 )
 
+type FileAction struct {
+	Action  string `json:"action"`  // create, update, delete
+	Path    string `json:"path"`    // file path
+	Purpose string `json:"purpose"` // why this file is being modified
+}
+
+func (fa FileAction) Icon() string {
+	switch fa.Action {
+	case "create":
+		return "✨"
+	case "update", "modify":
+		return "📝"
+	case "delete":
+		return "🗑️"
+	case "move", "rename":
+		return "📦"
+	default:
+		return "📄"
+	}
+}
+
+type TokenRequest struct {
+	FileActions []FileAction
+	Operations  []string
+	SessionID   string
+	ExpiresIn   time.Duration
+}
+
 func init() {
 	mcputil.RegisterTool(&GenerateApprovalTokenTool{
 		toolBase: newToolBase(mcputil.ToolOptions{

@@ -13,6 +13,14 @@ import (
 
 var _ mcputil.Tool = (*SearchFilesTool)(nil)
 
+type FileSearchResult struct {
+	Path     string `json:"path"`
+	Name     string `json:"name"`
+	Size     int64  `json:"size"`
+	Modified string `json:"modified"`
+	IsDir    bool   `json:"is_directory"`
+}
+
 func init() {
 	mcputil.RegisterTool(&SearchFilesTool{
 		toolBase: newToolBase(mcputil.ToolOptions{

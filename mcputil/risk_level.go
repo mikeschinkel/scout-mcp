@@ -1,4 +1,9 @@
-package mcptools
+package mcputil
+
+import (
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+)
 
 type RiskLevel string
 
@@ -7,14 +12,14 @@ func (r RiskLevel) String() string {
 }
 
 func (r RiskLevel) TitleCase() string {
-	return titleCase(string(r))
+	return cases.Title(language.English).String(string(r))
 }
 
 const LowRisk RiskLevel = "low"
 const MediumRisk RiskLevel = "medium"
 const HighRisk RiskLevel = "high"
 
-func getRiskIcon(rl RiskLevel) string {
+func GetRiskIcon(rl RiskLevel) string {
 	switch rl {
 	case LowRisk:
 		return "🟢"
