@@ -1,4 +1,4 @@
-package mcptools_test
+package testutil
 
 import (
 	"os"
@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/mikeschinkel/scout-mcp/mcptools"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 type TestFixture struct {
 	DirPrefix       string
 	tempDir         string
-	token           string
 	ProjectFixtures []*ProjectFixture
 	FileFixtures    []*FileFixture
 	cleanupFunc     func()
@@ -25,7 +23,6 @@ type TestFixture struct {
 func NewTestFixture(dirPrefix string) *TestFixture {
 	return &TestFixture{
 		DirPrefix:       dirPrefix,
-		token:           "test-session-token", // Unit tests don't validate tokens
 		ProjectFixtures: []*ProjectFixture{},
 		FileFixtures:    []*FileFixture{},
 	}
@@ -49,7 +46,7 @@ func (tf *TestFixture) AddFileFixture(name string, args FileFixtureArgs) *FileFi
 func (tf *TestFixture) Setup(t *testing.T) {
 	t.Helper()
 
-	mcptools.SetLogger(testutil.QuietLogger())
+	mcptools.SetLogger(QuietLogger())
 
 	// Create temp directory (this can fail, so it belongs in Setup)
 	var err error

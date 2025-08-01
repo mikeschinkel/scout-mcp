@@ -2,20 +2,19 @@ package mcptools_test
 
 import (
 	"encoding/json"
-	"log"
 	"testing"
 	"time"
 
+	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func must(err error) {
-	if err != nil {
-		log.Print(err.Error())
-	}
-}
+var testToken = "test-session-Token" // Unit tests don't validate tokens
+
+// Create set of expected tools
+var toolNamesMap = mcptools.ToolNamesMap
 
 func withinTimeframe(t *testing.T, t1, t2 time.Time, d time.Duration) bool {
 	t.Helper()

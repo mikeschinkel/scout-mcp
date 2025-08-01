@@ -51,7 +51,16 @@ func (t *ToolHelpTool) Handle(_ context.Context, req mcputil.ToolRequest) (resul
 		logger.Info("Tool completed", "tool", "help", "type", "tool_specific", "requested_tool", toolName)
 	}
 
-	result = mcputil.NewToolResultText(helpContent)
+	result = mcputil.NewToolResultJSON(map[string]any{
+		"tool":    toolName,
+		"content": helpContent,
+		"type": func() string {
+			if toolName == "" {
+				return "full_documentation"
+			}
+			return "tool_specific"
+		}(),
+	})
 
 end:
 	return result, err
@@ -131,7 +140,7 @@ func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
 	helpText = "Tool '" + toolName + "' not found.\n\n"
 	helpText += "Available tools:\n"
 
-	for _, tool := range availableTools {
+	for _, tool := range AvailableTools {
 		helpText += "- " + tool + "\n"
 	}
 

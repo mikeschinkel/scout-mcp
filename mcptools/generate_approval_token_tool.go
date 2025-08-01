@@ -11,8 +11,8 @@ import (
 var _ mcputil.Tool = (*GenerateApprovalTokenTool)(nil)
 
 var (
-	fileActionsProperty = mcputil.Array("file_actions", "File actions approved")
-	operationsProperty  = mcputil.Array("operations", "Operations approved (create, update, delete)")
+	fileActionsProperty = mcputil.Array("file_actions", "File actions approved", mcputil.DefaultArray[FileAction]{})
+	operationsProperty  = mcputil.Array("operations", "Operations approved (create, update, delete)", mcputil.DefaultArray[string]{})
 )
 
 func init() {
@@ -22,8 +22,8 @@ func init() {
 			Description: "Generate approval token after user confirmation",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				fileActionsProperty.Required(),
-				operationsProperty.Required(),
+				fileActionsProperty,
+				operationsProperty,
 			},
 		}),
 	})
@@ -66,7 +66,12 @@ func (t *GenerateApprovalTokenTool) Handle(_ context.Context, req mcputil.ToolRe
 		goto end
 	}
 
-	result = mcputil.NewToolResultText(fmt.Sprintf("✅ Approval token generated (expires in 1 hour)\n🔑 Token: %s", token))
+	result = mcputil.NewToolResultJSON(map[string]any{
+		"success":    true,
+		"token":      token,
+		"expires_in": "1 hour",
+		"message":    "Approval token generated successfully",
+	})
 
 end:
 	if err != nil {
@@ -76,7 +81,12 @@ end:
 	return result, err
 }
 
-func generateApprovalToken(_ TokenRequest) (token string, err error) {
-	// JWT token generation logic
+func generateApprovalToken(req TokenRequest) (token string, err error) {
+	// For now, generate a simple mock token
+	// In a real implementation, this would generate a proper JWT token
+	token = fmt.Sprintf("mock-approval-token-%d-ops-%d-files-%s",
+		len(req.Operations),
+		len(req.FileActions),
+		req.SessionID[:min(8, len(req.SessionID))])
 	return token, err
 }

@@ -3,6 +3,7 @@ package testutil
 import (
 	"context"
 	"io/fs"
+	"log"
 	"os"
 	"testing"
 
@@ -32,4 +33,10 @@ func MaybeRemove(t *testing.T, fp string) {
 
 	t.Error(err)
 end:
+}
+
+func must(err error) {
+	if err != nil {
+		log.Print(err.Error())
+	}
 }

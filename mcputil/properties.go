@@ -137,11 +137,10 @@ end:
 // default value is set and the property does not exist, we throw an error.
 func (p *property) AnySlice(tr ToolRequest) (s []any, err error) {
 	if p.required {
+		s, err = tr.RequireArray(p.name)
+	} else {
 		s = tr.GetArray(p.name, convertContainedSlice(p.Default()))
-		goto end
 	}
-	s, err = tr.RequireArray(p.name)
-end:
 	return s, err
 }
 

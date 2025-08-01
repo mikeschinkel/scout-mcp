@@ -134,7 +134,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	require.NotNil(t, tool, "detect_current_project tool should be registered")
 
 	t.Run("NoProjects", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
 		// No projects added - empty directory
 		tf.Setup(t)
@@ -143,7 +143,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -159,13 +159,13 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("SingleProjectWithGit", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
-		pf := tf.AddProjectFixture("my-project", ProjectFixtureArgs{
+		pf := tf.AddProjectFixture("my-project", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		pf.AddFileFixture("README.md", FileFixtureArgs{
+		pf.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:     "# Test Project",
 			Permissions: 0644,
 		})
@@ -175,7 +175,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -192,13 +192,13 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("SingleProjectIgnoreGit", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
-		pf := tf.AddProjectFixture("my-project-no-git", ProjectFixtureArgs{
+		pf := tf.AddProjectFixture("my-project-no-git", testutil.ProjectFixtureArgs{
 			HasGit:      false,
 			Permissions: 0755,
 		})
-		pf.AddFileFixture("package.json", FileFixtureArgs{
+		pf.AddFileFixture("package.json", testutil.FileFixtureArgs{
 			Content:     `{"name": "test"}`,
 			Permissions: 0644,
 		})
@@ -208,7 +208,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token":          tf.token,
+			"session_token":          testToken,
 			"ignore_git_requirement": true,
 		})
 
@@ -225,26 +225,26 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("MultipleProjectsClearWinner", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
 
 		// Create old project (48 hours ago)
-		oldPf := tf.AddProjectFixture("old-project", ProjectFixtureArgs{
+		oldPf := tf.AddProjectFixture("old-project", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		oldPf.AddFileFixture("README.md", FileFixtureArgs{
+		oldPf.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:      "# Old Project",
 			Permissions:  0644,
 			ModifiedTime: time.Now().Add(-48 * time.Hour),
 		})
 
 		// Create recent project (current time)
-		recentPf := tf.AddProjectFixture("recent-project", ProjectFixtureArgs{
+		recentPf := tf.AddProjectFixture("recent-project", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		recentPf.AddFileFixture("README.md", FileFixtureArgs{
+		recentPf.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:      "# Recent Project",
 			Permissions:  0644,
 			ModifiedTime: time.Now(),
@@ -256,7 +256,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -276,26 +276,26 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("MultipleRecentProjects", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
 
 		// Create project 1 (1 hour ago)
-		pf1 := tf.AddProjectFixture("project-1", ProjectFixtureArgs{
+		pf1 := tf.AddProjectFixture("project-1", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		pf1.AddFileFixture("README.md", FileFixtureArgs{
+		pf1.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:      "# Project 1",
 			Permissions:  0644,
 			ModifiedTime: time.Now().Add(-1 * time.Hour),
 		})
 
 		// Create project 2 (2 hours ago)
-		pf2 := tf.AddProjectFixture("project-2", ProjectFixtureArgs{
+		pf2 := tf.AddProjectFixture("project-2", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		pf2.AddFileFixture("README.md", FileFixtureArgs{
+		pf2.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:      "# Project 2",
 			Permissions:  0644,
 			ModifiedTime: time.Now().Add(-2 * time.Hour),
@@ -307,7 +307,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -327,25 +327,25 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("SkipHiddenDirectories", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
 
 		// Create a hidden directory (should be ignored)
-		hiddenPf := tf.AddProjectFixture(".hidden-project", ProjectFixtureArgs{
+		hiddenPf := tf.AddProjectFixture(".hidden-project", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		hiddenPf.AddFileFixture("README.md", FileFixtureArgs{
+		hiddenPf.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:     "# Hidden Project",
 			Permissions: 0644,
 		})
 
 		// Create a normal project directory
-		normalPf := tf.AddProjectFixture("normal-project", ProjectFixtureArgs{
+		normalPf := tf.AddProjectFixture("normal-project", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		normalPf.AddFileFixture("README.md", FileFixtureArgs{
+		normalPf.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:     "# Normal Project",
 			Permissions: 0644,
 		})
@@ -356,7 +356,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -373,28 +373,28 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("MultipleRootPathsAllowed", func(t *testing.T) {
-		tf1 := NewTestFixture(DirPrefix)
+		tf1 := testutil.NewTestFixture(DirPrefix)
 		defer tf1.Cleanup()
-		tf2 := NewTestFixture(DirPrefix)
+		tf2 := testutil.NewTestFixture(DirPrefix)
 		defer tf2.Cleanup()
 
 		// Create project in first directory (most recent)
-		pf1 := tf1.AddProjectFixture("project-in-dir1", ProjectFixtureArgs{
+		pf1 := tf1.AddProjectFixture("project-in-dir1", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		pf1.AddFileFixture("README.md", FileFixtureArgs{
+		pf1.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:      "# Project 1",
 			Permissions:  0644,
 			ModifiedTime: time.Now(),
 		})
 
 		// Create project in second directory (older)
-		pf2 := tf2.AddProjectFixture("project-in-dir2", ProjectFixtureArgs{
+		pf2 := tf2.AddProjectFixture("project-in-dir2", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		pf2.AddFileFixture("README.md", FileFixtureArgs{
+		pf2.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:      "# Project 2",
 			Permissions:  0644,
 			ModifiedTime: time.Now().Add(-48 * time.Hour),
@@ -411,7 +411,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf1.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -431,16 +431,16 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("MultipleProjectPathsAllowed", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
 
 		// Create project 1 (most recent) with 5+ files
-		pf1 := tf.AddProjectFixture("project-in-path1", ProjectFixtureArgs{
+		pf1 := tf.AddProjectFixture("project-in-path1", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		pf1.AddFileFixtures(t, FileFixtureArgs{
-			ContentFunc: func(ff *FileFixture) string {
+		pf1.AddFileFixtures(t, testutil.FileFixtureArgs{
+			ContentFunc: func(ff *testutil.FileFixture) string {
 				return fmt.Sprintf("# Project 1 - %s", ff.Name)
 			},
 			Permissions:  0644,
@@ -448,12 +448,12 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}, "README.md", "package.json", "main.go", "config.yaml", "utils.js")
 
 		// Create project 2 (older) with 5+ files
-		pf2 := tf.AddProjectFixture("project-in-path2", ProjectFixtureArgs{
+		pf2 := tf.AddProjectFixture("project-in-path2", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
-		pf2.AddFileFixtures(t, FileFixtureArgs{
-			ContentFunc: func(ff *FileFixture) string {
+		pf2.AddFileFixtures(t, testutil.FileFixtureArgs{
+			ContentFunc: func(ff *testutil.FileFixture) string {
 				return fmt.Sprintf("# Project 2 - %s", ff.Name)
 			},
 			Permissions:  0644,
@@ -471,7 +471,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -491,7 +491,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("NoAllowedPaths", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
 		// No projects added, but also no allowed paths configured
 		tf.Setup(t)
@@ -502,7 +502,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 		})
 
 		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
@@ -516,15 +516,15 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 	})
 
 	t.Run("MaxProjectsParameter", func(t *testing.T) {
-		tf := NewTestFixture(DirPrefix)
+		tf := testutil.NewTestFixture(DirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("project-0", ProjectFixtureArgs{
+		pf := tf.AddProjectFixture("project-0", testutil.ProjectFixtureArgs{
 			HasGit:      true,
 			Permissions: 0755,
 		})
 		// Create multiple files to ensure projects are robust
-		pf.AddFileFixture("README.md", FileFixtureArgs{
+		pf.AddFileFixture("README.md", testutil.FileFixtureArgs{
 			Content:      "# Project 0 - README.md",
 			Permissions:  0644,
 			ModifiedTime: time.Now(),
@@ -533,14 +533,14 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		// Create more projects than max_projects (8 projects, limit to 3)
 		// Use larger time gaps to ensure clear winner logic works
 		for i := 1; i < 8; i++ {
-			pf := tf.AddProjectFixture(fmt.Sprintf("project-%d", i), ProjectFixtureArgs{
+			pf := tf.AddProjectFixture(fmt.Sprintf("project-%d", i), testutil.ProjectFixtureArgs{
 				HasGit:      true,
 				Permissions: 0755,
 			})
 
 			// Create multiple files to ensure projects are robust
-			pf.AddFileFixtures(t, FileFixtureArgs{
-				ContentFunc: func(ff *FileFixture) string {
+			pf.AddFileFixtures(t, testutil.FileFixtureArgs{
+				ContentFunc: func(ff *testutil.FileFixture) string {
 					return fmt.Sprintf("# Project %d - %s", i, ff.Name)
 				},
 				Permissions:  0644,
@@ -553,7 +553,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		}))
 
 		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": tf.token,
+			"session_token": testToken,
 			"max_projects":  3,
 		})
 

@@ -15,9 +15,24 @@ const (
 	AfterPosition  RelativePosition = "after"
 )
 
-var availableTools = slices.Collect(maps.Keys(toolNamesMap))
+func (rp RelativePosition) Validate() (err error) {
+	switch rp {
+	case BeforePosition:
+	case AfterPosition:
+	default:
+		err = fmt.Errorf("position must be '%s' or '%s', got '%s'",
+			BeforePosition,
+			AfterPosition,
+			rp,
+		)
+	}
+	return err
+}
 
-var toolNamesMap = map[string]NULL{
+var AvailableTools = slices.Collect(maps.Keys(ToolNamesMap))
+
+// ToolNamesMap is the set of expected tools
+var ToolNamesMap = map[string]NULL{
 	"start_session":           {},
 	"read_files":              {},
 	"search_files":            {},
@@ -38,18 +53,4 @@ var toolNamesMap = map[string]NULL{
 	"request_approval":        {},
 	"generate_approval_token": {},
 	"detect_current_project":  {},
-}
-
-func (rp RelativePosition) Validate() (err error) {
-	switch rp {
-	case BeforePosition:
-	case AfterPosition:
-	default:
-		err = fmt.Errorf("position must be '%s' or '%s', got '%s'",
-			BeforePosition,
-			AfterPosition,
-			rp,
-		)
-	}
-	return err
 }
