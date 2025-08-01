@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestToolHelpDirect tests the tool_help functionality using direct server access
+// TestToolHelpDirect tests the help functionality using direct server access
 func TestToolHelpDirect(t *testing.T) {
 	env := NewDirectServerTestEnv(t)
 	defer env.Cleanup()
@@ -32,9 +32,9 @@ func TestToolHelpDirect(t *testing.T) {
 
 func testFullDocumentationDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test getting full documentation without specifying a tool
-	result := env.CallTool(t, "tool_help", map[string]interface{}{})
+	result := env.CallTool(t, "help", map[string]interface{}{})
 
-	// Parse the response as text (tool_help returns Markdown, not JSON)
+	// Parse the response as text (help returns Markdown, not JSON)
 	content := ParseTextResult(t, result)
 
 	// Verify it contains the full README content
@@ -46,7 +46,7 @@ func testFullDocumentationDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Verify it contains tool descriptions
 	assert.Contains(t, content, "### `read_files`", "Should contain read_files documentation")
 	assert.Contains(t, content, "### `update_file_lines`", "Should contain update_file_lines documentation")
-	assert.Contains(t, content, "### `tool_help`", "Should contain self-documentation")
+	assert.Contains(t, content, "### `help`", "Should contain self-documentation")
 
 	// Verify safety warnings are present
 	assert.Contains(t, content, "⚠️ DANGEROUS", "Should contain danger warnings")
@@ -140,10 +140,10 @@ func testSpecificToolHelpDirect(t *testing.T, env *DirectServerTestEnv) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			result := env.CallTool(t, "tool_help", map[string]interface{}{
+			result := env.CallTool(t, "help", map[string]interface{}{
 				"tool": tc.toolName,
 			})
-			require.NotNil(t, result, "tool_help should return result for %s", tc.toolName)
+			require.NotNil(t, result, "help should return result for %s", tc.toolName)
 
 			content := ParseTextResult(t, result)
 
@@ -168,10 +168,10 @@ func testSpecificToolHelpDirect(t *testing.T, env *DirectServerTestEnv) {
 
 func testNonExistentToolDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test requesting help for a non-existent tool
-	result := env.CallTool(t, "tool_help", map[string]interface{}{
+	result := env.CallTool(t, "help", map[string]interface{}{
 		"tool": "nonexistent_tool",
 	})
-	require.NotNil(t, result, "tool_help should return result")
+	require.NotNil(t, result, "help should return result")
 
 	content := ParseTextResult(t, result)
 
@@ -183,7 +183,7 @@ func testNonExistentToolDirect(t *testing.T, env *DirectServerTestEnv) {
 	expectedTools := []string{
 		"read_files", "create_file", "update_file", "delete_files",
 		"search_files", "update_file_lines", "insert_file_lines",
-		"replace_pattern", "get_config", "tool_help",
+		"replace_pattern", "get_config", "help", "detect_current_project",
 	}
 
 	for _, tool := range expectedTools {
@@ -191,14 +191,14 @@ func testNonExistentToolDirect(t *testing.T, env *DirectServerTestEnv) {
 	}
 
 	// Verify usage instructions
-	assert.Contains(t, content, "Call tool_help without parameters", "Should provide usage instructions")
-	assert.Contains(t, content, `"tool": "tool_help"`, "Should show example usage")
+	assert.Contains(t, content, "Call help without parameters", "Should provide usage instructions")
+	assert.Contains(t, content, `"tool": "help"`, "Should show example usage")
 }
 
 func testDocumentationContentDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test that the documentation contains important safety information
-	result := env.CallTool(t, "tool_help", map[string]interface{}{})
-	require.NotNil(t, result, "tool_help should return result")
+	result := env.CallTool(t, "help", map[string]interface{}{})
+	require.NotNil(t, result, "help should return result")
 
 	content := ParseTextResult(t, result)
 

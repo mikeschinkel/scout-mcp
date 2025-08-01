@@ -221,7 +221,7 @@ func testInsertAtPatternDirect(t *testing.T, env *DirectServerTestEnv) {
 			"path":          testFilePath,
 			"after_pattern": "package main",
 			"position":      "after",
-			"content":       "\nimport \"fmt\"",
+			"new_content":   "\nimport \"fmt\"",
 		})
 		assert.NotNil(t, result, "insert_at_pattern should return result")
 
@@ -238,7 +238,7 @@ func testInsertAtPatternDirect(t *testing.T, env *DirectServerTestEnv) {
 			"path":           testFilePath,
 			"before_pattern": "func helper()",
 			"position":       "before",
-			"content":        "// Helper function comment",
+			"new_content":    "// Helper function comment",
 		})
 		assert.NotNil(t, result, "insert_at_pattern should return result")
 
@@ -255,7 +255,7 @@ func testInsertAtPatternDirect(t *testing.T, env *DirectServerTestEnv) {
 			"path":           testFilePath,
 			"before_pattern": "func \\w+\\(\\)",
 			"position":       "before",
-			"content":        "// Function found by regex",
+			"new_content":    "// Function found by regex",
 			"regex":          true,
 		})
 		assert.NotNil(t, result, "insert_at_pattern with regex should return result")

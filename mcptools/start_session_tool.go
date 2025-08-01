@@ -43,9 +43,10 @@ func (t *StartSessionTool) Handle(_ context.Context, _ mcputil.ToolRequest) (res
 	var token string
 	var expiresAt time.Time
 	var response SessionResponse
-	var toolHelp string
+	var quickStart []string
 	var serverConfig map[string]any
 	var instructions InstructionsConfig
+	var currentProject *ProjectDetectionResult
 
 	logger.Info("Tool called", "tool", "start_session")
 
@@ -57,12 +58,8 @@ func (t *StartSessionTool) Handle(_ context.Context, _ mcputil.ToolRequest) (res
 		goto end
 	}
 
-	// Get tool help (from existing tool_help functionality)
-	toolHelp, err = t.generateToolHelp()
-	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to generate tool help: %v", err))
-		goto end
-	}
+	// Generate quick start list
+	quickStart = t.generateQuickStartList()
 
 	// Get server config (from existing get_config functionality)
 	serverConfig, err = t.config.ToMap()
@@ -78,14 +75,24 @@ func (t *StartSessionTool) Handle(_ context.Context, _ mcputil.ToolRequest) (res
 		goto end
 	}
 
+	// Detect current project (optional - don't fail session creation if this fails)
+	currentProject, err = t.detectCurrentProject()
+	if err != nil {
+		// Log the error but don't fail session creation
+		logger.Error("Failed to detect current project during session creation", "error", err)
+		currentProject = nil
+		err = nil // Reset error so session creation continues
+	}
+
 	// Build response
 	response = SessionResponse{
 		SessionToken:   token,
 		TokenExpiresAt: expiresAt,
-		ToolHelp:       toolHelp,
+		QuickStart:     quickStart,
 		ServerConfig:   serverConfig,
 		Instructions:   instructions,
 		Message:        instructionsMsg,
+		CurrentProject: currentProject,
 	}
 
 	logger.Info("Tool completed", "tool", "start_session", "success", true, "token_length", len(token))
@@ -95,7 +102,27 @@ end:
 	return result, err
 }
 
-// generateToolHelp creates the same output as the tool_help tool
+// generateQuickStartList creates a list of essential tools with their quick help descriptions
+func (t *StartSessionTool) generateQuickStartList() []string {
+	var tools []mcputil.Tool
+	var tool mcputil.Tool
+	var options mcputil.ToolOptions
+	var quickStartList []string
+
+	tools = mcputil.RegisteredTools()
+	quickStartList = make([]string, 0)
+
+	for _, tool = range tools {
+		options = tool.Options()
+		if options.QuickHelp != "" {
+			quickStartList = append(quickStartList, fmt.Sprintf("%s - %s", options.Name, options.QuickHelp))
+		}
+	}
+
+	return quickStartList
+}
+
+// generateToolHelp creates the same output as the help tool
 func (t *StartSessionTool) generateToolHelp() (helpText string, err error) {
 	var tools []mcputil.Tool
 	var tool mcputil.Tool
@@ -155,6 +182,7 @@ func (t *StartSessionTool) loadInstructions() (instructions InstructionsConfig, 
 		goto end
 	}
 
+	// TODO: Use gm
 	instructionsDir = filepath.Join(homeDir, ".config", "scout-mcp", "instructions")
 
 	// Load general instructions
@@ -346,6 +374,39 @@ func getDefaultExtensionMappings() map[string]string {
 		".h":    "c",
 		".hpp":  "cpp",
 	}
+}
+
+// detectCurrentProject runs the same logic as the detect_current_project tool
+func (t *StartSessionTool) detectCurrentProject() (result *ProjectDetectionResult, err error) {
+	var detectTool *DetectCurrentProjectTool
+	var allowedPaths []string
+	var detectionResult ProjectDetectionResult
+
+	// Get allowed paths from config
+	allowedPaths = t.Config().AllowedPaths()
+	if len(allowedPaths) == 0 {
+		// No allowed paths configured, return nil without error
+		return nil, nil
+	}
+
+	// Create a DetectCurrentProjectTool instance to reuse its logic
+	detectTool = &DetectCurrentProjectTool{
+		toolBase: newToolBase(mcputil.ToolOptions{
+			Name: "detect_current_project_internal",
+		}),
+	}
+	detectTool.SetConfig(t.Config())
+
+	// Use default parameters: use default max_projects (5), require git
+	detectionResult, err = detectTool.detectCurrentProject(5, false)
+	if err != nil {
+		goto end
+	}
+
+	result = &detectionResult
+
+end:
+	return result, err
 }
 
 func getPropertyDescription(prop mcputil.Property) string {

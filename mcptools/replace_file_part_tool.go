@@ -43,27 +43,27 @@ func (t *ReplaceFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "replace_file_part")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = PathProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	language, err = req.RequireString("language")
+	language, err = LanguageProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	partType, err = req.RequireString("part_type")
+	partType, err = PartTypeProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	partName, err = req.RequireString("part_name")
+	partName, err = PartNameProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	newContent, err = req.RequireString("new_content")
+	newContent, err = NewContentProperty.String(req)
 	if err != nil {
 		goto end
 	}
@@ -78,7 +78,14 @@ func (t *ReplaceFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		goto end
 	}
 
-	result = mcputil.NewToolResultText(fmt.Sprintf("Successfully replaced %s '%s' in %s", partType, partName, filePath))
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":   true,
+		"file_path": filePath,
+		"language":  language,
+		"part_type": partType,
+		"part_name": partName,
+		"message":   fmt.Sprintf("Successfully replaced %s '%s' in %s", partType, partName, filePath),
+	})
 	logger.Info("Tool completed", "tool", "replace_file_part", "path", filePath, "part_type", partType, "part_name", partName)
 
 end:
@@ -149,15 +156,9 @@ func (t *ReplaceFilePartTool) validateGoContent(partType, content string) (err e
 }
 
 func (t *ReplaceFilePartTool) replaceFilePart(filePath, language, partType, partName, newContent string) (err error) {
-	var allowed bool
 	var originalContent string
 
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}

@@ -10,6 +10,10 @@ import (
 )
 
 var _ mcputil.Tool = (*InsertAtPatternTool)(nil)
+var (
+	BeforePatternProperty = mcputil.String("before_pattern", "Pattern to find - insert content before this pattern")
+	AfterPatternProperty  = mcputil.String("after_pattern", "Pattern to find - insert content after this pattern")
+)
 
 func init() {
 	mcputil.RegisterTool(&InsertAtPatternTool{
@@ -19,11 +23,11 @@ func init() {
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				PathProperty.Required(),
-				mcputil.String("content", "Content to insert").Required(),
-				mcputil.String("before_pattern", "Pattern to find - insert content before this pattern"),
-				mcputil.String("after_pattern", "Pattern to find - insert content after this pattern"),
-				mcputil.String("position", "Position relative to pattern (before/after, default: before)"),
-				mcputil.Bool("regex", "Whether to treat pattern as regular expression"),
+				NewContentProperty.Required(),
+				BeforePatternProperty,
+				AfterPatternProperty,
+				PositionProperty.Description("Position relative to pattern (before/after, default: before)"),
+				RegexProperty,
 			},
 		}),
 	})
@@ -43,20 +47,21 @@ func (t *InsertAtPatternTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "insert_at_pattern")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = PathProperty.String(req)
 	if err != nil {
 		goto end
 	}
-	content, err = req.RequireString("content")
+
+	content, err = NewContentProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
 	// TODO: Fix these to have errors after we fix ToolRequest interface
-	beforePattern = req.GetString("before_pattern", "")
-	afterPattern = req.GetString("after_pattern", "")
-	position = req.GetString("position", "before")
-	useRegex = req.GetBool("regex", false)
+	beforePattern, _ = BeforePatternProperty.String(req)
+	afterPattern, _ = AfterPatternProperty.String(req)
+	position, _ = PositionProperty.SetDefault("before").String(req)
+	useRegex, _ = RegexProperty.Bool(req)
 
 	err = t.validatePatterns(beforePattern, afterPattern)
 	if err != nil {
@@ -73,7 +78,13 @@ func (t *InsertAtPatternTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		goto end
 	}
 
-	result = mcputil.NewToolResultText(fmt.Sprintf("Successfully inserted content at pattern in %s", filePath))
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":   true,
+		"file_path": filePath,
+		"pattern":   getPatternForResult(beforePattern, afterPattern),
+		"position":  position,
+		"message":   fmt.Sprintf("Successfully inserted content at pattern in %s", filePath),
+	})
 	logger.Info("Tool completed", "tool", "insert_at_pattern", "path", filePath)
 
 end:
@@ -100,17 +111,11 @@ func (t *InsertAtPatternTool) validatePosition(position string) (err error) {
 }
 
 func (t *InsertAtPatternTool) insertAtPattern(filePath, beforePattern, afterPattern, content, position string, useRegex bool) (err error) {
-	var allowed bool
 	var originalContent string
 	var updatedContent string
 	var pattern string
 
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}
@@ -215,4 +220,11 @@ func (t *InsertAtPatternTool) insertAtLineNumber(lines []string, lineNumber int,
 	result = strings.Join(combined, "\n")
 
 	return result
+}
+
+func getPatternForResult(beforePattern, afterPattern string) string {
+	if beforePattern != "" {
+		return beforePattern
+	}
+	return afterPattern
 }

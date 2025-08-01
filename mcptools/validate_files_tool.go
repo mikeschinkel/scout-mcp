@@ -23,7 +23,7 @@ func init() {
 				PathsProperty,
 				LanguageProperty,
 				RecursiveProperty,
-				mcputil.Array("extensions", "Extensions of files to process for this tool"),
+				ExtensionsProperty.Description("Extensions of files to process for this tool"),
 			},
 		}),
 	})
@@ -49,29 +49,18 @@ type ValidationSummary struct {
 }
 
 func (t *ValidateFilesTool) parseFilesOrPaths(req mcputil.ToolRequest) (files []string, paths []string, err error) {
-	var filesParam []any
-	var pathsParam []any
 	// Parse parameters - files takes precedence over paths
-	filesParam = req.GetArray("files", nil)
-	if len(filesParam) > 0 {
-		for _, f := range filesParam {
-			if str, ok := f.(string); ok {
-				files = append(files, str)
-			}
-		}
+	files, err = FilesProperty.StringSlice(req)
+	if err == nil && len(files) > 0 {
 		goto end
 	}
+
 	// If no files specified, use paths
-	pathsParam = req.GetArray("paths", nil)
-	if len(pathsParam) > 0 {
-		for _, p := range pathsParam {
-			if str, ok := p.(string); ok {
-				paths = append(paths, str)
-			}
-		}
-		goto end
+	paths, err = PathsProperty.StringSlice(req)
+	if err != nil || len(paths) == 0 {
+		err = fmt.Errorf("either 'files' (array of file paths) or 'paths' (array of directory paths) parameter is required")
 	}
-	err = fmt.Errorf("either 'files' (array of file paths) or 'paths' (array of directory paths) parameter is required")
+
 end:
 	return files, paths, err
 }
@@ -82,7 +71,6 @@ func (t *ValidateFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (
 	var recursive bool
 	var extensions []string
 	var summary ValidationSummary
-	var extensionsParam []any
 
 	logger.Info("Tool called", "tool", "validate_files")
 
@@ -91,14 +79,19 @@ func (t *ValidateFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (
 		goto end
 	}
 
-	languageOverride = req.GetString("language", "")
-	recursive = req.GetBool("recursive", false)
+	languageOverride, err = LanguageProperty.String(req)
+	if err != nil {
+		goto end
+	}
 
-	extensionsParam = req.GetArray("extensions", nil)
-	for _, e := range extensionsParam {
-		if str, ok := e.(string); ok {
-			extensions = append(extensions, str)
-		}
+	recursive, err = RecursiveProperty.Bool(req)
+	if err != nil {
+		goto end
+	}
+
+	extensions, err = ExtensionsProperty.StringSlice(req)
+	if err != nil {
+		goto end
 	}
 
 	// Validate files
@@ -186,14 +179,8 @@ end:
 }
 
 func (t *ValidateFilesTool) collectFiles(path string, recursive bool, extensions []string) (files []string, err error) {
-	var allowed bool
 
-	allowed, err = t.IsAllowedPath(path)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(path) {
 		err = fmt.Errorf("access denied: path not allowed: %s", path)
 		goto end
 	}

@@ -20,7 +20,7 @@ func init() {
 				RequiredSessionTokenProperty,
 				FilepathProperty.Required(),
 				NewContentProperty.Required(),
-				mcputil.Bool("create_dirs", "Create parent directories if needed"),
+				CreateDirsProperty,
 			},
 		}),
 	})
@@ -34,34 +34,28 @@ func (t *CreateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	var filePath string
 	var content string
 	var createDirs bool
-	var allowed bool
 	var fileDir string
 
 	logger.Info("Tool called", "tool", "create_file")
 
-	filePath, err = req.RequireString("filepath")
+	filePath, err = FilepathProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	content, err = req.RequireString("new_content")
+	content, err = NewContentProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	createDirs = req.GetBool("create_dirs", false)
+	createDirs, _ = CreateDirsProperty.Bool(req)
 
 	logger.Info("Tool arguments parsed", "tool", "create_file", "path", filePath, "create_dirs", createDirs, "content_length", len(content))
 
 	// Check path is allowed
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
-		goto end
-	}
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", filePath))
 		goto end
 	}
@@ -95,7 +89,12 @@ func (t *CreateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	}
 
 	logger.Info("Tool completed", "tool", "create_file", "success", true, "path", filePath)
-	result = mcputil.NewToolResultText(fmt.Sprintf("File created successfully: %s (%d bytes)", filePath, len(content)))
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":   true,
+		"file_path": filePath,
+		"size":      len(content),
+		"message":   fmt.Sprintf("File created successfully: %s (%d bytes)", filePath, len(content)),
+	})
 end:
 	return result, err
 }

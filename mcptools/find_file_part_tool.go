@@ -40,22 +40,22 @@ func (t *FindFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest) (r
 
 	logger.Info("Tool called", "tool", "find_file_part")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = PathProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	language, err = req.RequireString("language")
+	language, err = LanguageProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	partType, err = req.RequireString("part_type")
+	partType, err = PartTypeProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	partName, err = req.RequireString("part_name")
+	partName, err = PartNameProperty.String(req)
 	if err != nil {
 		goto end
 	}
@@ -125,17 +125,13 @@ end:
 }
 
 func (t *FindFilePartTool) findFilePart(filePath, language, partType, partName string) (content string, err error) {
-	var allowed bool
 
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}
+
+	// TODO: This is unfinished
 
 	content, err = readFile(t.Config(), filePath)
 

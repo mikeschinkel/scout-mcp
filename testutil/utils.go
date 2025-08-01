@@ -21,7 +21,7 @@ func MaybeRemove(t *testing.T, fp string) {
 	var ok bool
 
 	t.Helper()
-	err := os.Remove(fp)
+	err := os.RemoveAll(fp)
 	if err == nil {
 		goto end
 	}

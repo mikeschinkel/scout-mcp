@@ -16,13 +16,14 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "replace_pattern",
 			Description: "Find and replace text patterns in a file with support for regex",
+			QuickHelp:   "Find and replace text",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				PathProperty.Required(),
-				mcputil.String("pattern", "Text pattern to find").Required(),
-				mcputil.String("replacement", "Text to replace the pattern with").Required(),
-				mcputil.Bool("regex", "Whether to treat pattern as regular expression"),
-				mcputil.Bool("all_occurrences", "Whether to replace all occurrences (default: true)"),
+				PatternProperty.Required(),
+				ReplacementProperty.Required(),
+				RegexProperty,
+				AllOccurrencesProperty,
 			},
 		}),
 	})
@@ -39,27 +40,34 @@ func (t *ReplacePatternTool) Handle(_ context.Context, req mcputil.ToolRequest) 
 	var useRegex bool
 	var allOccurrences bool
 	var replacementCount int
+	var message string
 
 	logger.Info("Tool called", "tool", "replace_pattern")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = PathProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	pattern, err = req.RequireString("pattern")
+	pattern, err = PatternProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	replacement, err = req.RequireString("replacement")
+	replacement, err = ReplacementProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	// TODO Change back to checking error here
-	useRegex = req.GetBool("regex", false)
-	allOccurrences = req.GetBool("all_occurrences", true)
+	useRegex, err = RegexProperty.Bool(req)
+	if err != nil {
+		goto end
+	}
+
+	allOccurrences, err = AllOccurrencesProperty.Bool(req)
+	if err != nil {
+		goto end
+	}
 
 	replacementCount, err = t.replaceInFile(filePath, pattern, replacement, useRegex, allOccurrences)
 	if err != nil {
@@ -67,12 +75,23 @@ func (t *ReplacePatternTool) Handle(_ context.Context, req mcputil.ToolRequest) 
 	}
 
 	if replacementCount == 0 {
-		result = mcputil.NewToolResultText(fmt.Sprintf("Pattern '%s' not found in %s", pattern, filePath))
+		message = fmt.Sprintf("Pattern '%s' not found in %s", pattern, filePath)
 	} else if replacementCount == 1 {
-		result = mcputil.NewToolResultText(fmt.Sprintf("Successfully replaced 1 occurrence of '%s' in %s", pattern, filePath))
+		message = fmt.Sprintf("Successfully replaced 1 occurrence of '%s' in %s", pattern, filePath)
 	} else {
-		result = mcputil.NewToolResultText(fmt.Sprintf("Successfully replaced %d occurrences of '%s' in %s", replacementCount, pattern, filePath))
+		message = fmt.Sprintf("Successfully replaced %d occurrences of '%s' in %s", replacementCount, pattern, filePath)
 	}
+
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":           replacementCount > 0,
+		"file_path":         filePath,
+		"pattern":           pattern,
+		"replacement":       replacement,
+		"replacement_count": replacementCount,
+		"use_regex":         useRegex,
+		"all_occurrences":   allOccurrences,
+		"message":           message,
+	})
 
 	logger.Info("Tool completed", "tool", "replace_pattern", "path", filePath, "replacements", replacementCount)
 
@@ -81,16 +100,10 @@ end:
 }
 
 func (t *ReplacePatternTool) replaceInFile(filePath, pattern, replacement string, useRegex, allOccurrences bool) (count int, err error) {
-	var allowed bool
 	var originalContent string
 	var updatedContent string
 
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}

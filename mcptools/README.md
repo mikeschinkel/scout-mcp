@@ -423,6 +423,74 @@ Analyze file structure and provide insights about the codebase.
 }
 ```
 
+### `detect_current_project`
+Detect the most recently active project by analyzing recent file modifications in allowed paths and their immediate subdirectories.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `list_recent` (optional): If true, lists the 5 most recent projects instead of detecting current (default: false)
+- `max_projects` (optional): Maximum number of recent projects to track (default: 5)
+- `ignore_git_requirement` (optional): If true, don't require .git directory to consider a directory a project (default: false)
+
+**Examples:**
+
+**Detect current project (Git repositories only):**
+```json
+{
+  "tool": "detect_current_project",
+  "parameters": {
+    "session_token": "your-session-token"
+  }
+}
+```
+
+**List recent projects including non-Git directories:**
+```json
+{
+  "tool": "detect_current_project",
+  "parameters": {
+    "session_token": "your-session-token",
+    "list_recent": true,
+    "ignore_git_requirement": true,
+    "max_projects": 10
+  }
+}
+```
+
+**Response Format:**
+```json
+{
+  "current_project": {
+    "name": "my-active-project",
+    "path": "/Users/mike/Projects/my-active-project",
+    "last_modified": "2024-01-15T10:30:00Z",
+    "relative_age": "2 hours ago"
+  },
+  "recent_projects": [
+    {
+      "name": "my-active-project", 
+      "path": "/Users/mike/Projects/my-active-project",
+      "last_modified": "2024-01-15T10:30:00Z",
+      "relative_age": "2 hours ago"
+    }
+  ],
+  "requires_choice": false,
+  "summary": "Current project: my-active-project (last modified 2 hours ago)"
+}
+```
+
+**Project Detection Logic:**
+1. **Checks allowed paths themselves** - if they contain recent file modifications and meet project criteria
+2. **Checks immediate subdirectories** of allowed paths - only one level deep
+3. **Project criteria**:
+   - By default: Must contain a `.git` directory (Git repository) AND have at least 5 files
+   - With `ignore_git_requirement: true`: Any directory with at least 5 files is considered a project
+4. **Activity detection**: Uses most recent file modification time (recursively within each project, but excludes hidden files/directories like `.git`)
+5. **Filtering**: Skips hidden directories (starting with '.') when scanning for projects
+6. **File counting**: Counts all non-hidden files recursively to determine if directory qualifies as a project
+7. **Current project logic**: If one project is 24+ hours newer than others, it's identified as current
+8. **User choice**: If multiple projects are modified within 24 hours, user choice is required
+
 ## Configuration and Help Tools
 
 ### `get_config`
@@ -441,7 +509,7 @@ Get information about the Scout MCP server configuration.
 }
 ```
 
-### `tool_help`
+### `help`
 Get detailed documentation for all available tools.
 
 **Parameters:**
@@ -450,7 +518,7 @@ Get detailed documentation for all available tools.
 **Example:**
 ```json
 {
-  "tool": "tool_help",
+  "tool": "help",
   "parameters": {
     "session_token": "your-session-token"
   }

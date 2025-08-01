@@ -68,6 +68,7 @@ func TestSessionTokenRequirements(t *testing.T) {
 		require.NotNil(t, tool, "tool %s must be registered", toolName)
 
 		// Check if tool has session_token in its properties
+		// CLAUDE: Tool should have a HasProperty() method
 		for _, p := range tool.Options().Properties {
 			if p.GetName() != "session_token" {
 				continue

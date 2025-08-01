@@ -10,15 +10,9 @@ import (
 )
 
 func writeFile(c Config, filePath string, content string) (err error) {
-	var allowed bool
 	var language string
 
-	allowed, err = c.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !c.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}
@@ -40,15 +34,9 @@ end:
 }
 
 func readFile(c Config, filePath string) (content string, err error) {
-	var allowed bool
 	var fileData []byte
 
-	allowed, err = c.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !c.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}

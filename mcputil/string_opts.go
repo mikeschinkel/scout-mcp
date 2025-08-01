@@ -9,35 +9,35 @@ type Enum []string
 
 func (Enum) PropertyOption() {}
 func (e Enum) SetStringProperty(prop Property) {
-	prop.(*stringProperty).Enum = e
+	prop.(*stringProperty).enum = e
 }
 
 type MinLen [1]int
 
 func (MinLen) PropertyOption() {}
 func (ml MinLen) SetStringProperty(prop Property) {
-	prop.(*stringProperty).MinLen = &ml[0]
+	prop.(*stringProperty).minLen = &ml[0]
 }
 
 type MaxLen [1]int
 
 func (MaxLen) PropertyOption() {}
 func (ml MaxLen) SetStringProperty(prop Property) {
-	prop.(*stringProperty).MaxLen = &ml[0]
+	prop.(*stringProperty).maxLen = &ml[0]
 }
 
 type DefaultString [1]string
 
 func (DefaultString) PropertyOption() {}
 func (ds DefaultString) SetStringProperty(prop Property) {
-	prop.(*stringProperty).Default = &ds[0]
+	prop.(*stringProperty).defaultValue = &ds[0]
 }
 
 type Pattern [1]string
 
 func (Pattern) PropertyOption() {}
 func (p Pattern) SetStringProperty(prop Property) {
-	prop.(*stringProperty).Pattern = &p[0]
+	prop.(*stringProperty).pattern = &p[0]
 }
 
 type StringOptions struct {
@@ -51,18 +51,18 @@ type StringOptions struct {
 func (so StringOptions) SetStringProperty(prop Property) {
 	p := prop.(*stringProperty)
 	if so.Enum != nil {
-		p.Enum = so.Enum
+		p.enum = so.Enum
 	}
 	if so.MinLen != nil {
-		p.MinLen = so.MinLen
+		p.minLen = so.MinLen
 	}
 	if so.MaxLen != nil {
-		p.MaxLen = so.MaxLen
+		p.maxLen = so.MaxLen
 	}
 	if so.Default != nil {
-		p.Default = so.Default
+		p.defaultValue = so.Default
 	}
 	if so.Pattern != nil {
-		p.Pattern = so.Pattern
+		p.pattern = so.Pattern
 	}
 }

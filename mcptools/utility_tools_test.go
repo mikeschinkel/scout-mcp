@@ -18,7 +18,9 @@ func TestGetConfigTool(t *testing.T) {
 	defer cleanup()
 
 	// Create config that allows our temp directory
-	config := testutil.NewMockConfig([]string{tempDir})
+	config := testutil.NewMockConfig(testutil.MockConfigArgs{
+		AllowedPaths: []string{tempDir},
+	})
 
 	// Get the tool and set config
 	tool := mcputil.GetRegisteredTool("get_config")
@@ -42,17 +44,19 @@ func TestGetConfigTool(t *testing.T) {
 
 }
 
-func TestToolHelpTool(t *testing.T) {
+func TestHelpTool(t *testing.T) {
 	tempDir, cleanup := setupTestEnv(t)
 	token := "test-session-token" // Unit tests don't validate tokens
 	defer cleanup()
 
 	// Create config that allows our temp directory
-	config := testutil.NewMockConfig([]string{tempDir})
+	config := testutil.NewMockConfig(testutil.MockConfigArgs{
+		AllowedPaths: []string{tempDir},
+	})
 
 	// Get the tool and set config
-	tool := mcputil.GetRegisteredTool("tool_help")
-	require.NotNil(t, tool, "tool_help tool should be registered")
+	tool := mcputil.GetRegisteredTool("help")
+	require.NotNil(t, tool, "help tool should be registered")
 
 	tool.SetConfig(config)
 
@@ -96,7 +100,9 @@ func TestAnalyzeFilesTool(t *testing.T) {
 	defer cleanup()
 
 	// Create config that allows our temp directory
-	config := testutil.NewMockConfig([]string{tempDir})
+	config := testutil.NewMockConfig(testutil.MockConfigArgs{
+		AllowedPaths: []string{tempDir},
+	})
 
 	// Get the tool and set config
 	tool := mcputil.GetRegisteredTool("analyze_files")
@@ -226,7 +232,9 @@ func TestRequestApprovalTool(t *testing.T) {
 	defer cleanup()
 
 	// Create config that allows our temp directory
-	config := testutil.NewMockConfig([]string{tempDir})
+	config := testutil.NewMockConfig(testutil.MockConfigArgs{
+		AllowedPaths: []string{tempDir},
+	})
 
 	// Get the tool and set config
 	tool := mcputil.GetRegisteredTool("request_approval")
@@ -288,7 +296,9 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 	defer cleanup()
 
 	// Create config that allows our temp directory
-	config := testutil.NewMockConfig([]string{tempDir})
+	config := testutil.NewMockConfig(testutil.MockConfigArgs{
+		AllowedPaths: []string{tempDir},
+	})
 
 	// Get the tool and set config
 	tool := mcputil.GetRegisteredTool("generate_approval_token")
@@ -341,27 +351,7 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 
 // Test tool metadata and registration
 func TestToolMetadata(t *testing.T) {
-	expectedTools := map[string]struct{}{
-		"start_session":           {},
-		"read_files":              {},
-		"search_files":            {},
-		"get_config":              {},
-		"tool_help":               {},
-		"create_file":             {},
-		"update_file":             {},
-		"delete_files":            {},
-		"update_file_lines":       {},
-		"delete_file_lines":       {},
-		"insert_file_lines":       {},
-		"insert_at_pattern":       {},
-		"replace_pattern":         {},
-		"find_file_part":          {},
-		"replace_file_part":       {},
-		"validate_files":          {},
-		"analyze_files":           {},
-		"request_approval":        {},
-		"generate_approval_token": {},
-	}
+	expectedTools := toolNamesMap
 
 	// Get all registered tools
 	registeredTools := mcputil.RegisteredToolsMap()

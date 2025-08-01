@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## INCLUDE ../CLAUDE-*.md
+
+**IMPORTANT**: Before working on this project, you MUST:
+
+1. **Check the parent directory** for files named `CLAUDE-*.md` (e.g., `CLAUDE-golang.md`, `CLAUDE-mcp-server-usage.md`)
+2. **Read all applicable files** based on your current tasks:
+  - For Go code: Read `CLAUDE-golang.md` for coding style requirements
+  - For Go code: Read `CLAUDE-golang-package-design-guidelines` for Go package design guidelines,
+  - For project exploration: Read `CLAUDE-mcp-server-usage.md` for file system tool usage
+  - For other languages/topics: Read the relevant `CLAUDE-*.md` files
+3. **Follow those guidelines** in addition to the project-specific guidance below
+
+These parent-level files contain critical coding standards and tool usage patterns that apply across multiple projects.
+
 ## Common Development Commands
 
 ### Building and Running
@@ -182,7 +196,7 @@ All tools follow a consistent pattern in mcptools/:
 - **test/direct_server_test.go**: Direct in-process MCP server testing infrastructure
 - **testutil/**: Mock configurations, requests, and test utilities
 
-### Current Tool Implementation (19 tools)
+### Current Tool Implementation (20 tools)
 
 #### Session Management
 - **start_session**: Creates session tokens and delivers comprehensive instructions
@@ -212,6 +226,7 @@ All tools follow a consistent pattern in mcptools/:
 - **analyze_files**: File analysis and insights
 - **get_config**: Server configuration
 - **tool_help**: Tool documentation
+- **detect_current_project**: Detect most recently active project by modification time
 
 #### Approval System
 - **request_approval**: User approval for risky operations
@@ -224,6 +239,7 @@ The codebase follows "Clear Path" style:
 - All variables declared before first `goto`
 - Minimal nesting through helper functions
 - No variable shadowing
+
 
 ### Session Flow
 1. **User calls `start_session`**: Gets token + comprehensive instructions + tool docs + server config
@@ -299,3 +315,7 @@ When adding new MCP tools:
 - Be consistent across similar tools
 
 When making changes, ensure they maintain the existing security model, follow the "Clear Path" coding style, and integrate properly with the session management system.
+
+
+### Current Bugs/TODOs
+- [ ] Add logic to track what files have been read and require reading files before updating them.

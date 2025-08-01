@@ -10,6 +10,11 @@ import (
 
 var _ mcputil.Tool = (*GenerateApprovalTokenTool)(nil)
 
+var (
+	fileActionsProperty = mcputil.Array("file_actions", "File actions approved")
+	operationsProperty  = mcputil.Array("operations", "Operations approved (create, update, delete)")
+)
+
 func init() {
 	mcputil.RegisterTool(&GenerateApprovalTokenTool{
 		toolBase: newToolBase(mcputil.ToolOptions{
@@ -17,8 +22,8 @@ func init() {
 			Description: "Generate approval token after user confirmation",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				mcputil.Array("file_actions", "File actions approved").Required(),
-				mcputil.Array("operations", "Operations approved (create, update, delete)").Required(),
+				fileActionsProperty.Required(),
+				operationsProperty.Required(),
 			},
 		}),
 	})
@@ -36,18 +41,18 @@ func (t *GenerateApprovalTokenTool) Handle(_ context.Context, req mcputil.ToolRe
 
 	logger.Info("Tool called", "tool", "generate_approval_token")
 
-	fileActions, err = getFileActions(req)
+	fileActions, err = mcputil.TypedPropertySlice[FileAction](req, fileActionsProperty)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	operations, err = getStringSlice(req, "operations")
+	operations, err = operationsProperty.StringSlice(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
-	sessionID = req.GetString("session_id", "")
+	sessionID, _ = SessionIdProperty.String(req)
 
 	// Generate the JWT token
 	token, err = generateApprovalToken(TokenRequest{
@@ -64,6 +69,10 @@ func (t *GenerateApprovalTokenTool) Handle(_ context.Context, req mcputil.ToolRe
 	result = mcputil.NewToolResultText(fmt.Sprintf("✅ Approval token generated (expires in 1 hour)\n🔑 Token: %s", token))
 
 end:
+	if err != nil {
+		// TODO Verify there are no use-cases where this should generate a real error
+		err = nil
+	}
 	return result, err
 }
 

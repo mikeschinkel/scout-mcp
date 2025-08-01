@@ -31,19 +31,18 @@ type UpdateFileTool struct {
 func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var content string
-	var allowed bool
 	var fileInfo os.FileInfo
 	var oldSize int64
 
 	logger.Info("Tool called", "tool", "update_file")
 
-	filePath, err = req.RequireString("filepath")
+	filePath, err = FilepathProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	content, err = req.RequireString("new_content")
+	content, err = NewContentProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
@@ -52,12 +51,7 @@ func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	logger.Info("Tool arguments parsed", "tool", "update_file", "path", filePath, "content_length", len(content))
 
 	// Check path is allowed
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
-		goto end
-	}
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", filePath))
 		goto end
 	}
@@ -89,7 +83,13 @@ func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	}
 
 	logger.Info("Tool completed", "tool", "update_file", "success", true, "path", filePath)
-	result = mcputil.NewToolResultText(fmt.Sprintf("File updated successfully: %s (%d -> %d bytes)", filePath, oldSize, len(content)))
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":   true,
+		"file_path": filePath,
+		"old_size":  oldSize,
+		"new_size":  len(content),
+		"message":   fmt.Sprintf("File updated successfully: %s (%d -> %d bytes)", filePath, oldSize, len(content)),
+	})
 end:
 	return result, err
 }

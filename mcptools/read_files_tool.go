@@ -17,13 +17,14 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "read_files",
 			Description: "Read contents of multiple files and/or directories with filtering options",
+			QuickHelp:   "Read multiple files efficiently (read before updating)",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				PathsProperty.Required(),
-				mcputil.Array("extensions", "Filter by file extensions (e.g., ['.go', '.txt']) - applies to directories only"),
+				ExtensionsProperty.Description("Filter by file extensions (e.g., ['.go', '.txt']) - applies to directories only"),
 				RecursiveProperty,
-				mcputil.String("pattern", "Filename pattern to match (case-insensitive substring) - applies to directories only"),
-				mcputil.Number("max_files", "Maximum number of files to read (default: 100)"),
+				PatternProperty.Description("Filename pattern to match (case-insensitive substring) - applies to directories only"),
+				MaxFilesProperty,
 			},
 		}),
 	})
@@ -41,12 +42,11 @@ func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 	var maxFiles int
 	var fileResults []FileReadResult
 	var totalSize int64
-	var errors []string
+	var errs []error
 
 	logger.Info("Tool called", "tool", "read_files")
 
-	// Get paths array
-	paths, err = getStringSlice(req, "paths")
+	paths, err = PathsProperty.StringSlice(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(fmt.Errorf("invalid paths array: %v", err))
 		goto end
@@ -57,16 +57,29 @@ func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 		goto end
 	}
 
-	// Get optional parameters
-	extensions, err = getStringSlice(req, "extensions")
+	extensions, err = ExtensionsProperty.StringSlice(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(fmt.Errorf("invalid extensions array: %v", err))
 		goto end
 	}
 
-	recursive = req.GetBool("recursive", false)
-	pattern = req.GetString("pattern", "")
-	maxFiles = req.GetInt("max_files", 100)
+	recursive, err = RecursiveProperty.Bool(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	pattern, err = PatternProperty.String(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	maxFiles, err = MaxFilesProperty.Int(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
 
 	logger.Info("Tool arguments parsed",
 		"tool", "read_files",
@@ -76,7 +89,7 @@ func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 		"pattern", pattern,
 		"max_files", maxFiles)
 
-	fileResults, totalSize, errors, err = t.readMultiplePaths(paths, ReadFilesOptions{
+	fileResults, totalSize, errs, err = t.readMultiplePaths(paths, ReadFilesOptions{
 		Extensions: extensions,
 		Recursive:  recursive,
 		Pattern:    pattern,
@@ -93,13 +106,13 @@ func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 		"files":       fileResults,
 		"total_files": len(fileResults),
 		"total_size":  totalSize,
-		"errors":      errors,
 		"paths":       paths,
 		"extensions":  extensions,
 		"recursive":   recursive,
 		"pattern":     pattern,
 		"max_files":   maxFiles,
 		"truncated":   len(fileResults) >= maxFiles,
+		"errors":      errorsStringSlice(errs),
 	})
 
 end:
@@ -121,47 +134,55 @@ type FileReadResult struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions) (results []FileReadResult, totalSize int64, errors []string, err error) {
-	var filesToRead []string
+func (t *ReadFilesTool) readPath(path string, opts ReadFilesOptions) (entries []string, err error) {
+	var info os.FileInfo
+
+	// Check if path is allowed
+	if !t.IsAllowedPath(path) {
+		err = fmt.Errorf("access denied: path not allowed: %s", path)
+		goto end
+	}
+
+	// Check if it's a file or directory
+	info, err = os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("cannot access %s: %v", path, err)
+		goto end
+	}
+
+	if !info.IsDir() {
+		// Single file
+		entries = append(entries, path)
+		goto end
+	}
+
+	// Directory - find files within it
+	entries, err = t.findFilesInDirectory(path, opts)
+	if err != nil {
+		err = fmt.Errorf("error reading directory %s: %v", path, err)
+		goto end
+	}
+	entries = append(entries, entries...)
+
+end:
+	return entries, err
+}
+
+func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions) (results []FileReadResult, totalSize int64, errs []error, err error) {
+	var filesToRead, entries []string
 	var path string
-	var allowed bool
 
 	// First pass: collect all files to read
 	for _, path = range paths {
-		// Check if path is allowed
-		allowed, err = t.IsAllowedPath(path)
+		entries, err = t.readPath(path, opts)
 		if err != nil {
-			errors = append(errors, fmt.Sprintf("path validation failed for %s: %v", path, err))
+			errs = append(errs, err)
+			err = nil
 			continue
 		}
-
-		if !allowed {
-			errors = append(errors, fmt.Sprintf("access denied: path not allowed: %s", path))
-			continue
-		}
-
-		// Check if it's a file or directory
-		info, statErr := os.Stat(path)
-		if statErr != nil {
-			errors = append(errors, fmt.Sprintf("cannot access %s: %v", path, statErr))
-			continue
-		}
-
-		if info.IsDir() {
-			// Directory - find files within it
-			dirFiles, dirErr := t.findFilesInDirectory(path, opts)
-			if dirErr != nil {
-				errors = append(errors, fmt.Sprintf("error reading directory %s: %v", path, dirErr))
-				continue
-			}
-			filesToRead = append(filesToRead, dirFiles...)
-		} else {
-			// Single file
-			filesToRead = append(filesToRead, path)
-		}
-
-		// Stop if we've reached the limit
+		filesToRead = append(filesToRead, entries...)
 		if len(filesToRead) >= opts.MaxFiles {
+			// Stop if we've reached the limit
 			filesToRead = filesToRead[:opts.MaxFiles]
 			break
 		}
@@ -172,26 +193,28 @@ func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions)
 	for _, filePath := range filesToRead {
 		var content string
 		var fileInfo os.FileInfo
-		var readErr error
+		var err error
 
-		fileInfo, readErr = os.Stat(filePath)
-		if readErr != nil {
+		fileInfo, err = os.Stat(filePath)
+		if err != nil {
 			results = append(results, FileReadResult{
 				Path:  filePath,
 				Name:  filepath.Base(filePath),
-				Error: fmt.Sprintf("cannot stat file: %v", readErr),
+				Error: fmt.Sprintf("cannot stat file: %v", err),
 			})
+			err = nil
 			continue
 		}
 
-		content, readErr = t.readFile(filePath)
-		if readErr != nil {
+		content, err = t.readFile(filePath)
+		if err != nil {
 			results = append(results, FileReadResult{
 				Path:  filePath,
 				Name:  filepath.Base(filePath),
 				Size:  fileInfo.Size(),
-				Error: fmt.Sprintf("cannot read file: %v", readErr),
+				Error: fmt.Sprintf("cannot read file: %v", err),
 			})
+			err = nil
 			continue
 		}
 
@@ -203,9 +226,9 @@ func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions)
 		})
 
 		totalSize += fileInfo.Size()
-	}
 
-	return results, totalSize, errors, err
+	}
+	return results, totalSize, errs, err
 }
 
 func (t *ReadFilesTool) findFilesInDirectory(dirPath string, opts ReadFilesOptions) (files []string, err error) {

@@ -9,7 +9,7 @@ import (
 type ToolHandler func(context.Context, ToolRequest) (ToolResult, error)
 
 type Config interface {
-	IsAllowedPath(string) (bool, error)
+	IsAllowedPath(string) bool
 	Path() string
 	AllowedPaths() []string
 	ServerPort() string
@@ -26,15 +26,12 @@ type Tool interface {
 	SetConfig(c Config)
 }
 
-type tool struct {
-	options ToolOptions
-}
-
 // ToolOptions contains options for defining a tool
 type ToolOptions struct {
 	Name        string
 	Description string
 	Properties  []Property
+	QuickHelp   string // Short description for quick help list (empty = not included)
 }
 
 // ToolRequest represents a tool call request
@@ -61,7 +58,8 @@ type ToolRequest interface {
 
 // ToolResult represents the result of a tool call
 type ToolResult interface {
-	ToolResult() // Marker method
+	ToolResult()   // Marker method
+	Value() string // Get the actual result value
 }
 
 // ToolResult implementations
@@ -71,11 +69,19 @@ type textResult struct {
 
 func (textResult) ToolResult() {}
 
+func (t *textResult) Value() string {
+	return t.text
+}
+
 type errorResult struct {
 	message string
 }
 
 func (errorResult) ToolResult() {}
+
+func (e *errorResult) Value() string {
+	return e.message
+}
 
 // NewToolResultText creates a text result for a tool call
 func NewToolResultText(text string) ToolResult {

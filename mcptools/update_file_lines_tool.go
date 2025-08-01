@@ -15,6 +15,7 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "update_file_lines",
 			Description: "Update specific lines in a file by line number range",
+			QuickHelp:   "Edit specific line ranges safely",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				FilepathProperty.Required(),
@@ -37,23 +38,23 @@ func (t *UpdateFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "update_file_lines")
 
-	filePath, err = req.RequireString("filepath")
+	filePath, err = FilepathProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	newContent, err = req.RequireString("new_content")
+	newContent, err = NewContentProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	startLine, err = getNumberAsInt(req, "start_line", true)
+	startLine, err = StartLineProperty.Int(req)
 	if err != nil {
 		err = fmt.Errorf("start_line must be a valid number: %w", err)
 		goto end
 	}
 
-	endLine, err = getNumberAsInt(req, "end_line", true)
+	endLine, err = EndLineProperty.Int(req)
 	if err != nil {
 		err = fmt.Errorf("end_line must be a valid number: %w", err)
 		goto end
@@ -69,7 +70,13 @@ func (t *UpdateFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		goto end
 	}
 
-	result = mcputil.NewToolResultText(fmt.Sprintf("Successfully updated lines %d-%d in %s", startLine, endLine, filePath))
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":    true,
+		"file_path":  filePath,
+		"start_line": startLine,
+		"end_line":   endLine,
+		"message":    fmt.Sprintf("Successfully updated lines %d-%d in %s", startLine, endLine, filePath),
+	})
 	logger.Info("Tool completed", "tool", "update_file_lines", "path", filePath, "start_line", startLine, "end_line", endLine)
 
 end:
@@ -92,17 +99,11 @@ end:
 }
 
 func (t *UpdateFileLinesTool) updateFileLines(filePath string, startLine, endLine int, newContent string) (err error) {
-	var allowed bool
 	var originalContent string
 	var lines []string
 	var updatedContent string
 
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}

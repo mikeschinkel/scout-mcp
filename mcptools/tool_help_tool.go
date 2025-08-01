@@ -16,10 +16,11 @@ var _ mcputil.Tool = (*ToolHelpTool)(nil)
 func init() {
 	mcputil.RegisterTool(&ToolHelpTool{
 		toolBase: newToolBase(mcputil.ToolOptions{
-			Name:        "tool_help",
+			Name:        "help",
 			Description: "Get detailed documentation for MCP tools and best practices",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
+				ToolProperty,
 			},
 		}),
 	})
@@ -33,24 +34,26 @@ func (t *ToolHelpTool) Handle(_ context.Context, req mcputil.ToolRequest) (resul
 	var toolName string
 	var helpContent string
 
-	logger.Info("Tool called", "tool", "tool_help")
+	logger.Info("Tool called", "tool", "help")
 
-	// TODO: Check error here
-	toolName = req.GetString("tool", "")
+	toolName, err = ToolProperty.String(req)
+	if err != nil {
+		goto end
+	}
 
 	if toolName == "" {
 		// Return full documentation
 		helpContent = readmeContent
-		logger.Info("Tool completed", "tool", "tool_help", "type", "full_documentation")
+		logger.Info("Tool completed", "tool", "help", "type", "full_documentation")
 	} else {
 		// Return tool-specific documentation
 		helpContent = t.getToolSpecificHelp(toolName)
-		logger.Info("Tool completed", "tool", "tool_help", "type", "tool_specific", "requested_tool", toolName)
+		logger.Info("Tool completed", "tool", "help", "type", "tool_specific", "requested_tool", toolName)
 	}
 
 	result = mcputil.NewToolResultText(helpContent)
 
-	//end:
+end:
 	return result, err
 }
 
@@ -124,22 +127,6 @@ func (t *ToolHelpTool) extractToolName(line string) (toolName string) {
 }
 
 func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
-	var availableTools []string
-
-	availableTools = []string{
-		"read_files",
-		"create_file",
-		"update_file",
-		"delete_files",
-		"search_files",
-		"update_file_lines",
-		"insert_file_lines",
-		"insert_at_pattern",
-		"delete_file_lines",
-		"replace_pattern",
-		"get_config",
-		"tool_help",
-	}
 
 	helpText = "Tool '" + toolName + "' not found.\n\n"
 	helpText += "Available tools:\n"
@@ -148,8 +135,8 @@ func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
 		helpText += "- " + tool + "\n"
 	}
 
-	helpText += "\nCall tool_help without parameters to see full documentation, or specify a tool name:\n"
-	helpText += `{"tool": "tool_help", "parameters": {"tool": "read_files"}}`
+	helpText += "\nCall help without parameters to see full documentation, or specify a tool name:\n"
+	helpText += `{"tool": "help", "parameters": {"tool": "read_files"}}`
 
 	return helpText
 }

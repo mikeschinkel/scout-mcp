@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
@@ -195,25 +194,22 @@ func (c *Config) Reset() {
 	}
 }
 
-func (c *Config) IsAllowedPath(targetPath string) (allowed bool, err error) {
-	var absPath string
+func (c *Config) IsAllowedPath(targetPath string) (allowed bool) {
 
-	absPath, err = filepath.Abs(targetPath)
-	if err != nil {
-		goto end
-	}
+	// Fails one if os.Getwd() fails, so lets ignore that as that failure will be
+	// caught elsewhere.
+	targetPath, _ = filepath.Abs(targetPath)
 
 	for path := range c.validPaths {
-		if strings.HasPrefix(absPath, path) {
+		_, err := filepath.Rel(path, targetPath)
+		if err == nil {
 			allowed = true
 			goto end
 		}
 	}
 
-	allowed = false
-
 end:
-	return allowed, err
+	return allowed
 }
 
 func (c *Config) Validate() (err error) {

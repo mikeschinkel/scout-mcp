@@ -11,14 +11,28 @@ type MockConfig struct {
 	allowedPaths []string
 }
 
-func (m *MockConfig) IsAllowedPath(path string) (bool, error) {
+type MockConfigArgs struct {
+	AllowedPaths []string
+}
+
+// NewMockConfig creates a mock config with specified allowed paths
+func NewMockConfig(args MockConfigArgs) mcputil.Config {
+	return &MockConfig{
+		allowedPaths: args.AllowedPaths,
+	}
+}
+
+func (m *MockConfig) IsAllowedPath(path string) (allowed bool) {
 	// For tests, allow any path that starts with one of our allowed paths
 	for _, allowedPath := range m.allowedPaths {
-		if filepath.HasPrefix(path, allowedPath) {
-			return true, nil
+		_, err := filepath.Rel(allowedPath, path)
+		if err != nil {
+			goto end
 		}
 	}
-	return false, nil
+	allowed = true
+end:
+	return allowed
 }
 
 func (m *MockConfig) Path() string {
@@ -51,9 +65,4 @@ func (m *MockConfig) ToMap() (map[string]any, error) {
 		"serverName":     m.ServerName(),
 		"allowedOrigins": m.AllowedOrigins(),
 	}, nil
-}
-
-// NewMockConfig creates a mock config with specified allowed paths
-func NewMockConfig(allowedPaths []string) mcputil.Config {
-	return &MockConfig{allowedPaths: allowedPaths}
 }

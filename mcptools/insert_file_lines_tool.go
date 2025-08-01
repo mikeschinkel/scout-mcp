@@ -15,12 +15,13 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "insert_file_lines",
 			Description: "Insert content at a specific line number in a file",
+			QuickHelp:   "Insert content at specific lines",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				FilepathProperty.Required(),
 				NewContentProperty.Required(),
-				mcputil.String("position", "Position at which to insert").Required(),
-				mcputil.Number("line_number", "Line number where to insert content").Required(),
+				PositionProperty.Description("Position at which to insert").Required(),
+				LineNumberProperty.Description("Line number where to insert content").Required(),
 			},
 		}),
 	})
@@ -38,23 +39,25 @@ func (t *InsertFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "insert_file_lines")
 
-	filePath, err = req.RequireString("filepath")
+	filePath, err = FilepathProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	content, err = req.RequireString("new_content")
+	content, err = NewContentProperty.String(req)
 	if err != nil {
 		goto end
 	}
 
-	lineNumber, err = req.RequireInt("line_number")
+	lineNumber, err = LineNumberProperty.Int(req)
 	if err != nil {
 		goto end
 	}
 
-	// TODO Change back to checking error here
-	position = req.GetString("position", string(AfterPosition))
+	position, err = PositionProperty.SetDefault(string(AfterPosition)).String(req)
+	if err != nil {
+		goto end
+	}
 
 	err = t.validatePosition(position)
 	if err != nil {
@@ -66,7 +69,13 @@ func (t *InsertFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		goto end
 	}
 
-	result = mcputil.NewToolResultText(fmt.Sprintf("Successfully inserted content %s line %d in %s", position, lineNumber, filePath))
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":     true,
+		"file_path":   filePath,
+		"line_number": lineNumber,
+		"position":    position,
+		"message":     fmt.Sprintf("Successfully inserted content %s line %d in %s", position, lineNumber, filePath),
+	})
 	logger.Info("Tool completed", "tool", "insert_file_lines", "path", filePath, "line_number", lineNumber, "position", position)
 
 end:
@@ -78,17 +87,11 @@ func (t *InsertFileLinesTool) validatePosition(position string) (err error) {
 }
 
 func (t *InsertFileLinesTool) insertAtLine(filePath string, lineNumber int, content, position string) (err error) {
-	var allowed bool
 	var originalContent string
 	var lines []string
 	var updatedContent string
 
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}

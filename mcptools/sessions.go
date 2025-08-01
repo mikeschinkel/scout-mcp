@@ -24,12 +24,13 @@ type Session struct {
 
 // SessionResponse contains the complete response from start_session
 type SessionResponse struct {
-	SessionToken   string             `json:"session_token"`
-	TokenExpiresAt time.Time          `json:"token_expires_at"`
-	ToolHelp       string             `json:"tool_help"`
-	ServerConfig   map[string]any     `json:"server_config"`
-	Instructions   InstructionsConfig `json:"instructions"`
-	Message        string             `json:"message"`
+	SessionToken   string                  `json:"session_token"`
+	TokenExpiresAt time.Time               `json:"token_expires_at"`
+	QuickStart     []string                `json:"quick_start"`
+	ServerConfig   map[string]any          `json:"server_config"`
+	Instructions   InstructionsConfig      `json:"instructions"`
+	Message        string                  `json:"message"`
+	CurrentProject *ProjectDetectionResult `json:"current_project,omitempty"`
 }
 
 // InstructionsConfig contains all instruction content

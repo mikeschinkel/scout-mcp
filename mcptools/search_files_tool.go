@@ -18,16 +18,17 @@ func init() {
 		toolBase: newToolBase(mcputil.ToolOptions{
 			Name:        "search_files",
 			Description: "Search for files and directories in allowed paths with filtering options",
+			QuickHelp:   "Find files matching criteria",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				PathProperty.Required(),
 				RecursiveProperty,
-				mcputil.Array("extensions", "Filter by file extensions (e.g., ['.go', '.txt'])"),
-				mcputil.String("pattern", "Name pattern to match (case-insensitive substring)"),
-				mcputil.String("name_pattern", "Exact filename pattern to match"),
-				mcputil.Bool("files_only", "Return only files, not directories"),
-				mcputil.Bool("dirs_only", "Return only directories, not files"),
-				mcputil.Number("max_results", "Maximum number of results to return"),
+				ExtensionsProperty,
+				PatternProperty.Description("Name pattern to match (case-insensitive substring)"),
+				NamePatternProperty,
+				FilesOnlyProperty,
+				DirsOnlyProperty,
+				MaxResultsProperty,
 			},
 		}),
 	})
@@ -46,26 +47,53 @@ func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (re
 	var dirsOnly bool
 	var maxResults int
 	var extensions []string
-	var allowed bool
 	var results []FileSearchResult
 
 	logger.Info("Tool called", "tool", "search_files")
 
-	searchPath, err = req.RequireString("path")
+	searchPath, err = PathProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	recursive = req.GetBool("recursive", false)
-	pattern = req.GetString("pattern", "")
-	namePattern = req.GetString("name_pattern", "")
-	filesOnly = req.GetBool("files_only", false)
-	dirsOnly = req.GetBool("dirs_only", false)
-	maxResults = req.GetInt("max_results", 1000)
+	recursive, err = RecursiveProperty.Bool(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
 
-	// Get extensions array if provided
-	extensions, err = getStringSlice(req, "extensions")
+	pattern, err = PatternProperty.String(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	namePattern, err = NamePatternProperty.String(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	filesOnly, err = FilesOnlyProperty.Bool(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	dirsOnly, err = DirsOnlyProperty.Bool(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	maxResults, err = MaxResultsProperty.Int(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
+
+	extensions, err = ExtensionsProperty.StringSlice(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(fmt.Errorf("invalid extensions array: %v", err))
 		goto end
@@ -83,13 +111,7 @@ func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (re
 		"max_results", maxResults)
 
 	// Check path is allowed
-	allowed, err = t.IsAllowedPath(searchPath)
-	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(searchPath) {
 		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", searchPath))
 		goto end
 	}
@@ -141,14 +163,8 @@ type SearchFilesOptions struct {
 
 func (t *SearchFilesTool) searchFiles(searchPath string, opts SearchFilesOptions) (results []FileSearchResult, err error) {
 	var searchDir string
-	var allowed bool
 
-	allowed, err = t.IsAllowedPath(searchPath)
-	if err != nil {
-		goto end
-	}
-
-	if !allowed {
+	if !t.IsAllowedPath(searchPath) {
 		err = fmt.Errorf("access denied: path not allowed: %s", searchPath)
 		goto end
 	}
@@ -169,7 +185,7 @@ func (t *SearchFilesTool) searchFiles(searchPath string, opts SearchFilesOptions
 		}
 
 		// Stop if we've hit the max results
-		if len(results) >= opts.MaxResults {
+		if 0 < opts.MaxResults && len(results) >= opts.MaxResults {
 			err = filepath.SkipDir
 			goto end
 		}
@@ -189,7 +205,7 @@ func (t *SearchFilesTool) searchFiles(searchPath string, opts SearchFilesOptions
 		}
 
 		// Apply pattern matching
-		shouldInclude = t.matchesFilters(info.Name(), path, opts)
+		shouldInclude = t.matchesFilters(info.Name(), opts)
 		if !shouldInclude {
 			goto end
 		}
@@ -212,7 +228,7 @@ end:
 	return results, err
 }
 
-func (t *SearchFilesTool) matchesFilters(fileName, fullPath string, opts SearchFilesOptions) (matches bool) {
+func (t *SearchFilesTool) matchesFilters(fileName string, opts SearchFilesOptions) (matches bool) {
 	// Pattern matching (case-insensitive substring)
 	if opts.Pattern != "" {
 		if !strings.Contains(strings.ToLower(fileName), strings.ToLower(opts.Pattern)) {

@@ -25,7 +25,7 @@ func newToolBase(options mcputil.ToolOptions) *toolBase {
 	}
 }
 
-func (b *toolBase) IsAllowedPath(path string) (bool, error) {
+func (b *toolBase) IsAllowedPath(path string) bool {
 	return b.config.IsAllowedPath(path)
 }
 

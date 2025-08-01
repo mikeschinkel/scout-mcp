@@ -31,29 +31,27 @@ type DeleteFileTool struct {
 func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var recursive bool
-	var allowed bool
 	var fileInfo os.FileInfo
 	var fileType string
 
 	logger.Info("Tool called", "tool", "delete_files")
 
-	filePath, err = req.RequireString("path")
+	filePath, err = PathProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	recursive = req.GetBool("recursive", false)
+	recursive, err = RecursiveProperty.Bool(req)
+	if err != nil {
+		result = mcputil.NewToolResultError(err)
+		goto end
+	}
 
 	logger.Info("Tool arguments parsed", "tool", "delete_files", "path", filePath, "recursive", recursive)
 
 	// Check path is allowed
-	allowed, err = t.IsAllowedPath(filePath)
-	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("path validation failed: %v", err))
-		goto end
-	}
-	if !allowed {
+	if !t.IsAllowedPath(filePath) {
 		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", filePath))
 		goto end
 	}
@@ -90,10 +88,12 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	}
 
 	logger.Info("Tool completed", "tool", "delete_files", "success", true, "path", filePath, "type", fileType)
-	result = mcputil.NewToolResultText(fmt.Sprintf("%s deleted successfully: %s",
-		titleCase(fileType),
-		filePath,
-	))
+	result = mcputil.NewToolResultJSON(map[string]interface{}{
+		"success":      true,
+		"deleted_path": filePath,
+		"file_type":    fileType,
+		"message":      fmt.Sprintf("%s deleted successfully: %s", titleCase(fileType), filePath),
+	})
 end:
 	return result, err
 }

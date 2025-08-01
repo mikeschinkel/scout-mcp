@@ -204,7 +204,9 @@ end:
 	return result, err
 }
 
+type Params = map[string]any
+
 // NewMockRequest creates a mock request with the specified parameters
-func NewMockRequest(params map[string]interface{}) mcputil.ToolRequest {
+func NewMockRequest(params Params) mcputil.ToolRequest {
 	return &MockRequest{params: params}
 }

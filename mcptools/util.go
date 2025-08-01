@@ -10,27 +10,11 @@ import (
 	"golang.org/x/text/language"
 )
 
-func getFileActions(req mcputil.ToolRequest) ([]FileAction, error) {
-	return convertSlice[FileAction](req.GetArray("file_actions", nil))
-}
 func getStringSlice(req mcputil.ToolRequest, prop string) ([]string, error) {
-	return convertSlice[string](req.GetArray(prop, nil))
+	return convertSliceOfAny[string](req.GetArray(prop, nil))
 }
 
-func getNumberAsInt(req mcputil.ToolRequest, prop string, nonZero bool) (n int, err error) {
-	n = req.GetInt(prop, 0)
-	if n != 0 {
-		goto end
-	}
-	if nonZero {
-		err = fmt.Errorf("'%s' must be a valid number: %w", prop, err)
-		goto end
-	}
-end:
-	return n, err
-}
-
-func convertSlice[T any](input []any) (output []T, err error) {
+func convertSliceOfAny[T any](input []any) (output []T, err error) {
 	var t T
 	var errs []error
 
@@ -64,4 +48,12 @@ func makeRelativePath(path, root string) (rel string, err error) {
 	path = filepath.Join("~", rel)
 end:
 	return path, err
+}
+
+func errorsStringSlice(errs []error) (es []string) {
+	es = make([]string, len(errs))
+	for i, err := range errs {
+		es[i] = err.Error()
+	}
+	return es
 }

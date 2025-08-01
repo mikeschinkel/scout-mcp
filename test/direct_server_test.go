@@ -280,7 +280,7 @@ func TestDirectServerInfrastructure(t *testing.T) {
 	t.Run("ToolsRegistered", func(t *testing.T) {
 		expectedTools := []string{
 			"start_session", "read_files", "search_files", "get_config",
-			"tool_help", "create_file", "update_file", "delete_files",
+			"help", "create_file", "update_file", "delete_files",
 		}
 
 		for _, toolName := range expectedTools {

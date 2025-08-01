@@ -6,7 +6,7 @@ Scout-MCP is a comprehensive Model Context Protocol (MCP) server that provides C
 
 - **Session-Based Instruction Enforcement**: All interactions start with comprehensive instructions and coding guidelines
 - **Explicit Directory Whitelisting**: Only specified directories are accessible
-- **Comprehensive File Operations**: 19 tools for reading, writing, editing, and analyzing files
+- **Comprehensive File Operations**: 20 tools for reading, writing, editing, and analyzing files
   - **Session Management**: `start_session` tool provides instructions and session tokens
   - **Efficient File Reading**: `read_files` tool can read multiple files/directories in one call
   - **Basic Operations**: create, update, delete files and search directories
@@ -219,7 +219,7 @@ This provides you with a session token and comprehensive instructions. Then you 
 
 ## API Tools
 
-Scout-MCP provides 19 comprehensive tools to Claude:
+Scout-MCP provides 20 comprehensive tools to Claude:
 
 ### Session Management
 - **`start_session`**: ⭐ **START HERE** - Create session token and get comprehensive instructions (no session token required)
@@ -249,6 +249,7 @@ Scout-MCP provides 19 comprehensive tools to Claude:
 - **`analyze_files`**: Analyze file structure and provide insights
 - **`get_config`**: Show current Scout-MCP configuration
 - **`tool_help`**: Get detailed documentation for all tools
+- **`detect_current_project`**: Detect the most recently active project by analyzing recent file modifications in Git repositories
 
 ### Approval System
 - **`request_approval`**: Request user approval for risky operations
