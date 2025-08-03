@@ -14,6 +14,6 @@ func SetLogger(l *slog.Logger) {
 // ensureLogger panics if logger is not set
 func ensureLogger() {
 	if logger == nil {
-		panic("Must set logger with gmover.SetLogger() before using gmover package")
+		panic("Must set logger with scoutcfg.SetLogger() before using scoutcfg package")
 	}
 }

@@ -80,6 +80,7 @@ func (t *StartSessionTool) EnsurePreconditions(_ ToolRequest) (err error) {
 
 func (t *StartSessionTool) Handle(_ context.Context, tr ToolRequest) (result ToolResult, err error) {
 	var response StartSessionResult
+	var ptn string
 
 	logger.Info("Tool called", "tool", "start_session")
 
@@ -91,7 +92,10 @@ func (t *StartSessionTool) Handle(_ context.Context, tr ToolRequest) (result Too
 		goto end
 	}
 
-	err = t.Payload.Initialize(t, tr)
+	if t.Payload != nil {
+		ptn = reflect.TypeOf(t.Payload).Elem().String()
+		err = t.Payload.Initialize(t, tr)
+	}
 	if err != nil {
 		result = NewToolResultError(err)
 		goto end
@@ -102,7 +106,7 @@ func (t *StartSessionTool) Handle(_ context.Context, tr ToolRequest) (result Too
 		SessionToken:    session.Token,
 		TokenExpiresAt:  session.ExpiresAt,
 		Instructions:    instructions,
-		PayloadTypeName: reflect.TypeOf(t.Payload).Elem().String(),
+		PayloadTypeName: ptn,
 		Payload:         t.Payload,
 		Message:         "MCP Session Started",
 	}

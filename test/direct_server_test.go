@@ -31,9 +31,9 @@ func NewDirectServerTestEnv(t *testing.T) *DirectServerTestEnv {
 	t.Helper()
 
 	// Initialize loggers with quiet logger for tests
-	quietLogger := testutil.QuietLogger()
-	scout.SetLogger(quietLogger)
-	mcptools.SetLogger(quietLogger)
+	testLogger := testutil.NewTestLogger()
+	scout.SetLogger(testLogger)
+	mcptools.SetLogger(testLogger)
 
 	// Create temporary test directory
 	testDir, err := os.MkdirTemp("", "scout-mcp-direct-test-")
@@ -248,22 +248,6 @@ func ParseJSONResult(t *testing.T, result mcputil.ToolResult, target interface{}
 	// Parse the JSON content
 	err := json.Unmarshal([]byte(jsonText), target)
 	require.NoError(t, err, "Should be able to parse JSON result")
-}
-
-// ParseTextResult extracts text from a ToolResult
-func ParseTextResult(t *testing.T, result mcputil.ToolResult) string {
-	t.Helper()
-
-	// Use reflection to extract the text from textResult
-	resultValue := reflect.ValueOf(result)
-	if resultValue.Kind() == reflect.Ptr {
-		resultValue = resultValue.Elem()
-	}
-
-	textField := resultValue.FieldByName("text")
-	require.True(t, textField.IsValid(), "Result should have text field")
-
-	return textField.String()
 }
 
 // Test the direct server infrastructure

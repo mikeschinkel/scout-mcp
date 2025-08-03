@@ -5,6 +5,10 @@ import (
 	"log/slog"
 )
 
+func NewTestLogger() *slog.Logger {
+	return QuietLogger() // TODO: Replace this with a buffering logger
+}
+
 // QuietLogger creates a logger that discards all output (for tests that don't need log inspection)
 func QuietLogger() *slog.Logger {
 	return slog.New(NullHandler{})

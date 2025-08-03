@@ -20,7 +20,7 @@ func SetupUnitTest(t *testing.T, env Environment) (tempDir string, cleanup func(
 	t.Helper()
 
 	// Use quiet logger that discards all output
-	env.SetLogger(QuietLogger())
+	env.SetLogger(NewTestLogger())
 
 	// Create temp directory
 	var err error
