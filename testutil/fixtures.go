@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mikeschinkel/scout-mcp/mcptools"
+	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,7 +47,9 @@ func (tf *TestFixture) AddFileFixture(name string, args FileFixtureArgs) *FileFi
 func (tf *TestFixture) Setup(t *testing.T) {
 	t.Helper()
 
-	mcptools.SetLogger(QuietLogger())
+	logger := QuietLogger()
+	mcptools.SetLogger(logger)
+	mcputil.SetLogger(logger)
 
 	// Create temp directory (this can fail, so it belongs in Setup)
 	var err error

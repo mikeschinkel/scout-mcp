@@ -125,10 +125,7 @@ func TestValidateFilesTool(t *testing.T) {
 			"language":      "go",
 		})
 
-		result, err := getToolResult[ValidateFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error validating valid Go file",
-		)
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error validating valid Go file")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:   1,
@@ -164,10 +161,7 @@ func TestValidateFilesTool(t *testing.T) {
 			"language":      "go",
 		})
 
-		result, err := getToolResult[ValidateFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error when validating invalid file",
-		)
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error when validating invalid file")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:    1,
@@ -210,10 +204,7 @@ func TestValidateFilesTool(t *testing.T) {
 			"recursive":     true,
 		})
 
-		result, err := getToolResult[ValidateFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error validating directory",
-		)
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error validating directory")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:    2,
@@ -249,10 +240,7 @@ func TestValidateFilesTool(t *testing.T) {
 			"language":      "python",
 		})
 
-		result, err := getToolResult[ValidateFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle unsupported language gracefully",
-		)
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle unsupported language gracefully")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:    1,

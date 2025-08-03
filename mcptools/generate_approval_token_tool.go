@@ -45,7 +45,7 @@ type TokenRequest struct {
 
 func init() {
 	mcputil.RegisterTool(&GenerateApprovalTokenTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "generate_approval_token",
 			Description: "Generate approval token after user confirmation",
 			Properties: []mcputil.Property{
@@ -58,7 +58,7 @@ func init() {
 }
 
 type GenerateApprovalTokenTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *GenerateApprovalTokenTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

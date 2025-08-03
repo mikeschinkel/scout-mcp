@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/mikeschinkel/scout-mcp/langutil"
+	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
-func writeFile(c Config, filePath string, content string) (err error) {
+func writeFile(c mcputil.Config, filePath string, content string) (err error) {
 	var language string
 
 	if !c.IsAllowedPath(filePath) {
@@ -33,7 +34,7 @@ end:
 	return err
 }
 
-func readFile(c Config, filePath string) (content string, err error) {
+func readFile(c mcputil.Config, filePath string) (content string, err error) {
 	var fileData []byte
 
 	if !c.IsAllowedPath(filePath) {

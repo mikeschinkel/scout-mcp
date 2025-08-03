@@ -123,10 +123,7 @@ func TestReplacePatternTool(t *testing.T) {
 			"all_occurrences": true,
 		})
 
-		result, err := getToolResult[ReplacePatternResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error replacing text",
-		)
+		result, err := mcputil.GetToolResult[ReplacePatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing text")
 
 		requireReplacePatternResult(t, result, err, replacePatternResultOpts{
 			ExpectedFilePath:         testFile.Filepath,
@@ -164,10 +161,7 @@ func TestReplacePatternTool(t *testing.T) {
 			"all_occurrences": false,
 		})
 
-		result, err := getToolResult[ReplacePatternResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error replacing first occurrence",
-		)
+		result, err := mcputil.GetToolResult[ReplacePatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing first occurrence")
 
 		requireReplacePatternResult(t, result, err, replacePatternResultOpts{
 			ExpectedFilePath:         testFile.Filepath,
@@ -206,10 +200,7 @@ func TestReplacePatternTool(t *testing.T) {
 			"all_occurrences": true,
 		})
 
-		result, err := getToolResult[ReplacePatternResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with regex replacement",
-		)
+		result, err := mcputil.GetToolResult[ReplacePatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with regex replacement")
 
 		requireReplacePatternResult(t, result, err, replacePatternResultOpts{
 			ExpectedFilePath:         testFile.Filepath,
@@ -253,10 +244,7 @@ func TestReplacePatternTool(t *testing.T) {
 			"regex":         true,
 		})
 
-		result, err := getToolResult[ReplacePatternResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle invalid regex",
-		)
+		result, err := mcputil.GetToolResult[ReplacePatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle invalid regex")
 
 		requireReplacePatternResult(t, result, err, replacePatternResultOpts{
 			ExpectError:      true,

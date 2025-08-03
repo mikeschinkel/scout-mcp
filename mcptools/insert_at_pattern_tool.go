@@ -17,7 +17,7 @@ var (
 
 func init() {
 	mcputil.RegisterTool(&InsertAtPatternTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "insert_at_pattern",
 			Description: "Insert content before or after a code pattern match",
 			Properties: []mcputil.Property{
@@ -34,7 +34,7 @@ func init() {
 }
 
 type InsertAtPatternTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *InsertAtPatternTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

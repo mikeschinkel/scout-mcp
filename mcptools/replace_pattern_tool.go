@@ -13,7 +13,7 @@ var _ mcputil.Tool = (*ReplacePatternTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&ReplacePatternTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "replace_pattern",
 			Description: "Find and replace text patterns in a file with support for regex",
 			QuickHelp:   "Find and replace text",
@@ -30,7 +30,7 @@ func init() {
 }
 
 type ReplacePatternTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *ReplacePatternTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

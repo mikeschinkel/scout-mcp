@@ -34,8 +34,12 @@ func testFullDocumentationDirect(t *testing.T, env *DirectServerTestEnv) {
 	// Test getting full documentation without specifying a tool
 	result := env.CallTool(t, "help", map[string]interface{}{})
 
-	// Parse the response as text (help returns Markdown, not JSON)
-	content := ParseTextResult(t, result)
+	// Parse the response as JSON and extract content
+	var helpResult map[string]interface{}
+	ParseJSONResult(t, result, &helpResult)
+	content, ok := helpResult["content"].(string)
+	require.True(t, ok, "Help result should have content field")
+	require.NotEmpty(t, content, "Content should not be empty")
 
 	// Verify it contains the full README content
 	assert.Contains(t, content, "# Scout MCP Tools Documentation", "Should contain main title")
@@ -145,7 +149,11 @@ func testSpecificToolHelpDirect(t *testing.T, env *DirectServerTestEnv) {
 			})
 			require.NotNil(t, result, "help should return result for %s", tc.toolName)
 
-			content := ParseTextResult(t, result)
+			var helpResult map[string]interface{}
+			ParseJSONResult(t, result, &helpResult)
+			content, ok := helpResult["content"].(string)
+			require.True(t, ok, "Help result should have content field for %s", tc.toolName)
+			require.NotEmpty(t, content, "Content should not be empty for %s", tc.toolName)
 
 			// Check that required content is present
 			for _, shouldContain := range tc.shouldContain {
@@ -173,7 +181,11 @@ func testNonExistentToolDirect(t *testing.T, env *DirectServerTestEnv) {
 	})
 	require.NotNil(t, result, "help should return result")
 
-	content := ParseTextResult(t, result)
+	var helpResult map[string]interface{}
+	ParseJSONResult(t, result, &helpResult)
+	content, ok := helpResult["content"].(string)
+	require.True(t, ok, "Help result should have content field")
+	require.NotEmpty(t, content, "Content should not be empty")
 
 	// Verify helpful error message
 	assert.Contains(t, content, "Tool 'nonexistent_tool' not found", "Should indicate tool not found")
@@ -200,7 +212,11 @@ func testDocumentationContentDirect(t *testing.T, env *DirectServerTestEnv) {
 	result := env.CallTool(t, "help", map[string]interface{}{})
 	require.NotNil(t, result, "help should return result")
 
-	content := ParseTextResult(t, result)
+	var helpResult map[string]interface{}
+	ParseJSONResult(t, result, &helpResult)
+	content, ok := helpResult["content"].(string)
+	require.True(t, ok, "Help result should have content field")
+	require.NotEmpty(t, content, "Content should not be empty")
 
 	t.Run("SafetyWarnings", func(t *testing.T) {
 		// Verify important safety warnings are present

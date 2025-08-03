@@ -69,10 +69,7 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 			"operations": []any{"create_file", "update_file"},
 		})
 
-		result, err := getToolResult[GenerateApprovalTokenResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error generating approval token",
-		)
+		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error generating approval token")
 
 		requireGenerateApprovalTokenResult(t, result, err, generateApprovalTokenResultOpts{})
 	})
@@ -94,10 +91,7 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 			"operations": []any{"delete_files"},
 		})
 
-		result, err := getToolResult[GenerateApprovalTokenResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error generating delete approval token",
-		)
+		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error generating delete approval token")
 
 		requireGenerateApprovalTokenResult(t, result, err, generateApprovalTokenResultOpts{})
 	})
@@ -118,10 +112,7 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 			// Missing file_actions and operations - treated as empty arrays
 		})
 
-		result, err := getToolResult[GenerateApprovalTokenResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Tool accepts empty file_actions and operations",
-		)
+		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Tool accepts empty file_actions and operations")
 
 		requireGenerateApprovalTokenResult(t, result, err, generateApprovalTokenResultOpts{})
 	})

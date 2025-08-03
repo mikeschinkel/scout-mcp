@@ -12,7 +12,7 @@ var _ mcputil.Tool = (*GetConfigTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&GetConfigTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "get_config",
 			Description: "Get current Scout MCP server configuration including allowed paths and settings",
 			Properties: []mcputil.Property{
@@ -23,7 +23,7 @@ func init() {
 }
 
 type GetConfigTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *GetConfigTool) Handle(_ context.Context, _ mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
@@ -57,7 +57,7 @@ type ConfigInfo struct {
 	Summary        string   `json:"summary"`
 }
 
-func (t *GetConfigTool) getConfigInfo(cfg Config) (info ConfigInfo, err error) {
+func (t *GetConfigTool) getConfigInfo(cfg mcputil.Config) (info ConfigInfo, err error) {
 	var allowedPaths []string
 	var homeDir string
 	var configPath string

@@ -1,4 +1,4 @@
-package mcptools
+package mcputil
 
 import (
 	"encoding/json"
@@ -8,32 +8,33 @@ import (
 	"strings"
 
 	"github.com/mikeschinkel/scout-mcp/langutil"
-	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
-type Config = mcputil.Config
+//type Config = Config
 
-type toolBase struct {
+// TODO
+
+type ToolBase struct {
 	config  Config
-	options mcputil.ToolOptions
+	options ToolOptions
 }
 
-func newToolBase(options mcputil.ToolOptions) *toolBase {
+func NewToolBase(options ToolOptions) *ToolBase {
 	options.Name = strings.ToLower(options.Name)
-	return &toolBase{
+	return &ToolBase{
 		options: options,
 	}
 }
 
-func (b *toolBase) IsAllowedPath(path string) bool {
+func (b *ToolBase) IsAllowedPath(path string) bool {
 	return b.config.IsAllowedPath(path)
 }
 
-func (b *toolBase) Name() string {
+func (b *ToolBase) Name() string {
 	return b.options.Name
 }
 
-func (b *toolBase) ToMap() (m map[string]any, err error) {
+func (b *ToolBase) ToMap() (m map[string]any, err error) {
 	var bytes []byte
 	bytes, err = json.Marshal(b)
 	if err != nil {
@@ -47,26 +48,26 @@ end:
 	return m, err
 }
 
-func (b *toolBase) SetConfig(c Config) {
+func (b *ToolBase) SetConfig(c Config) {
 	b.config = c
 }
 
-func (b *toolBase) Config() Config {
+func (b *ToolBase) Config() Config {
 	return b.config
 }
 
-func (b *toolBase) Options() mcputil.ToolOptions {
+func (b *ToolBase) Options() ToolOptions {
 	return b.options
 }
 
 // EnsurePreconditions checks all shared preconditions for tools
-func (b *toolBase) EnsurePreconditions(req mcputil.ToolRequest) (err error) {
+func (b *ToolBase) EnsurePreconditions(req ToolRequest) (err error) {
 	var sessionToken string
 
 	// Session validation (skip for start_session tool)
 	if b.options.Name != "start_session" {
 		sessionToken = req.GetString("session_token", "")
-		err = RequireValidSession(sessionToken)
+		err = ValidateSession(sessionToken)
 		if err != nil {
 			goto end
 		}
@@ -82,8 +83,9 @@ end:
 	return err
 }
 
-// File system operations
-func (b *toolBase) readFile(path string) (content string, err error) {
+// ReadFile reads files and returns a string
+// TODO Does the functionality of this really carry its own weight?  Seems like it does not.
+func (b *ToolBase) ReadFile(path string) (content string, err error) {
 	var data []byte
 
 	data, err = os.ReadFile(path)
@@ -97,12 +99,14 @@ end:
 	return content, err
 }
 
-func (b *toolBase) writeFile(path, content string) (err error) {
+// WriteFile writes to files with a default 0644 permissions
+// TODO Does the functionality of this really carry its own weight?  Seems like it does not.
+func (b *ToolBase) WriteFile(path, content string) (err error) {
 	err = os.WriteFile(path, []byte(content), 0644)
 	return err
 }
 
-func (b *toolBase) writeFileWithValidation(path, content string) (err error) {
+func (b *ToolBase) writeFileWithValidation(path, content string) (err error) {
 	var language string
 
 	// Detect language from file extension
@@ -118,13 +122,13 @@ func (b *toolBase) writeFileWithValidation(path, content string) (err error) {
 	}
 
 	// Write file
-	err = b.writeFile(path, content)
+	err = b.WriteFile(path, content)
 
 end:
 	return err
 }
 
-func (b *toolBase) searchForFiles(path string, recursive bool, extensions []string) (files []string, err error) {
+func (b *ToolBase) SearchForFiles(path string, recursive bool, extensions []string) (files []string, err error) {
 	var info os.FileInfo
 
 	info, err = os.Stat(path)
@@ -151,7 +155,7 @@ end:
 	return files, err
 }
 
-func (b *toolBase) walkDirectory(path string, extensions []string, files *[]string) (err error) {
+func (b *ToolBase) walkDirectory(path string, extensions []string, files *[]string) (err error) {
 	err = filepath.Walk(path, func(filePath string, info os.FileInfo, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -167,7 +171,7 @@ func (b *toolBase) walkDirectory(path string, extensions []string, files *[]stri
 	return err
 }
 
-func (b *toolBase) listDirectory(path string, extensions []string, files *[]string) (err error) {
+func (b *ToolBase) listDirectory(path string, extensions []string, files *[]string) (err error) {
 	var entries []os.DirEntry
 
 	entries, err = os.ReadDir(path)
@@ -188,7 +192,7 @@ end:
 	return err
 }
 
-func (b *toolBase) matchesExtensions(filePath string, extensions []string) bool {
+func (b *ToolBase) matchesExtensions(filePath string, extensions []string) bool {
 	if len(extensions) == 0 {
 		return true
 	}
@@ -203,7 +207,7 @@ func (b *toolBase) matchesExtensions(filePath string, extensions []string) bool 
 	return false
 }
 
-func (b *toolBase) detectLanguageFromExtension(filePath string) (language string) {
+func (b *ToolBase) detectLanguageFromExtension(filePath string) (language string) {
 	ext := strings.ToLower(filepath.Ext(filePath))
 
 	switch ext {

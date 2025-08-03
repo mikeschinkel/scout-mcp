@@ -78,10 +78,7 @@ func TestGetConfigTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[ConfigResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error getting config",
-		)
+		result, err := mcputil.GetToolResult[ConfigResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error getting config")
 
 		requireConfigResult(t, result, err, configToolResultOpts{
 			ExpectMinPaths: 1,

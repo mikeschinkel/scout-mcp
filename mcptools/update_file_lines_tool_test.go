@@ -123,10 +123,7 @@ func TestUpdateFileLinesTool(t *testing.T) {
 			"new_content":   "Updated Line 2",
 		})
 
-		result, err := getToolResult[UpdateFileLinesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error updating single line",
-		)
+		result, err := mcputil.GetToolResult[UpdateFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error updating single line")
 
 		requireUpdateFileLinesResult(t, result, err, updateFileLinesResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -163,10 +160,7 @@ func TestUpdateFileLinesTool(t *testing.T) {
 			"new_content":   "Updated Lines 2-4",
 		})
 
-		result, err := getToolResult[UpdateFileLinesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error updating multiple lines",
-		)
+		result, err := mcputil.GetToolResult[UpdateFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error updating multiple lines")
 
 		requireUpdateFileLinesResult(t, result, err, updateFileLinesResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -204,10 +198,7 @@ func TestUpdateFileLinesTool(t *testing.T) {
 			"new_content":   "Updated content",
 		})
 
-		result, err := getToolResult[UpdateFileLinesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle invalid line range",
-		)
+		result, err := mcputil.GetToolResult[UpdateFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle invalid line range")
 
 		requireUpdateFileLinesResult(t, result, err, updateFileLinesResultOpts{
 			ExpectError:      true,

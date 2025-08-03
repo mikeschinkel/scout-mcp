@@ -75,7 +75,7 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 
 	// Add the mcpTool with wrapper handler
 	s.srv.AddTool(mcpTool, func(ctx context.Context, req mcp.CallToolRequest) (tr *mcp.CallToolResult, err error) {
-		var txtRes *textResult
+		var jsonRes *jsonResult
 		var errRes *errorResult
 		var ok bool
 		var result ToolResult
@@ -97,9 +97,9 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 		}
 
 		// Convert result
-		txtRes, ok = result.(*textResult)
+		jsonRes, ok = result.(*jsonResult)
 		if ok {
-			tr = mcp.NewToolResultText(txtRes.text)
+			tr = mcp.NewToolResultText(jsonRes.json)
 			goto end
 		}
 		errRes, ok = result.(*errorResult)

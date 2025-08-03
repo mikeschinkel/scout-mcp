@@ -90,10 +90,7 @@ func TestSearchFilesTool(t *testing.T) {
 			"path":          pf.Dir,
 		})
 
-		result, err := getToolResult[SearchFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error searching files",
-		)
+		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error searching files")
 
 		requireSearchFilesResult(t, result, err, searchFilesResultOpts{
 			MinFiles: 3, // At least our 3 files
@@ -123,10 +120,7 @@ func TestSearchFilesTool(t *testing.T) {
 			"pattern":       "test",
 		})
 
-		result, err := getToolResult[SearchFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error searching with pattern",
-		)
+		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error searching with pattern")
 
 		requireSearchFilesResult(t, result, err, searchFilesResultOpts{
 			ExpectFiles: 2, // Should find test-file.txt and test-config.yaml
@@ -157,10 +151,7 @@ func TestSearchFilesTool(t *testing.T) {
 			"recursive":     true,
 		})
 
-		result, err := getToolResult[SearchFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error searching with extensions",
-		)
+		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error searching with extensions")
 
 		requireSearchFilesResult(t, result, err, searchFilesResultOpts{
 			ExpectFiles: 2, // Should find only main.go and utils.go

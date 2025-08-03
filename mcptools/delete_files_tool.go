@@ -12,7 +12,7 @@ var _ mcputil.Tool = (*DeleteFileTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&DeleteFileTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "delete_files",
 			Description: "Delete file or directory from allowed directories",
 			Properties: []mcputil.Property{
@@ -25,7 +25,7 @@ func init() {
 }
 
 type DeleteFileTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

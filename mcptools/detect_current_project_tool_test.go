@@ -88,7 +88,7 @@ func requireProductDetectionResult(t *testing.T, result *mcptools.ProjectDetecti
 
 	if opts.AssertInRecentProjects != nil {
 		for _, p := range opts.AssertInRecentProjects {
-			assert.True(t, containsMatch(p, result.RecentProjects, func(p string, pi mcptools.ProjectInfo) bool {
+			assert.True(t, testutil.ContainsMatch(p, result.RecentProjects, func(p string, pi mcptools.ProjectInfo) bool {
 				return p == pi.Name
 			}), fmt.Sprintf("Recent projects should contain the older project"))
 		}
@@ -102,7 +102,7 @@ func requireProductDetectionResult(t *testing.T, result *mcptools.ProjectDetecti
 
 	// Verify requires choice set correctly for current + recent projects
 	if result.CurrentProject != nil {
-		if withinTimeframe(t, result.CurrentProject.LastModified, result.RecentProjects[0].LastModified, 24*time.Hour) {
+		if testutil.WithinTimeframe(t, result.CurrentProject.LastModified, result.RecentProjects[0].LastModified, 24*time.Hour) {
 			assert.True(t, result.RequiresChoice, "Should require choice when recent projects found")
 		} else {
 			assert.False(t, result.RequiresChoice, "Should not require choice when current project more recent than recent projects by at least 24 hours")
@@ -110,7 +110,7 @@ func requireProductDetectionResult(t *testing.T, result *mcptools.ProjectDetecti
 
 		// Verify recent projects does NOT include the current project (no duplication)
 		assert.False(t,
-			containsMatch(result.CurrentProject.Path, result.RecentProjects, func(path string, p mcptools.ProjectInfo) bool {
+			testutil.ContainsMatch(result.CurrentProject.Path, result.RecentProjects, func(path string, p mcptools.ProjectInfo) bool {
 				return path == p.Path
 			}),
 			"CurrentProject path must not appear in RecentProjects",
@@ -146,10 +146,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with empty directory",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with empty directory")
 
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertNoCurrentProject: true,
@@ -178,10 +175,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with single project",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with single project")
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertCurrentProject:     true,
 			AssertNoRecentProjects:   true,
@@ -212,10 +206,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"ignore_git_requirement": true,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with ignore_git_requirement",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with ignore_git_requirement")
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertCurrentProject:    true,
 			AssertNoRecentProjects:  true,
@@ -259,10 +250,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with clear winner",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with clear winner")
 
 		projectCount := 1
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
@@ -310,10 +298,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with multiple recent projects",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with multiple recent projects")
 
 		// For multiple recent projects (within 24 hours), there should be no current project
 		// and RequiresChoice should be true
@@ -359,10 +344,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with hidden directories",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with hidden directories")
 
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertCurrentProject:     true,
@@ -414,10 +396,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with multiple allowed paths",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with multiple allowed paths")
 
 		projectCount := 1
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
@@ -474,10 +453,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with multiple project paths",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with multiple project paths")
 
 		projectCount := 1
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
@@ -505,10 +481,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should error with no allowed paths",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should error with no allowed paths")
 
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertError: "no allowed paths configured",
@@ -557,10 +530,7 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			"max_projects":  3,
 		})
 
-		result, err := getToolResult[mcptools.ProjectDetectionResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with max_projects limit",
-		)
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with max_projects limit")
 
 		// Should have limited results to max_projects (3)
 		// The most recent project should be current, others in recent projects

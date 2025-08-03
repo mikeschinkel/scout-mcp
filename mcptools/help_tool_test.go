@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const ToolHelpDirPrefix = "tool-help-tool-test"
+const HelpDirPrefix = "tool-help-tool-test"
 
 // Tool help tool result type
-type ToolHelpResult struct {
+type HelpResult struct {
 	Tool    string `json:"tool"`
 	Content string `json:"content"`
 	Type    string `json:"type"`
@@ -27,7 +27,7 @@ type helpToolResultOpts struct {
 	ExpectedType          string
 }
 
-func requireHelpResult(t *testing.T, result *ToolHelpResult, err error, opts helpToolResultOpts) {
+func requireHelpResult(t *testing.T, result *HelpResult, err error, opts helpToolResultOpts) {
 	t.Helper()
 
 	if opts.ExpectError {
@@ -66,7 +66,7 @@ func TestHelpTool(t *testing.T) {
 	require.NotNil(t, tool, "help tool should be registered")
 
 	t.Run("GetFullDocumentation", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ToolHelpDirPrefix)
+		tf := testutil.NewTestFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -78,8 +78,8 @@ func TestHelpTool(t *testing.T) {
 			"session_token": testToken,
 		})
 
-		result, err := getToolResult[ToolHelpResult](t,
-			callResult(testutil.CallTool(tool, req)),
+		result, err := mcputil.GetToolResult[HelpResult](
+			mcputil.CallResult(testutil.CallTool(tool, req)),
 			"Should not error getting full documentation",
 		)
 
@@ -89,8 +89,8 @@ func TestHelpTool(t *testing.T) {
 		})
 	})
 
-	t.Run("GetSpecificToolHelp", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ToolHelpDirPrefix)
+	t.Run("GetSpecificHelp", func(t *testing.T) {
+		tf := testutil.NewTestFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -103,10 +103,7 @@ func TestHelpTool(t *testing.T) {
 			"tool":          "read_files",
 		})
 
-		result, err := getToolResult[ToolHelpResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error getting specific tool help",
-		)
+		result, err := mcputil.GetToolResult[HelpResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error getting specific tool help")
 
 		requireHelpResult(t, result, err, helpToolResultOpts{
 			ExpectSpecificContent: "read_files",
@@ -116,7 +113,7 @@ func TestHelpTool(t *testing.T) {
 	})
 
 	t.Run("GetHelpForNonExistentTool", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ToolHelpDirPrefix)
+		tf := testutil.NewTestFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -129,10 +126,7 @@ func TestHelpTool(t *testing.T) {
 			"tool":          "nonexistent_tool",
 		})
 
-		result, err := getToolResult[ToolHelpResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error when tool not found",
-		)
+		result, err := mcputil.GetToolResult[HelpResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error when tool not found")
 
 		requireHelpResult(t, result, err, helpToolResultOpts{
 			ExpectedTool: "nonexistent_tool",

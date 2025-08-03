@@ -91,10 +91,7 @@ func TestUpdateFileTool(t *testing.T) {
 			"new_content":   "Updated content",
 		})
 
-		result, err := getToolResult[UpdateFileResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error updating file",
-		)
+		result, err := mcputil.GetToolResult[UpdateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error updating file")
 
 		requireUpdateFileResult(t, result, err, updateFileResultOpts{
 			ShouldUpdateFile: true,
@@ -122,10 +119,7 @@ func TestUpdateFileTool(t *testing.T) {
 			"new_content":   "This should fail",
 		})
 
-		result, err := getToolResult[UpdateFileResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle nonexistent file",
-		)
+		result, err := mcputil.GetToolResult[UpdateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle nonexistent file")
 
 		requireUpdateFileResult(t, result, err, updateFileResultOpts{
 			ExpectError:      true,

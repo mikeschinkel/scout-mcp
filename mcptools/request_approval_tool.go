@@ -10,7 +10,7 @@ var _ mcputil.Tool = (*RequestApprovalTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&RequestApprovalTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "request_approval",
 			Description: "Request user approval with rich visual formatting",
 			Properties: []mcputil.Property{
@@ -26,7 +26,7 @@ func init() {
 }
 
 type RequestApprovalTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *RequestApprovalTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

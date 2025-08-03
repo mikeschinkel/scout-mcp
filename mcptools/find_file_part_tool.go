@@ -12,7 +12,7 @@ var _ mcputil.Tool = (*FindFilePartTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&FindFilePartTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "find_file_part",
 			Description: "Find specific language constructs by name and return their location and content",
 			Properties: []mcputil.Property{
@@ -27,7 +27,7 @@ func init() {
 }
 
 type FindFilePartTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *FindFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

@@ -122,10 +122,7 @@ func TestInsertAtPatternTool(t *testing.T) {
 			"new_content":   "\n\t// Added comment",
 		})
 
-		result, err := getToolResult[InsertAtPatternResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error inserting after pattern",
-		)
+		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting after pattern")
 
 		requireInsertAtPatternResult(t, result, err, insertAtPatternResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -165,10 +162,7 @@ func TestInsertAtPatternTool(t *testing.T) {
 			"new_content":    "// Main function\n",
 		})
 
-		result, err := getToolResult[InsertAtPatternResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error inserting before pattern",
-		)
+		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting before pattern")
 
 		requireInsertAtPatternResult(t, result, err, insertAtPatternResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -209,10 +203,7 @@ func TestInsertAtPatternTool(t *testing.T) {
 			"regex":          true,
 		})
 
-		result, err := getToolResult[InsertAtPatternResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with regex pattern",
-		)
+		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with regex pattern")
 
 		requireInsertAtPatternResult(t, result, err, insertAtPatternResultOpts{
 			ExpectedFilePath:  testFile.Filepath,

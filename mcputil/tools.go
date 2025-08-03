@@ -63,29 +63,24 @@ type ToolResult interface {
 }
 
 // ToolResult implementations
-type textResult struct {
-	text string
+type jsonResult struct {
+	json string
 }
 
-func (textResult) ToolResult() {}
+func (*jsonResult) ToolResult() {}
 
-func (t *textResult) Value() string {
-	return t.text
+func (t *jsonResult) Value() string {
+	return t.json
 }
 
 type errorResult struct {
 	message string
 }
 
-func (errorResult) ToolResult() {}
+func (*errorResult) ToolResult() {}
 
 func (e *errorResult) Value() string {
 	return e.message
-}
-
-// NewToolResultText creates a text result for a tool call
-func NewToolResultText(text string) ToolResult {
-	return &textResult{text: text}
 }
 
 // NewToolResultError creates an error result for a tool call
@@ -96,5 +91,5 @@ func NewToolResultError(err error) ToolResult {
 // NewToolResultJSON creates a JSON result for a tool call
 func NewToolResultJSON(data any) ToolResult {
 	jsonData, _ := json.Marshal(data)
-	return &textResult{text: string(jsonData)}
+	return &jsonResult{json: string(jsonData)}
 }

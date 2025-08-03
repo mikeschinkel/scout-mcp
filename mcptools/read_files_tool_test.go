@@ -128,10 +128,7 @@ func TestReadFilesTool(t *testing.T) {
 			"paths":         []any{testFile.Filepath},
 		})
 
-		result, err := getToolResult[ReadFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error reading single file",
-		)
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error reading single file")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			ExpectFiles:     1,
@@ -169,10 +166,7 @@ func TestReadFilesTool(t *testing.T) {
 			},
 		})
 
-		result, err := getToolResult[ReadFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error reading multiple files",
-		)
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error reading multiple files")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			ExpectFiles:      2,
@@ -206,10 +200,7 @@ func TestReadFilesTool(t *testing.T) {
 			"recursive":     true,
 		})
 
-		result, err := getToolResult[ReadFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error reading directory",
-		)
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error reading directory")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			MinFiles:         3, // At least the 3 files we created
@@ -236,10 +227,7 @@ func TestReadFilesTool(t *testing.T) {
 			"paths":         []any{missingFile.Filepath},
 		})
 
-		result, err := getToolResult[ReadFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle nonexistent file gracefully",
-		)
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle nonexistent file gracefully")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			ExpectPartialError: true,

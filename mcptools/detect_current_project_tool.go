@@ -17,7 +17,7 @@ var _ mcputil.Tool = (*DetectCurrentProjectTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&DetectCurrentProjectTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "detect_current_project",
 			Description: "Detect the most recently active project by analyzing subdirectory modification times in allowed paths",
 			Properties: []mcputil.Property{
@@ -30,7 +30,7 @@ func init() {
 }
 
 type DetectCurrentProjectTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 type ProjectInfo struct {

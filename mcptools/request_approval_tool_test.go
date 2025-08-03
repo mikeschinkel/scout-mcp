@@ -88,10 +88,7 @@ func TestRequestApprovalTool(t *testing.T) {
 			"preview_content": "# Configuration\nport: 8080\nhost: localhost",
 		})
 
-		result, err := getToolResult[RequestApprovalResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error requesting approval",
-		)
+		result, err := mcputil.GetToolResult[RequestApprovalResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error requesting approval")
 
 		requireRequestApprovalResult(t, result, err, requestApprovalResultOpts{
 			ExpectedOperation: "create_file",
@@ -118,10 +115,7 @@ func TestRequestApprovalTool(t *testing.T) {
 			"preview_content": "This operation will permanently delete the file",
 		})
 
-		result, err := getToolResult[RequestApprovalResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error requesting high-risk approval",
-		)
+		result, err := mcputil.GetToolResult[RequestApprovalResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error requesting high-risk approval")
 
 		requireRequestApprovalResult(t, result, err, requestApprovalResultOpts{
 			ExpectedOperation: "delete_files",
@@ -149,10 +143,7 @@ func TestRequestApprovalTool(t *testing.T) {
 			"risk_level":     "invalid_level",
 		})
 
-		result, err := getToolResult[RequestApprovalResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Stub implementation doesn't validate risk levels yet",
-		)
+		result, err := mcputil.GetToolResult[RequestApprovalResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Stub implementation doesn't validate risk levels yet")
 
 		requireRequestApprovalResult(t, result, err, requestApprovalResultOpts{
 			ExpectedOperation: "update_file",

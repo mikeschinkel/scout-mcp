@@ -1,120 +1,124 @@
 package mcptools
 
 import (
-	"context"
 	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
-var _ mcputil.Tool = (*StartSessionTool)(nil)
+var homeDir string
 
-func init() {
-	mcputil.RegisterTool(&StartSessionTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
-			Name:        "start_session",
-			Description: "Start an MCP session and get comprehensive instructions for using Scout-MCP effectively",
-			Properties:  []mcputil.Property{},
-		}),
-	})
-}
-
-type StartSessionTool struct {
-	*toolBase
-}
-
-// EnsurePreconditions bypasses session validation for start_session but runs other preconditions
-func (t *StartSessionTool) EnsurePreconditions(_ mcputil.ToolRequest) (err error) {
-	// start_session tool doesn't require any preconditions
-	// Future non-session preconditions could be added here if needed
-	return nil
-}
-
-var instructionsMsg = `🎯 MCP Session Started Successfully!
-
-Your session token is valid for 24 hours and will be required for all subsequent tool calls.
-
-REQUIRED: 
-- Log all tool failures in ./MCP_USABILITY_CONCERNS.md - match the file's existing format.
-
-IMPORTANT INSTRUCTIONS:
-1. **Session Token Required**: All tools (except start_session) require session_token parameter
-2. **Token Expiration**: Tokens expire after 24 hours or when server restarts
-3. **Language Instructions**: Review the language-specific instructions for proper coding style
-4. **Validation**: If you see instruction files with non-standard names like 'golang.md', 'js.md', or 'py.md', warn the user that these should be renamed to 'go.md', 'javascript.md', and 'python.md' respectively for best compatibility
+var instructionsMsg = `
+MORE IMPORTANT INSTRUCTIONS:
+1. **Language Instructions**: Review the language-specific instructions for proper coding style
+2. **Validation**: If you see instruction files with non-standard names like 'golang.md', 'js.md', or 'py.md', warn the user that these should be renamed to 'go.md', 'javascript.md', and 'python.md' respectively for best compatibility
 `
 
-func (t *StartSessionTool) Handle(_ context.Context, _ mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
-	var ss *Sessions
-	var token string
-	var expiresAt time.Time
-	var response SessionResponse
-	var quickStart []string
-	var serverConfig map[string]any
-	var instructions InstructionsConfig
-	var currentProject *ProjectDetectionResult
+func init() {
+	mcputil.RegisterTool(mcputil.NewStartSessionTool(&StartSessionResult{}))
+}
 
-	logger.Info("Tool called", "tool", "start_session")
+var _ mcputil.Payload = (*StartSessionResult)(nil)
 
-	// Get session manager and create new session
-	ss = GetSessions()
-	token, expiresAt, err = ss.NewSession()
+type ExtensionMappings map[string]string
+
+// StartSessionResult contains the generic response structure for session creation
+type StartSessionResult struct {
+	MoreInstructions     string                  `json:"more_instructions,omitempty"` // Generic instruction payload
+	Message              string                  `json:"message"`
+	QuickStart           []string                `json:"quick_start,omitempty"` // Generic quick start payload
+	LanguageInstructions []LanguageInstructions  `json:"language_instructions"`
+	ExtensionMappings    ExtensionMappings       `json:"extension_mappings"`
+	ServerConfig         map[string]any          `json:"server_config,omitempty"`   // Generic config payload
+	CurrentProject       *ProjectDetectionResult `json:"current_project,omitempty"` // Generic project info
+}
+
+func (sr *StartSessionResult) Payload() {}
+func (sr *StartSessionResult) ensureInstructionsDirectory() (err error) {
+	var dir string
+
+	// Get instructions directory
+	homeDir, err = os.UserHomeDir()
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to create session: %v", err))
+		goto end
+	}
+	dir = getInstructionsDir()
+	err = os.MkdirAll(dir, 0755)
+end:
+	return err
+}
+
+func errAndLog(err error, msg string, args ...any) error {
+	logger.Error(msg, append(args, "error", err)...)
+	return fmt.Errorf("%s: %w", msg, err)
+}
+
+func (sr *StartSessionResult) Initialize(t mcputil.Tool, _ mcputil.ToolRequest) (err error) {
+	var userInstructions string
+
+	sst, ok := t.(*mcputil.StartSessionTool)
+	if !ok {
+		err = fmt.Errorf("tool is %T, expected *mcputil.StartSessionTool", t)
 		goto end
 	}
 
-	// Generate quick start list
-	quickStart = t.generateQuickStartList()
-
-	// Get server config (from existing get_config functionality)
-	serverConfig, err = t.config.ToMap()
+	err = sr.ensureInstructionsDirectory()
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to generate server config: %v", err))
-		goto end
-	}
-
-	// Load instructions
-	instructions, err = t.loadInstructions()
-	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to load instructions: %v", err))
+		err = errAndLog(err, "unable to ensure instructions directory", []any{
+			"directory", getInstructionsDir(),
+		})
 		goto end
 	}
 
 	// Detect current project (optional - don't fail session creation if this fails)
-	currentProject, err = t.detectCurrentProject()
+	sr.CurrentProject, err = sr.detectCurrentProject(sst)
 	if err != nil {
-		// Log the error but don't fail session creation
-		logger.Error("Failed to detect current project during session creation", "error", err)
-		currentProject = nil
+		logger.Warn("unable to detect current project", "error", err)
 		err = nil // Reset error so session creation continues
 	}
 
-	// Build response
-	response = SessionResponse{
-		SessionToken:   token,
-		TokenExpiresAt: expiresAt,
-		QuickStart:     quickStart,
-		ServerConfig:   serverConfig,
-		Instructions:   instructions,
-		Message:        instructionsMsg,
-		CurrentProject: currentProject,
+	// Get server config (from existing get_config functionality)
+	sr.ServerConfig, err = sst.Config().ToMap()
+	if err != nil {
+		err = errAndLog(err, "failed to generate server config", nil)
+		goto end
 	}
 
-	logger.Info("Tool completed", "tool", "start_session", "success", true, "token_length", len(token))
-	result = mcputil.NewToolResultJSON(response)
+	// Load instructions
+	sr.LanguageInstructions, err = sr.loadLanguageInstructions()
+	if err != nil {
+		err = errAndLog(err, "failed to load language instructions", nil)
+		goto end
+	}
+
+	userInstructions, err = sr.loadInstructions()
+	if err != nil {
+		err = errAndLog(err, "failed to load general instructions", nil)
+		goto end
+	}
+	sr.MoreInstructions = fmt.Sprintf("%s\n\nCUSTOM INSTRUCTIONS\n%s", instructionsMsg, userInstructions)
+
+	// Generate quick start list
+	sr.QuickStart = sr.generateQuickStartList()
+
+	// Load instructions
+	sr.ExtensionMappings = sr.loadExtensionMappings()
 
 end:
-	return result, err
+	if err != nil {
+		sr.CurrentProject = nil
+		sr.ServerConfig = nil
+		sr.LanguageInstructions = nil
+	}
+	return err
 }
 
 // generateQuickStartList creates a list of essential tools with their quick help descriptions
-func (t *StartSessionTool) generateQuickStartList() []string {
+func (sr *StartSessionResult) generateQuickStartList() []string {
 	var tools []mcputil.Tool
 	var tool mcputil.Tool
 	var options mcputil.ToolOptions
@@ -133,91 +137,25 @@ func (t *StartSessionTool) generateQuickStartList() []string {
 	return quickStartList
 }
 
-// generateToolHelp creates the same output as the help tool
-func (t *StartSessionTool) generateToolHelp() (helpText string, err error) {
-	var tools []mcputil.Tool
-	var tool mcputil.Tool
-	var options mcputil.ToolOptions
-	var prop mcputil.Property
-	var propOptions []mcputil.PropertyOption
-
-	tools = mcputil.RegisteredTools()
-	helpText = "# Scout-MCP Tools Documentation\n\n"
-
-	for _, tool = range tools {
-		options = tool.Options()
-		helpText += fmt.Sprintf("## %s\n\n%s\n\n", options.Name, options.Description)
-
-		if len(options.Properties) > 0 {
-			helpText += "### Parameters\n\n"
-			for _, prop = range options.Properties {
-				propOptions = prop.PropertyOptions()
-				helpText += fmt.Sprintf("- **%s** (%s)", prop.GetName(), prop.GetType())
-
-				// Check if required
-				for _, opt := range propOptions {
-					p, ok := opt.(mcputil.RequiredProperty)
-					if ok && p.Required {
-						helpText += " *[required]*"
-						break
-					}
-				}
-
-				helpText += fmt.Sprintf(": %s\n", getPropertyDescription(prop))
-			}
-			helpText += "\n"
-		}
-	}
-
-	return helpText, err
-}
-
-// loadInstructions loads instruction files from the config directory
-func (t *StartSessionTool) loadInstructions() (instructions InstructionsConfig, err error) {
-	var homeDir string
-	var instructionsDir string
-	var generalPath string
-	var generalContent []byte
+// instructionsDir returns the directory where instructions can be found
+// TODO Centralize this knowledge
+// loadLanguageInstructions loads instruction files from the config directory
+func (sr *StartSessionResult) loadLanguageInstructions() (instructions []LanguageInstructions, err error) {
 	var entries []os.DirEntry
 	var entry os.DirEntry
 	var filename string
 	var language string
 	var version string
 	var content []byte
-	var langInstr LanguageInstructions
-	var extensionMappings map[string]string
-
-	// Get instructions directory
-	homeDir, err = os.UserHomeDir()
-	if err != nil {
-		goto end
-	}
-
-	// TODO: Use gm
-	instructionsDir = filepath.Join(homeDir, ".config", "scout-mcp", "instructions")
-
-	// Load general instructions
-	generalPath = filepath.Join(instructionsDir, "general.md")
-	generalContent, err = os.ReadFile(generalPath)
-	if err != nil {
-		// If general.md doesn't exist, provide default
-		instructions.General = getDefaultGeneralInstructions()
-	} else {
-		instructions.General = string(generalContent)
-	}
+	var hasGo bool
 
 	// Load language-specific instructions
-	instructions.Languages = make([]LanguageInstructions, 0)
+	instructions = make([]LanguageInstructions, 0)
 
-	entries, err = os.ReadDir(instructionsDir)
+	entries, err = os.ReadDir(getInstructionsDir())
 	if err != nil {
-		// If instructions directory doesn't exist, use defaults
-		instructions.Languages = getDefaultLanguageInstructions()
-		instructions.ExtensionMappings = getDefaultExtensionMappings()
-		err = nil
 		goto end
 	}
-
 	for _, entry = range entries {
 		if entry.IsDir() {
 			continue
@@ -238,29 +176,91 @@ func (t *StartSessionTool) loadInstructions() (instructions InstructionsConfig, 
 			continue
 		}
 
+		if !hasGo && language == "go" {
+			hasGo = true
+		}
+
 		// Read file content
-		content, err = os.ReadFile(filepath.Join(instructionsDir, filename))
+		content, err = os.ReadFile(filepath.Join(getInstructionsDir(), filename))
 		if err != nil {
 			continue // Skip files we can't read
 		}
 
-		langInstr = LanguageInstructions{
+		instructions = append(instructions, LanguageInstructions{
 			Language:   language,
 			Version:    version,
 			Content:    string(content),
-			Extensions: getExtensionsForLanguage(language),
-		}
-
-		instructions.Languages = append(instructions.Languages, langInstr)
+			Extensions: getExtensionsForLanguage(language), //TODO Make this extensible via config
+		})
 	}
 
-	// Load extension mappings from config or use defaults
-	extensionMappings = getDefaultExtensionMappings()
-	// TODO: Load from config file when we add instructions config
-	instructions.ExtensionMappings = extensionMappings
+	if !hasGo {
+		instructions = append(instructions, getGoLanguageInstructions())
+	}
 
 end:
 	return instructions, err
+}
+
+// loadInstructions loads instruction files from the config directory
+func (sr *StartSessionResult) loadExtensionMappings() ExtensionMappings {
+	return getDefaultExtensionMappings()
+}
+
+// loadInstructions loads instruction files from the config directory
+func (sr *StartSessionResult) loadInstructions() (instructions string, err error) {
+	var content []byte
+
+	// Load general instructions
+	content, err = os.ReadFile(filepath.Join(getInstructionsDir(), "general.md"))
+	if err != nil {
+		// If general.md doesn't exist, provide default
+		instructions = getDefaultGeneralInstructions()
+		err = nil
+		goto end
+	}
+	instructions = string(content)
+
+end:
+	return instructions, err
+}
+
+// detectCurrentProject runs the same logic as the detect_current_project tool
+func (sr *StartSessionResult) detectCurrentProject(sst *mcputil.StartSessionTool) (result *ProjectDetectionResult, err error) {
+	var detectTool *DetectCurrentProjectTool
+	var allowedPaths []string
+	var detectionResult ProjectDetectionResult
+
+	// Get allowed paths from config
+	allowedPaths = sst.Config().AllowedPaths()
+	if len(allowedPaths) == 0 {
+		// No allowed paths configured, return nil without error
+		return nil, nil
+	}
+
+	// Create a DetectCurrentProjectTool instance to reuse its logic
+	detectTool = &DetectCurrentProjectTool{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
+			Name: "detect_current_project_internal",
+		}),
+	}
+	detectTool.SetConfig(sst.Config())
+
+	// Use default parameters: use default max_projects (5), require git
+	detectionResult, err = detectTool.detectCurrentProject(5, false)
+	if err != nil {
+		goto end
+	}
+
+	result = &detectionResult
+
+end:
+	return result, err
+}
+
+func getInstructionsDir() string {
+	// TOOD: Get this from a single source of truth
+	return filepath.Join(homeDir, ".config", "scout-mcp", "instructions")
 }
 
 // parseLanguageFilename parses "python-3.md" into language="python", version="3"
@@ -281,7 +281,7 @@ func parseLanguageFilename(filename string) (language string, version string) {
 
 // getExtensionsForLanguage returns file extensions for a language
 func getExtensionsForLanguage(language string) []string {
-	var mappings map[string]string
+	var mappings ExtensionMappings
 	var extensions []string
 	var ext string
 	var lang string
@@ -337,11 +337,10 @@ Instead of gentle corrections:
 - Don't let them implement until they can articulate your architectural goals`
 }
 
-func getDefaultLanguageInstructions() []LanguageInstructions {
-	return []LanguageInstructions{
-		{
-			Language: "go",
-			Content: `# Clear Path Go Coding Style
+func getGoLanguageInstructions() LanguageInstructions {
+	return LanguageInstructions{
+		Language: "go",
+		Content: `# Clear Path Go Coding Style
 
 ## Core Principles
 - **Minimize nesting wherever possible**
@@ -360,13 +359,12 @@ func getDefaultLanguageInstructions() []LanguageInstructions {
 - Do not shadow any variables
 - Do not use ':=' after the first 'goto end'
 - Leverage Go's 'zero' values with 'return' variables where possible`,
-			Extensions: []string{".go"},
-		},
+		Extensions: []string{".go"},
 	}
 }
 
-func getDefaultExtensionMappings() map[string]string {
-	return map[string]string{
+func getDefaultExtensionMappings() ExtensionMappings {
+	return ExtensionMappings{
 		".go":   "go",
 		".py":   "python",
 		".js":   "javascript",
@@ -385,39 +383,6 @@ func getDefaultExtensionMappings() map[string]string {
 		".h":    "c",
 		".hpp":  "cpp",
 	}
-}
-
-// detectCurrentProject runs the same logic as the detect_current_project tool
-func (t *StartSessionTool) detectCurrentProject() (result *ProjectDetectionResult, err error) {
-	var detectTool *DetectCurrentProjectTool
-	var allowedPaths []string
-	var detectionResult ProjectDetectionResult
-
-	// Get allowed paths from config
-	allowedPaths = t.Config().AllowedPaths()
-	if len(allowedPaths) == 0 {
-		// No allowed paths configured, return nil without error
-		return nil, nil
-	}
-
-	// Create a DetectCurrentProjectTool instance to reuse its logic
-	detectTool = &DetectCurrentProjectTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
-			Name: "detect_current_project_internal",
-		}),
-	}
-	detectTool.SetConfig(t.Config())
-
-	// Use default parameters: use default max_projects (5), require git
-	detectionResult, err = detectTool.detectCurrentProject(5, false)
-	if err != nil {
-		goto end
-	}
-
-	result = &detectionResult
-
-end:
-	return result, err
 }
 
 func getPropertyDescription(prop mcputil.Property) string {

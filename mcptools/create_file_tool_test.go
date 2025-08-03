@@ -87,10 +87,7 @@ func TestCreateFileTool(t *testing.T) {
 			"create_dirs":   true,
 		})
 
-		result, err := getToolResult[CreateFileResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error creating file",
-		)
+		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error creating file")
 
 		requireCreateFileResult(t, result, err, createFileResultOpts{
 			ShouldCreateFile: true,
@@ -121,10 +118,7 @@ func TestCreateFileTool(t *testing.T) {
 			"create_dirs":   true,
 		})
 
-		result, err := getToolResult[CreateFileResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error creating file with nested directories",
-		)
+		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error creating file with nested directories")
 
 		requireCreateFileResult(t, result, err, createFileResultOpts{
 			ShouldCreateFile: true,
@@ -160,10 +154,7 @@ func TestCreateFileTool(t *testing.T) {
 			"create_dirs":   false,
 		})
 
-		result, err := getToolResult[CreateFileResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle missing parent directory",
-		)
+		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle missing parent directory")
 
 		requireCreateFileResult(t, result, err, createFileResultOpts{
 			ExpectError:      true,

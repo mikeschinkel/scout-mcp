@@ -3,6 +3,7 @@ package mcptools
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"strings"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
@@ -11,11 +12,11 @@ import (
 //go:embed README.md
 var readmeContent string
 
-var _ mcputil.Tool = (*ToolHelpTool)(nil)
+var _ mcputil.Tool = (*HelpTool)(nil)
 
 func init() {
-	mcputil.RegisterTool(&ToolHelpTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+	mcputil.RegisterTool(&HelpTool{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "help",
 			Description: "Get detailed documentation for MCP tools and best practices",
 			Properties: []mcputil.Property{
@@ -26,11 +27,11 @@ func init() {
 	})
 }
 
-type ToolHelpTool struct {
-	*toolBase
+type HelpTool struct {
+	*mcputil.ToolBase
 }
 
-func (t *ToolHelpTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
+func (t *HelpTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var toolName string
 	var helpContent string
 
@@ -66,7 +67,7 @@ end:
 	return result, err
 }
 
-func (t *ToolHelpTool) getToolSpecificHelp(toolName string) (helpText string) {
+func (t *HelpTool) getToolSpecificHelp(toolName string) (helpText string) {
 	var sections map[string]string
 	var found bool
 
@@ -81,7 +82,7 @@ func (t *ToolHelpTool) getToolSpecificHelp(toolName string) (helpText string) {
 	return helpText
 }
 
-func (t *ToolHelpTool) parseToolSections() (sections map[string]string) {
+func (t *HelpTool) parseToolSections() (sections map[string]string) {
 	var lines []string
 	var currentSection string
 	var currentContent strings.Builder
@@ -123,7 +124,7 @@ func (t *ToolHelpTool) parseToolSections() (sections map[string]string) {
 	return sections
 }
 
-func (t *ToolHelpTool) extractToolName(line string) (toolName string) {
+func (t *HelpTool) extractToolName(line string) (toolName string) {
 	// Extract tool name from "### `tool_name`"
 	start := strings.Index(line, "`")
 	end := strings.LastIndex(line, "`")
@@ -135,7 +136,7 @@ func (t *ToolHelpTool) extractToolName(line string) (toolName string) {
 	return toolName
 }
 
-func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
+func (t *HelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
 
 	helpText = "Tool '" + toolName + "' not found.\n\n"
 	helpText += "Available tools:\n"
@@ -148,4 +149,44 @@ func (t *ToolHelpTool) getToolNotFoundHelp(toolName string) (helpText string) {
 	helpText += `{"tool": "help", "parameters": {"tool": "read_files"}}`
 
 	return helpText
+}
+
+// generateToolHelp creates the same output as the help tool
+// THIS IS CURRENTLY NOT USED, BUT WE MIGHT WANT TO USE LATER
+func (t *HelpTool) generateToolHelp() (helpText string, err error) {
+	var tools []mcputil.Tool
+	var tool mcputil.Tool
+	var options mcputil.ToolOptions
+	var prop mcputil.Property
+	var propOptions []mcputil.PropertyOption
+
+	tools = mcputil.RegisteredTools()
+	helpText = "# Scout-MCP Tools Documentation\n\n"
+
+	for _, tool = range tools {
+		options = tool.Options()
+		helpText += fmt.Sprintf("## %s\n\n%s\n\n", options.Name, options.Description)
+
+		if len(options.Properties) > 0 {
+			helpText += "### Parameters\n\n"
+			for _, prop = range options.Properties {
+				propOptions = prop.PropertyOptions()
+				helpText += fmt.Sprintf("- **%s** (%s)", prop.GetName(), prop.GetType())
+
+				// Check if required
+				for _, opt := range propOptions {
+					p, ok := opt.(mcputil.RequiredProperty)
+					if ok && p.Required {
+						helpText += " *[required]*"
+						break
+					}
+				}
+
+				helpText += fmt.Sprintf(": %s\n", getPropertyDescription(prop))
+			}
+			helpText += "\n"
+		}
+	}
+
+	return helpText, err
 }

@@ -155,10 +155,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "oldFunction",
 		})
 
-		result, err := getToolResult[FindFilePartResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error finding function",
-		)
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding function")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -194,10 +191,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "Config",
 		})
 
-		result, err := getToolResult[FindFilePartResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error finding type",
-		)
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding type")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -233,10 +227,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "ServerPort",
 		})
 
-		result, err := getToolResult[FindFilePartResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error finding const",
-		)
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding const")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -272,10 +263,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "GlobalVar",
 		})
 
-		result, err := getToolResult[FindFilePartResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error finding var",
-		)
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding var")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -311,10 +299,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "*Config.GetPort",
 		})
 
-		result, err := getToolResult[FindFilePartResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error finding method",
-		)
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding method")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -350,10 +335,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "nonexistentFunction",
 		})
 
-		result, err := getToolResult[FindFilePartResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle part not found",
-		)
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle part not found")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectError:      true,

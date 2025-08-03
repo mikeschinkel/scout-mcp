@@ -117,10 +117,7 @@ func TestInsertFileLinesTool(t *testing.T) {
 			"new_content":   "Inserted after line 1",
 		})
 
-		result, err := getToolResult[InsertFileLinesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error inserting after line",
-		)
+		result, err := mcputil.GetToolResult[InsertFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting after line")
 
 		requireInsertFileLinesResult(t, result, err, insertFileLinesResultOpts{
 			ExpectedFilePath:   testFile.Filepath,
@@ -157,10 +154,7 @@ func TestInsertFileLinesTool(t *testing.T) {
 			"new_content":   "Inserted before line 2",
 		})
 
-		result, err := getToolResult[InsertFileLinesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error inserting before line",
-		)
+		result, err := mcputil.GetToolResult[InsertFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting before line")
 
 		requireInsertFileLinesResult(t, result, err, insertFileLinesResultOpts{
 			ExpectedFilePath:   testFile.Filepath,

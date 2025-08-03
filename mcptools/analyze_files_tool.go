@@ -14,7 +14,7 @@ var _ mcputil.Tool = (*AnalyzeFilesTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&AnalyzeFilesTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name: "analyze_files",
 			// TODO: Add a better description
 			Description: "Analyze files",
@@ -27,7 +27,7 @@ func init() {
 }
 
 type AnalyzeFilesTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *AnalyzeFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

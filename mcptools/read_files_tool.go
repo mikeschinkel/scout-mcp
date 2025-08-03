@@ -14,7 +14,7 @@ var _ mcputil.Tool = (*ReadFilesTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&ReadFilesTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "read_files",
 			Description: "Read contents of multiple files and/or directories with filtering options",
 			QuickHelp:   "Read multiple files efficiently (read before updating)",
@@ -31,7 +31,7 @@ func init() {
 }
 
 type ReadFilesTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
@@ -206,7 +206,7 @@ func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions)
 			continue
 		}
 
-		content, err = t.readFile(filePath)
+		content, err = t.ReadFile(filePath)
 		if err != nil {
 			results = append(results, FileReadResult{
 				Path:  filePath,

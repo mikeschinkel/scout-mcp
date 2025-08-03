@@ -122,10 +122,7 @@ func TestDeleteFileLinesTool(t *testing.T) {
 			"end_line":      "3",
 		})
 
-		result, err := getToolResult[DeleteFileLinesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error deleting single line",
-		)
+		result, err := mcputil.GetToolResult[DeleteFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting single line")
 
 		requireDeleteFileLinesResult(t, result, err, deleteFileLinesResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -161,10 +158,7 @@ func TestDeleteFileLinesTool(t *testing.T) {
 			"end_line":      "4",
 		})
 
-		result, err := getToolResult[DeleteFileLinesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error deleting multiple lines",
-		)
+		result, err := mcputil.GetToolResult[DeleteFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting multiple lines")
 
 		requireDeleteFileLinesResult(t, result, err, deleteFileLinesResultOpts{
 			ExpectedFilePath:  testFile.Filepath,

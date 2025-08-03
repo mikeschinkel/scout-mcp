@@ -146,8 +146,8 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 			"files":         []any{testFile.Filepath},
 		})
 
-		result, err := getToolResult[AnalyzeFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
+		result, err := mcputil.GetToolResult[AnalyzeFilesResult](
+			mcputil.CallResult(testutil.CallTool(tool, req)),
 			"Should not error analyzing file",
 		)
 
@@ -191,10 +191,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 			"files":         []any{file1.Filepath, file2.Filepath},
 		})
 
-		result, err := getToolResult[AnalyzeFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error analyzing multiple files",
-		)
+		result, err := mcputil.GetToolResult[AnalyzeFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error analyzing multiple files")
 
 		requireAnalyzeFilesResult(t, result, err, analyzeFilesToolResultOpts{
 			ExpectFiles: 2,
@@ -219,10 +216,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 			"files":         []any{missingFile.Filepath},
 		})
 
-		result, err := getToolResult[AnalyzeFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error with non-existent file",
-		)
+		result, err := mcputil.GetToolResult[AnalyzeFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with non-existent file")
 
 		requireAnalyzeFilesResult(t, result, err, analyzeFilesToolResultOpts{
 			ExpectFiles: 1, // Should report the missing file with error

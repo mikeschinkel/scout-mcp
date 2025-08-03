@@ -87,10 +87,7 @@ func TestDeleteFilesTool(t *testing.T) {
 			"path":          fileToDelete.Filepath,
 		})
 
-		result, err := getToolResult[DeleteFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error deleting file",
-		)
+		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting file")
 
 		requireDeleteFilesResult(t, result, err, deleteFilesResultOpts{
 			ExpectedPath:     fileToDelete.Filepath,
@@ -118,10 +115,7 @@ func TestDeleteFilesTool(t *testing.T) {
 			"path":          nonexistentFile.Filepath,
 		})
 
-		result, err := getToolResult[DeleteFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should handle nonexistent file",
-		)
+		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle nonexistent file")
 
 		requireDeleteFilesResult(t, result, err, deleteFilesResultOpts{
 			ExpectError:      true,
@@ -159,10 +153,7 @@ func TestDeleteFilesTool(t *testing.T) {
 			"recursive":     true,
 		})
 
-		result, err := getToolResult[DeleteFilesResult](t,
-			callResult(testutil.CallTool(tool, req)),
-			"Should not error deleting directory",
-		)
+		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting directory")
 
 		requireDeleteFilesResult(t, result, err, deleteFilesResultOpts{
 			ExpectedPath:     subDir,

@@ -14,7 +14,7 @@ var _ mcputil.Tool = (*ValidateFilesTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&ValidateFilesTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "validate_files",
 			Description: "Validate syntax of source code files using language-specific parsers",
 			Properties: []mcputil.Property{
@@ -30,7 +30,7 @@ func init() {
 }
 
 type ValidateFilesTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 type ValidationResult struct {
@@ -186,7 +186,7 @@ func (t *ValidateFilesTool) collectFiles(path string, recursive bool, extensions
 	}
 
 	// Use the search functionality from toolBase
-	files, err = t.searchForFiles(path, recursive, extensions)
+	files, err = t.SearchForFiles(path, recursive, extensions)
 
 end:
 	return files, err
@@ -199,7 +199,7 @@ func (t *ValidateFilesTool) validateSingleFile(filePath, languageOverride string
 	result.FilePath = filePath
 
 	// Read file content
-	content, err = t.readFile(filePath)
+	content, err = t.ReadFile(filePath)
 	if err != nil {
 		result.Valid = false
 		result.Error = fmt.Sprintf("failed to read file: %v", err)

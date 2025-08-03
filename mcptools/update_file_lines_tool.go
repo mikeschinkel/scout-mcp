@@ -12,7 +12,7 @@ var _ mcputil.Tool = (*UpdateFileLinesTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&UpdateFileLinesTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "update_file_lines",
 			Description: "Update specific lines in a file by line number range",
 			QuickHelp:   "Edit specific line ranges safely",
@@ -28,7 +28,7 @@ func init() {
 }
 
 type UpdateFileLinesTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *UpdateFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

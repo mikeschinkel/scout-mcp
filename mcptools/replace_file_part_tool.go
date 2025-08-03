@@ -15,7 +15,7 @@ var _ mcputil.Tool = (*ReplaceFilePartTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&ReplaceFilePartTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "replace_file_part",
 			Description: "Replace specific language constructs (functions, types, constants) by name using AST parsing",
 			Properties: []mcputil.Property{
@@ -31,7 +31,7 @@ func init() {
 }
 
 type ReplaceFilePartTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *ReplaceFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

@@ -13,7 +13,7 @@ var _ mcputil.Tool = (*CreateFileTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&CreateFileTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "create_file",
 			Description: "Create a new file in allowed directories",
 			Properties: []mcputil.Property{
@@ -27,7 +27,7 @@ func init() {
 }
 
 type CreateFileTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *CreateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

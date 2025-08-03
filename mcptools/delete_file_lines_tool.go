@@ -12,7 +12,7 @@ var _ mcputil.Tool = (*DeleteFileLinesTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&DeleteFileLinesTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "delete_file_lines",
 			Description: "Delete specific lines from a file by line number range",
 			Properties: []mcputil.Property{
@@ -26,7 +26,7 @@ func init() {
 }
 
 type DeleteFileLinesTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *DeleteFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

@@ -23,7 +23,7 @@ type FileSearchResult struct {
 
 func init() {
 	mcputil.RegisterTool(&SearchFilesTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "search_files",
 			Description: "Search for files and directories in allowed paths with filtering options",
 			QuickHelp:   "Find files matching criteria",
@@ -43,7 +43,7 @@ func init() {
 }
 
 type SearchFilesTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

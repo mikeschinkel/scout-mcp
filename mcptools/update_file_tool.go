@@ -12,7 +12,7 @@ var _ mcputil.Tool = (*UpdateFileTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&UpdateFileTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "update_file",
 			Description: "Update existing file in allowed directories",
 			Properties: []mcputil.Property{
@@ -25,7 +25,7 @@ func init() {
 }
 
 type UpdateFileTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {

@@ -12,7 +12,7 @@ var _ mcputil.Tool = (*InsertFileLinesTool)(nil)
 
 func init() {
 	mcputil.RegisterTool(&InsertFileLinesTool{
-		toolBase: newToolBase(mcputil.ToolOptions{
+		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
 			Name:        "insert_file_lines",
 			Description: "Insert content at a specific line number in a file",
 			QuickHelp:   "Insert content at specific lines",
@@ -28,7 +28,7 @@ func init() {
 }
 
 type InsertFileLinesTool struct {
-	*toolBase
+	*mcputil.ToolBase
 }
 
 func (t *InsertFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
