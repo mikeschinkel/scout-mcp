@@ -2,8 +2,6 @@ package mcputil
 
 import (
 	"fmt"
-
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 var _ Property = (*numberProperty)(nil)
@@ -14,6 +12,10 @@ type numberProperty struct {
 	min          *float64
 	max          *float64
 	zeroOK       *bool
+}
+
+func (p *numberProperty) setBase(prop *property) {
+	p.property = prop
 }
 
 func (p *numberProperty) ZeroOK() (zok bool) {
@@ -49,8 +51,8 @@ func (p *numberProperty) DefaultValue() any {
 	return p.defaultValue
 }
 
-func (p *numberProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithNumber(p.GetName(), opts...)
+func (p *numberProperty) mcpToolOption(opts []mcpPropertyOption) mcpToolOption {
+	return mcpWithNumber(p.GetName(), opts...)
 }
 
 func (*numberProperty) Property() {}
@@ -71,18 +73,18 @@ func (p *numberProperty) PropertyOptions() []PropertyOption {
 	return opts
 }
 
-func (p *numberProperty) mcpPropertyOptions() []mcp.PropertyOption {
+func (p *numberProperty) mcpPropertyOptions() []mcpPropertyOption {
 
 	opts := p.property.mcpPropertyOptions()
 
 	if p.defaultValue != nil {
-		opts = append(opts, mcp.DefaultNumber(*p.defaultValue))
+		opts = append(opts, mcpDefaultNumber(*p.defaultValue))
 	}
 	if p.min != nil {
-		opts = append(opts, mcp.Min(*p.min))
+		opts = append(opts, mcpMin(*p.min))
 	}
 	if p.max != nil {
-		opts = append(opts, mcp.Max(*p.max))
+		opts = append(opts, mcpMax(*p.max))
 	}
 
 	return opts

@@ -137,17 +137,17 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 			Permissions: 0644,
 		})
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{testFile.Filepath},
 		})
 
 		result, err := mcputil.GetToolResult[AnalyzeFilesResult](
-			mcputil.CallResult(testutil.CallTool(tool, req)),
+			mcputil.CallResult(mcputil.CallTool(tool, req)),
 			"Should not error analyzing file",
 		)
 
@@ -182,16 +182,16 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{file1.Filepath, file2.Filepath},
 		})
 
-		result, err := mcputil.GetToolResult[AnalyzeFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error analyzing multiple files")
+		result, err := mcputil.GetToolResult[AnalyzeFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error analyzing multiple files")
 
 		requireAnalyzeFilesResult(t, result, err, analyzeFilesToolResultOpts{
 			ExpectFiles: 2,
@@ -207,16 +207,16 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 			Missing: true,
 		})
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{missingFile.Filepath},
 		})
 
-		result, err := mcputil.GetToolResult[AnalyzeFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with non-existent file")
+		result, err := mcputil.GetToolResult[AnalyzeFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with non-existent file")
 
 		requireAnalyzeFilesResult(t, result, err, analyzeFilesToolResultOpts{
 			ExpectFiles: 1, // Should report the missing file with error

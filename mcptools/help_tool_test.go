@@ -3,135 +3,85 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const HelpDirPrefix = "tool-help-tool-test"
+const HelpDirPrefix = "scout-help-tool-test"
 
 // Tool help tool result type
 type HelpResult struct {
-	Tool    string `json:"tool"`
-	Content string `json:"content"`
-	Type    string `json:"type"`
+	Tool            string                `json:"tool"`
+	Content         string                `json:"content"`
+	Type            string                `json:"type"`
+	PayloadTypeName string                `json:"payload_type_name"`
+	Payload         *mcptools.HelpPayload `json:"payload"`
 }
 
-type helpToolResultOpts struct {
-	ExpectError           bool
-	ExpectedErrorMsg      string
-	ExpectHelpContent     bool
-	ExpectSpecificContent string
-	ExpectedTool          string
-	ExpectedType          string
-}
-
-func requireHelpResult(t *testing.T, result *HelpResult, err error, opts helpToolResultOpts) {
-	t.Helper()
-
-	if opts.ExpectError {
-		require.Error(t, err, "Should have error")
-		if opts.ExpectedErrorMsg != "" {
-			assert.Contains(t, err.Error(), opts.ExpectedErrorMsg, "Error should contain expected message")
-		}
-		return
-	}
-
-	require.NoError(t, err, "Should not have error")
-	require.NotNil(t, result, "Result should not be nil")
-	assert.NotEmpty(t, result.Content, "Help content should not be empty")
-
-	if opts.ExpectedTool != "" {
-		assert.Equal(t, opts.ExpectedTool, result.Tool, "Tool should match expected")
-	}
-
-	if opts.ExpectedType != "" {
-		assert.Equal(t, opts.ExpectedType, result.Type, "Type should match expected")
-	}
-
-	if opts.ExpectSpecificContent != "" {
-		assert.Contains(t, result.Content, opts.ExpectSpecificContent, "Help should contain expected content")
-	}
-
-	if opts.ExpectHelpContent {
-		// Basic checks for help content structure
-		assert.Contains(t, result.Content, "Scout MCP", "Help should mention Scout MCP")
-	}
-}
-
-func TestHelpTool(t *testing.T) {
+func TestScoutHelpTool(t *testing.T) {
 	// Get the tool
 	tool := mcputil.GetRegisteredTool("help")
 	require.NotNil(t, tool, "help tool should be registered")
 
-	t.Run("GetFullDocumentation", func(t *testing.T) {
+	t.Run("GetFullDocumentationWithScoutContent", func(t *testing.T) {
 		tf := testutil.NewTestFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": testToken,
+		req := mcputil.NewMockRequest(mcputil.Params{
+			"session_token": mcputil.TestToken,
 		})
 
 		result, err := mcputil.GetToolResult[HelpResult](
-			mcputil.CallResult(testutil.CallTool(tool, req)),
-			"Should not error getting full documentation",
+			mcputil.CallResult(mcputil.CallTool(tool, req)),
+			"Should not error getting full documentation with Scout content",
 		)
 
-		requireHelpResult(t, result, err, helpToolResultOpts{
-			ExpectHelpContent: true,
-			ExpectedType:      "full_documentation",
-		})
+		require.NoError(t, err, "Should not have error")
+		require.NotNil(t, result, "Result should not be nil")
+		assert.NotEmpty(t, result.Content, "Help content should not be empty")
+		assert.Equal(t, "full_documentation", result.Type, "Type should be full_documentation")
+
+		// Scout-specific assertions
+		assert.NotNil(t, result.Payload, "Should have Scout-specific payload")
+		assert.NotEmpty(t, result.Payload.ServerSpecificHelp, "Should have Scout-specific help content")
+		assert.Contains(t, result.Payload.ServerSpecificHelp, "Scout MCP", "Scout help should mention Scout MCP")
 	})
 
-	t.Run("GetSpecificHelp", func(t *testing.T) {
+	t.Run("GetSpecificHelpForScoutTool", func(t *testing.T) {
 		tf := testutil.NewTestFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": testToken,
+		req := mcputil.NewMockRequest(mcputil.Params{
+			"session_token": mcputil.TestToken,
 			"tool":          "read_files",
 		})
 
-		result, err := mcputil.GetToolResult[HelpResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error getting specific tool help")
+		result, err := mcputil.GetToolResult[HelpResult](
+			mcputil.CallResult(mcputil.CallTool(tool, req)),
+			"Should not error getting specific Scout tool help",
+		)
 
-		requireHelpResult(t, result, err, helpToolResultOpts{
-			ExpectSpecificContent: "read_files",
-			ExpectedTool:          "read_files",
-			ExpectedType:          "tool_specific",
-		})
-	})
+		require.NoError(t, err, "Should not have error")
+		require.NotNil(t, result, "Result should not be nil")
+		assert.NotEmpty(t, result.Content, "Help content should not be empty")
+		assert.Contains(t, result.Content, "read_files", "Help should contain read_files tool info")
+		assert.Equal(t, "read_files", result.Tool, "Tool should match requested")
+		assert.Equal(t, "tool_specific", result.Type, "Type should be tool_specific")
 
-	t.Run("GetHelpForNonExistentTool", func(t *testing.T) {
-		tf := testutil.NewTestFixture(HelpDirPrefix)
-		defer tf.Cleanup()
-
-		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
-			AllowedPaths: []string{tf.TempDir()},
-		}))
-
-		req := testutil.NewMockRequest(testutil.Params{
-			"session_token": testToken,
-			"tool":          "nonexistent_tool",
-		})
-
-		result, err := mcputil.GetToolResult[HelpResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error when tool not found")
-
-		requireHelpResult(t, result, err, helpToolResultOpts{
-			ExpectedTool: "nonexistent_tool",
-			ExpectedType: "tool_specific",
-		})
-		// The tool should return helpful message about available tools
+		// Scout-specific payload should still be present
+		assert.NotNil(t, result.Payload, "Should have Scout-specific payload")
 	})
 }

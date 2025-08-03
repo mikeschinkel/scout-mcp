@@ -143,11 +143,11 @@ func TestFindFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -155,7 +155,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "oldFunction",
 		})
 
-		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding function")
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error finding function")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -179,11 +179,11 @@ func TestFindFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -191,7 +191,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "Config",
 		})
 
-		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding type")
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error finding type")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -215,11 +215,11 @@ func TestFindFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -227,7 +227,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "ServerPort",
 		})
 
-		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding const")
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error finding const")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -251,11 +251,11 @@ func TestFindFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -263,7 +263,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "GlobalVar",
 		})
 
-		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding var")
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error finding var")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -287,11 +287,11 @@ func TestFindFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -299,7 +299,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "*Config.GetPort",
 		})
 
-		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error finding method")
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error finding method")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectedFound:    true,
@@ -323,11 +323,11 @@ func TestFindFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -335,7 +335,7 @@ func TestFindFilePartTool(t *testing.T) {
 			"part_name":     "nonexistentFunction",
 		})
 
-		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle part not found")
+		result, err := mcputil.GetToolResult[FindFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle part not found")
 
 		requireFindFilePartResult(t, result, err, findFilePartResultOpts{
 			ExpectError:      true,

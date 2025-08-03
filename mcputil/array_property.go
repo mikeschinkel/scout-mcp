@@ -2,8 +2,6 @@ package mcputil
 
 import (
 	"fmt"
-
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 var _ Property = (*arrayProperty)(nil)
@@ -13,6 +11,10 @@ type arrayProperty struct {
 	defaultValue DefaultArray[any]
 	minItems     *int
 	maxItems     *int
+}
+
+func (p *arrayProperty) setBase(prop *property) {
+	p.property = prop
 }
 
 func (p *arrayProperty) Clone() Property {
@@ -33,8 +35,8 @@ func (p *arrayProperty) DefaultValue() any {
 	return p.defaultValue
 }
 
-func (p *arrayProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithArray(p.GetName(), opts...)
+func (p *arrayProperty) mcpToolOption(opts []mcpPropertyOption) mcpToolOption {
+	return mcpWithArray(p.GetName(), opts...)
 }
 
 func (*arrayProperty) Property() {}
@@ -56,18 +58,18 @@ func (p *arrayProperty) PropertyOptions() []PropertyOption {
 	return opts
 }
 
-func (p *arrayProperty) mcpPropertyOptions() []mcp.PropertyOption {
+func (p *arrayProperty) mcpPropertyOptions() []mcpPropertyOption {
 
 	opts := p.property.mcpPropertyOptions()
 
 	if p.defaultValue != nil {
-		opts = append(opts, mcp.DefaultArray(p.defaultValue))
+		opts = append(opts, mcpDefaultArray(p.defaultValue))
 	}
 	if p.minItems != nil {
-		opts = append(opts, mcp.MinItems(*p.minItems))
+		opts = append(opts, mcpMinItems(*p.minItems))
 	}
 	if p.maxItems != nil {
-		opts = append(opts, mcp.MaxItems(*p.maxItems))
+		opts = append(opts, mcpMaxItems(*p.maxItems))
 	}
 
 	return opts

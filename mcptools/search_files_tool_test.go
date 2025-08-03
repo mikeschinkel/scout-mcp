@@ -81,16 +81,16 @@ func TestSearchFilesTool(t *testing.T) {
 		}, "file1.txt", "file2.go", "README.md")
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir,
 		})
 
-		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error searching files")
+		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error searching files")
 
 		requireSearchFilesResult(t, result, err, searchFilesResultOpts{
 			MinFiles: 3, // At least our 3 files
@@ -110,17 +110,17 @@ func TestSearchFilesTool(t *testing.T) {
 		}, "test-file.txt", "other-file.go", "test-config.yaml")
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir,
 			"pattern":       "test",
 		})
 
-		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error searching with pattern")
+		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error searching with pattern")
 
 		requireSearchFilesResult(t, result, err, searchFilesResultOpts{
 			ExpectFiles: 2, // Should find test-file.txt and test-config.yaml
@@ -140,18 +140,18 @@ func TestSearchFilesTool(t *testing.T) {
 		}, "main.go", "utils.go", "config.yaml", "README.md")
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir,
 			"extensions":    []any{".go"},
 			"recursive":     true,
 		})
 
-		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error searching with extensions")
+		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error searching with extensions")
 
 		requireSearchFilesResult(t, result, err, searchFilesResultOpts{
 			ExpectFiles: 2, // Should find only main.go and utils.go

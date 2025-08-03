@@ -33,3 +33,12 @@ func GetRegisteredTool(name string) (t Tool) {
 end:
 	return t
 }
+
+// GetRegisteredToolNames returns the names of all registered tools
+func GetRegisteredToolNames() []string {
+	names := make([]string, 0, len(registeredTools))
+	for _, tool := range registeredTools {
+		names = append(names, tool.Name())
+	}
+	return names
+}

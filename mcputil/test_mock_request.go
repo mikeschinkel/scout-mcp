@@ -1,10 +1,10 @@
-package testutil
+package mcputil
 
 import (
 	"fmt"
 	"strconv"
 
-	"github.com/mikeschinkel/scout-mcp/mcputil"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 // MockRequest implements mcputil.ToolRequest for testing
@@ -171,7 +171,7 @@ func (m *MockRequest) GetArray(key string, defaultValue []any) (a []any) {
 	if !ok {
 		goto end
 	}
-	arr = convertSlice(val)
+	arr = ConvertContainedSlice(val)
 	if arr != nil {
 		a = arr
 	}
@@ -181,6 +181,14 @@ end:
 
 func (m *MockRequest) GetArguments() map[string]any {
 	return m.params
+}
+
+func (m *MockRequest) CallToolRequest() CallToolRequest {
+	return mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: m.params,
+		},
+	}
 }
 
 func (m *MockRequest) RequireArray(key string) (result []any, err error) {
@@ -207,6 +215,6 @@ end:
 type Params = map[string]any
 
 // NewMockRequest creates a mock request with the specified parameters
-func NewMockRequest(params Params) mcputil.ToolRequest {
+func NewMockRequest(params Params) ToolRequest {
 	return &MockRequest{params: params}
 }

@@ -2,8 +2,6 @@ package mcptools
 
 import (
 	"fmt"
-	"maps"
-	"slices"
 )
 
 type NULL = struct{}
@@ -28,8 +26,6 @@ func (rp RelativePosition) Validate() (err error) {
 	}
 	return err
 }
-
-var AvailableTools = slices.Collect(maps.Keys(ToolNamesMap))
 
 // ToolNamesMap is the set of expected tools
 var ToolNamesMap = map[string]NULL{

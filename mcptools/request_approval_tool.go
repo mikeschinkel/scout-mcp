@@ -8,6 +8,10 @@ import (
 
 var _ mcputil.Tool = (*RequestApprovalTool)(nil)
 
+var (
+	operationProperty = mcputil.String("operation", "Brief operation description").Required()
+)
+
 func init() {
 	mcputil.RegisterTool(&RequestApprovalTool{
 		ToolBase: mcputil.NewToolBase(mcputil.ToolOptions{
@@ -15,8 +19,8 @@ func init() {
 			Description: "Request user approval with rich visual formatting",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				mcputil.String("operation", "Brief operation description").Required(),
-				FilesProperty.Required(),
+				operationProperty,
+				RequiredFilesProperty,
 				mcputil.String("preview_content", "Code preview or diff content"),
 				mcputil.String("risk_level", "Risk level: low, medium, or high"),
 				mcputil.String("impact_summary", "Summary of what will change"),
@@ -35,13 +39,13 @@ func (t *RequestApprovalTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	logger.Info("Tool called", "tool", "request_approval")
 
-	operation, err = mcputil.String("operation", "").String(req)
+	operation, err = operationProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
-	files, err = FilesProperty.StringSlice(req)
+	files, err = RequiredFilesProperty.StringSlice(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end

@@ -2,8 +2,6 @@ package mcputil
 
 import (
 	"fmt"
-
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 // Property is the interface that all property types implement
@@ -12,7 +10,8 @@ type Property interface {
 	Clone() Property
 	DefaultValue() any
 	SetDefault(any) Property
-	mcpToolOption([]mcp.PropertyOption) mcp.ToolOption
+	mcpToolOption([]mcpPropertyOption) mcpToolOption
+	setBase(*property)
 }
 
 type propertyEmbed interface {
@@ -23,7 +22,7 @@ type propertyEmbed interface {
 	Name(string) Property
 	Description(string) Property
 	PropertyOptions() []PropertyOption
-	mcpPropertyOptions() []mcp.PropertyOption
+	mcpPropertyOptions() []mcpPropertyOption
 	String(request ToolRequest) (string, error)
 	AnySlice(request ToolRequest) ([]any, error)
 	StringSlice(request ToolRequest) ([]string, error)
@@ -68,25 +67,37 @@ func (p *property) PropertyOptions() []PropertyOption {
 	return opts
 }
 
-func (p *property) mcpPropertyOptions() []mcp.PropertyOption {
-	opts := []mcp.PropertyOption{mcp.Description(p.description)}
+func (p *property) mcpPropertyOptions() []mcpPropertyOption {
+	opts := []mcpPropertyOption{mcpDescription(p.description)}
 	if p.required {
-		opts = append(opts, mcp.Required())
+		opts = append(opts, mcpRequired())
 	}
 	return opts
 }
 
 func (p *property) Required() Property {
-	np := *p
-	np.required = true
-	np.parent = p.parent.Clone()
-	return np.parent
+	return p.updateProperty(func(np *property) {
+		np.required = true
+	})
 }
 
 func (p *property) Name(name string) Property {
+	return p.updateProperty(func(np *property) {
+		np.name = name
+	})
+}
+
+func (p *property) Description(desc string) Property {
+	return p.updateProperty(func(np *property) {
+		np.description = desc
+	})
+}
+
+func (p *property) updateProperty(updateFunc func(*property)) Property {
 	np := *p
-	np.name = name
 	np.parent = p.parent.Clone()
+	updateFunc(&np)
+	np.parent.setBase(&np)
 	return np.parent
 }
 
@@ -100,8 +111,10 @@ func (p *property) String(tr ToolRequest) (s string, err error) {
 	var sp *string
 	var value string
 	var ok bool
+
+	req := tr.CallToolRequest()
 	if p.required {
-		s, err = tr.RequireString(p.name)
+		s, err = req.RequireString(p.name)
 		goto end
 	}
 	sp, ok = p.Default().(*string)
@@ -111,7 +124,7 @@ func (p *property) String(tr ToolRequest) (s string, err error) {
 	if sp != nil {
 		value = *sp
 	}
-	s = tr.GetString(p.name, value)
+	s = req.GetString(p.name, value)
 end:
 	return s, err
 }
@@ -123,7 +136,7 @@ func (p *property) StringSlice(tr ToolRequest) (s []string, err error) {
 	if p.required {
 		a, err = tr.RequireArray(p.name)
 	} else {
-		a = tr.GetArray(p.name, convertContainedSlice(p.Default()))
+		a = tr.GetArray(p.name, ConvertContainedSlice(p.Default()))
 	}
 	if err != nil {
 		goto end
@@ -139,7 +152,7 @@ func (p *property) AnySlice(tr ToolRequest) (s []any, err error) {
 	if p.required {
 		s, err = tr.RequireArray(p.name)
 	} else {
-		s = tr.GetArray(p.name, convertContainedSlice(p.Default()))
+		s = tr.GetArray(p.name, ConvertContainedSlice(p.Default()))
 	}
 	return s, err
 }
@@ -149,8 +162,10 @@ func (p *property) AnySlice(tr ToolRequest) (s []any, err error) {
 func (p *property) Bool(tr ToolRequest) (b bool, err error) {
 	var bp *bool
 	var value, ok bool
+
+	req := tr.CallToolRequest()
 	if p.parent.IsRequired() {
-		b, err = tr.RequireBool(p.name)
+		b, err = req.RequireBool(p.name)
 		goto end
 	}
 	bp, ok = p.Default().(*bool)
@@ -160,7 +175,7 @@ func (p *property) Bool(tr ToolRequest) (b bool, err error) {
 	if bp != nil && *bp {
 		value = true
 	}
-	b = tr.GetBool(p.name, value)
+	b = req.GetBool(p.name, value)
 end:
 	return b, err
 }
@@ -171,8 +186,10 @@ func (p *property) Number(tr ToolRequest) (n float64, err error) {
 	var sp *float64
 	var value float64
 	var ok bool
+
+	req := tr.CallToolRequest()
 	if p.parent.IsRequired() {
-		n, err = tr.RequireFloat(p.name)
+		n, err = req.RequireFloat(p.name)
 		goto end
 	}
 	value, ok = p.Default().(float64)
@@ -186,7 +203,7 @@ func (p *property) Number(tr ToolRequest) (n float64, err error) {
 	if sp != nil {
 		value = *sp
 	}
-	n = tr.GetFloat(p.name, value)
+	n = req.GetFloat(p.name, value)
 end:
 	return n, err
 }
@@ -199,6 +216,7 @@ func (p *property) Int(tr ToolRequest) (n int, err error) {
 	var np *numberProperty
 	var ok bool
 
+	req := tr.CallToolRequest()
 	np, ok = p.parent.(*numberProperty)
 	if !ok {
 		err = fmt.Errorf("*numberProperty expected for %s when calling Int(); got %T instead", p.name, p.parent)
@@ -206,7 +224,7 @@ func (p *property) Int(tr ToolRequest) (n int, err error) {
 	}
 
 	if p.parent.IsRequired() {
-		n, err = tr.RequireInt(p.name)
+		n, err = req.RequireInt(p.name)
 		goto end
 	}
 
@@ -217,19 +235,12 @@ func (p *property) Int(tr ToolRequest) (n int, err error) {
 	if sp != nil {
 		value = int(*sp)
 	}
-	n = tr.GetInt(p.name, value)
+	n = req.GetInt(p.name, value)
 end:
 	if err == nil && n == 0 && np.ZeroOK() {
 		err = fmt.Errorf("'%s' must be a valid number: %w", p.name, err)
 	}
 	return n, err
-}
-
-func (p *property) Description(desc string) Property {
-	np := *p
-	np.description = desc
-	np.parent = p.parent.Clone()
-	return np.parent
 }
 
 type RequiredProperty struct {

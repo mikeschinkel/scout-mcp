@@ -5,7 +5,9 @@ import (
 )
 
 var (
-	RequiredSessionTokenProperty = mcputil.String("session_token", "Session token from start_session").Required()
+	RequiredSessionTokenProperty = mcputil.RequiredSessionTokenProperty
+	RequiredFilesProperty        = FilesProperty.Required()
+	RequiredPathProperty         = PathProperty.Required()
 )
 
 var (
@@ -36,5 +38,4 @@ var (
 	CreateDirsProperty     = mcputil.Bool("create_dirs", "Create parent directories if needed")
 	MaxProjectsProperty    = mcputil.Number("max_projects", "Maximum number of recent projects to track (default: 5)", mcputil.DefaultInt{5})
 	IgnoreGitProperty      = mcputil.Bool("ignore_git_requirement", "If true, don't require .git directory to consider a directory a project (default: false)")
-	ToolProperty           = mcputil.String("tool", "Tool name for help documentation")
 )

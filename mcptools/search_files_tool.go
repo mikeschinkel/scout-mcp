@@ -29,7 +29,7 @@ func init() {
 			QuickHelp:   "Find files matching criteria",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				PathProperty.Required(),
+				RequiredPathProperty,
 				RecursiveProperty,
 				ExtensionsProperty,
 				PatternProperty.Description("Name pattern to match (case-insensitive substring)"),
@@ -59,7 +59,7 @@ func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (re
 
 	logger.Info("Tool called", "tool", "search_files")
 
-	searchPath, err = PathProperty.String(req)
+	searchPath, err = RequiredPathProperty.String(req)
 	if err != nil {
 		result = mcputil.NewToolResultError(err)
 		goto end

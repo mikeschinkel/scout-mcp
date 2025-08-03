@@ -6,8 +6,8 @@ import (
 	"reflect"
 )
 
-// convertContainedSlice converts a sliced contained in an `any` into a slice of any — e.g. []any
-func convertContainedSlice(input any) []any {
+// ConvertContainedSlice converts a sliced contained in an `any` into a slice of any — e.g. []any
+func ConvertContainedSlice(input any) []any {
 	switch v := input.(type) {
 	case []string:
 		return convertTypedSlice(v)
@@ -48,7 +48,7 @@ end:
 
 }
 
-// convertContainedSlice converts a sliced contained in an `any` into a slice of any — e.g. []any
+// ConvertContainedSlice converts a sliced contained in an `any` into a slice of any — e.g. []any
 func convertSliceOfAny[T any](input []any) (output []T, err error) {
 	var t T
 	var errs []error
@@ -66,4 +66,18 @@ func convertSliceOfAny[T any](input []any) (output []T, err error) {
 		err = errors.Join(errs...)
 	}
 	return output, err
+}
+
+// empty returns true if an any value is nil or equals ""
+func empty(value any) (empty bool) {
+	if value == nil {
+		empty = true
+		goto end
+	}
+	if value == "" {
+		empty = true
+		goto end
+	}
+end:
+	return empty
 }

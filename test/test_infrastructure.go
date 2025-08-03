@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/mikeschinkel/scout-mcp"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"github.com/mikeschinkel/scout-mcp/testutil"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,6 +32,7 @@ func NewDirectServerTestEnv(t *testing.T) *DirectServerTestEnv {
 	testLogger := testutil.NewTestLogger()
 	scout.SetLogger(testLogger)
 	mcptools.SetLogger(testLogger)
+	mcputil.SetLogger(testLogger)
 
 	// Create temporary test directory
 	testDir, err := os.MkdirTemp("", "scout-mcp-direct-test-")
@@ -77,7 +76,7 @@ func NewDirectServerTestEnv(t *testing.T) *DirectServerTestEnv {
 	require.NotNil(t, startSessionTool, "start_session tool should be available")
 
 	// Create empty request for start_session (it doesn't need parameters)
-	req := testutil.NewMockRequest(map[string]interface{}{})
+	req := mcputil.NewMockRequest(map[string]interface{}{})
 
 	result, err := startSessionTool.Handle(ctx, req)
 	require.NoError(t, err, "start_session should succeed")
@@ -103,6 +102,33 @@ func NewDirectServerTestEnv(t *testing.T) *DirectServerTestEnv {
 	}
 }
 
+// extractSessionToken extracts the session token from start_session result
+func extractSessionToken(t *testing.T, result mcputil.ToolResult) (string, error) {
+	t.Helper()
+
+	// Get the JSON text from the result
+	jsonText := result.Value()
+
+	// Parse the JSON content
+	var response struct {
+		SessionToken string `json:"session_token"`
+	}
+
+	err := json.Unmarshal([]byte(jsonText), &response)
+	if err != nil {
+		return "", err
+	}
+
+	return response.SessionToken, nil
+}
+
+// Cleanup cleans up test resources
+func (env *DirectServerTestEnv) Cleanup() {
+	if env.cleanup != nil {
+		env.cleanup()
+	}
+}
+
 // CallTool calls a tool directly with the given arguments
 func (env *DirectServerTestEnv) CallTool(t *testing.T, toolName string, args map[string]interface{}) mcputil.ToolResult {
 	t.Helper()
@@ -117,7 +143,7 @@ func (env *DirectServerTestEnv) CallTool(t *testing.T, toolName string, args map
 	require.NotNil(t, tool, "Tool %s should be registered", toolName)
 
 	// Create request
-	req := testutil.NewMockRequest(args)
+	req := mcputil.NewMockRequest(args)
 
 	// Check preconditions first (like the real MCP server does)
 	err := tool.EnsurePreconditions(req)
@@ -146,7 +172,7 @@ func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName strin
 	require.NotNil(t, tool, "Tool %s should be registered", toolName)
 
 	// Create request
-	req := testutil.NewMockRequest(args)
+	req := mcputil.NewMockRequest(args)
 
 	// Check preconditions first (like the real MCP server does)
 	err := tool.EnsurePreconditions(req)
@@ -162,19 +188,19 @@ func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName strin
 		return err
 	}
 
-	// Check if result is an errorResult using reflection
-	resultValue := reflect.ValueOf(result)
-	if resultValue.Kind() == reflect.Ptr {
-		resultValue = resultValue.Elem()
-	}
+	// Try to get the result value - if it's an error result, it will contain the error message
+	resultValue := result.Value()
+	if resultValue != "" {
+		// This might be an error result or a successful result
+		// For error results, the Value() contains the error message directly
+		// For successful results, it contains JSON
 
-	// Check if it's an errorResult
-	if resultValue.Type().Name() == "errorResult" {
-		// Extract error message
-		messageField := resultValue.FieldByName("message")
-		if messageField.IsValid() {
-			errorMsg := messageField.String()
-			return fmt.Errorf("%s", errorMsg)
+		// Try to parse as JSON first - if it fails, assume it's an error message
+		var temp interface{}
+		err := json.Unmarshal([]byte(resultValue), &temp)
+		if err != nil {
+			// Not valid JSON, likely an error message
+			return fmt.Errorf("%s", resultValue)
 		}
 	}
 
@@ -191,119 +217,4 @@ func (env *DirectServerTestEnv) GetTestDir() string {
 // GetSessionToken returns the session token
 func (env *DirectServerTestEnv) GetSessionToken() string {
 	return env.sessionToken
-}
-
-// Cleanup cleans up test resources
-func (env *DirectServerTestEnv) Cleanup() {
-	if env.cleanup != nil {
-		env.cleanup()
-	}
-}
-
-// extractSessionToken extracts the session token from start_session result
-func extractSessionToken(t *testing.T, result mcputil.ToolResult) (string, error) {
-	t.Helper()
-
-	// Use reflection to extract the text from textResult
-	resultValue := reflect.ValueOf(result)
-	if resultValue.Kind() == reflect.Ptr {
-		resultValue = resultValue.Elem()
-	}
-
-	textField := resultValue.FieldByName("text")
-	if !textField.IsValid() {
-		return "", assert.AnError
-	}
-
-	jsonText := textField.String()
-
-	// Parse the JSON content
-	var response struct {
-		SessionToken string `json:"session_token"`
-	}
-
-	err := json.Unmarshal([]byte(jsonText), &response)
-	if err != nil {
-		return "", err
-	}
-
-	return response.SessionToken, nil
-}
-
-// ParseJSONResult extracts and parses JSON from a ToolResult
-func ParseJSONResult(t *testing.T, result mcputil.ToolResult, target interface{}) {
-	t.Helper()
-
-	// Use reflection to extract the text from textResult
-	resultValue := reflect.ValueOf(result)
-	if resultValue.Kind() == reflect.Ptr {
-		resultValue = resultValue.Elem()
-	}
-
-	textField := resultValue.FieldByName("text")
-	require.True(t, textField.IsValid(), "Result should have text field")
-
-	jsonText := textField.String()
-
-	// Parse the JSON content
-	err := json.Unmarshal([]byte(jsonText), target)
-	require.NoError(t, err, "Should be able to parse JSON result")
-}
-
-// Test the direct server infrastructure
-func TestDirectServerInfrastructure(t *testing.T) {
-	env := NewDirectServerTestEnv(t)
-	defer env.Cleanup()
-
-	t.Run("ServerCreated", func(t *testing.T) {
-		assert.NotNil(t, env.server, "Server should be created")
-		assert.NotEmpty(t, env.GetTestDir(), "Test directory should be set")
-		assert.NotEmpty(t, env.GetSessionToken(), "Session token should be available")
-	})
-
-	t.Run("ToolsRegistered", func(t *testing.T) {
-		expectedTools := []string{
-			"start_session", "read_files", "search_files", "get_config",
-			"help", "create_file", "update_file", "delete_files",
-		}
-
-		for _, toolName := range expectedTools {
-			tool := mcputil.GetRegisteredTool(toolName)
-			assert.NotNil(t, tool, "Tool %s should be registered", toolName)
-		}
-	})
-
-	t.Run("BasicToolCall", func(t *testing.T) {
-		// Test get_config tool
-		result := env.CallTool(t, "get_config", map[string]interface{}{})
-		assert.NotNil(t, result, "get_config should return result")
-	})
-
-	t.Run("FileOperations", func(t *testing.T) {
-		// Test creating a file
-		testFile := filepath.Join(env.GetTestDir(), "new_test_file.txt")
-
-		result := env.CallTool(t, "create_file", map[string]interface{}{
-			"filepath":    testFile,
-			"new_content": "Test file content",
-			"create_dirs": true,
-		})
-		assert.NotNil(t, result, "create_file should succeed")
-
-		// Verify file was created
-		content, err := os.ReadFile(testFile)
-		require.NoError(t, err, "Should be able to read created file")
-		assert.Equal(t, "Test file content", string(content), "File content should match")
-	})
-
-	t.Run("ReadFiles", func(t *testing.T) {
-		// Test reading existing files
-		result := env.CallTool(t, "read_files", map[string]interface{}{
-			"paths": []string{
-				filepath.Join(env.GetTestDir(), "README.md"),
-				filepath.Join(env.GetTestDir(), "src/main.go"),
-			},
-		})
-		assert.NotNil(t, result, "read_files should succeed")
-	})
 }

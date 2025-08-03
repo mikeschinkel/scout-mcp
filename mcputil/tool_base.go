@@ -60,24 +60,42 @@ func (b *ToolBase) Options() ToolOptions {
 	return b.options
 }
 
+// HasRequiredParams returns true if the tool has any required parameters beyond session_token
+func (b *ToolBase) HasRequiredParams() bool {
+	// Check individual required properties
+	for _, prop := range b.options.Properties {
+		// Skip session_token as it's handled automatically in tests
+		if prop.IsRequired() && prop.GetName() != "session_token" {
+			return true
+		}
+	}
+
+	// Check complex requirements
+	if len(b.options.Requires) > 0 {
+		return true
+	}
+
+	return false
+}
+
 // EnsurePreconditions checks all shared preconditions for tools
 func (b *ToolBase) EnsurePreconditions(req ToolRequest) (err error) {
 	var sessionToken string
 
 	// Session validation (skip for start_session tool)
-	if b.options.Name != "start_session" {
-		sessionToken = req.GetString("session_token", "")
-		err = ValidateSession(sessionToken)
-		if err != nil {
-			goto end
-		}
+	if b.options.Name == "start_session" {
+		goto end
 	}
 
-	// Future preconditions can be added here:
-	// - Rate limiting checks
-	// - User permission validation
-	// - Feature flag checks
-	// - etc.
+	sessionToken, err = RequiredSessionTokenProperty.String(req)
+	if err != nil {
+		goto end
+	}
+
+	err = ValidateSession(sessionToken)
+	if err != nil {
+		goto end
+	}
 
 end:
 	return err

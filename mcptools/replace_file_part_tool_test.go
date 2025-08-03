@@ -156,11 +156,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -169,7 +169,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   UpdatedFunction,
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing function")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error replacing function")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectedSuccess:   true,
@@ -197,11 +197,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -210,7 +210,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   UpdatedType,
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing type")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error replacing type")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectedSuccess:   true,
@@ -237,11 +237,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -250,7 +250,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   UpdatedConst,
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing const")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error replacing const")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectedSuccess:   true,
@@ -277,11 +277,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -290,7 +290,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   UpdatedVar,
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing var")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error replacing var")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectedSuccess:   true,
@@ -317,11 +317,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -330,7 +330,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   UpdatedInterface,
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing interface")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error replacing interface")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectedSuccess:   true,
@@ -357,11 +357,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -370,7 +370,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   UpdatedMethod,
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error replacing method")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error replacing method")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectedSuccess:   true,
@@ -397,11 +397,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "python",
@@ -410,7 +410,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   "def hello():\n    print('updated')",
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle unsupported language")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle unsupported language")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectError:      true,
@@ -432,11 +432,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -445,7 +445,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   "something",
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle invalid part type")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle invalid part type")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectError:      true,
@@ -467,11 +467,11 @@ func TestReplaceFilePartTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"language":      "go",
@@ -480,7 +480,7 @@ func TestReplaceFilePartTool(t *testing.T) {
 			"new_content":   "func nonexistentFunction() {}",
 		})
 
-		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle non-existent function")
+		result, err := mcputil.GetToolResult[ReplaceFilePartResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle non-existent function")
 
 		requireReplaceFilePartResult(t, result, err, replaceFilePartResultOpts{
 			ExpectError:      true,

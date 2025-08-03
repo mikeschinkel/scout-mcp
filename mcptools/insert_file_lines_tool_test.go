@@ -105,11 +105,11 @@ func TestInsertFileLinesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      testFile.Filepath,
 			"position":      "after",
@@ -117,7 +117,7 @@ func TestInsertFileLinesTool(t *testing.T) {
 			"new_content":   "Inserted after line 1",
 		})
 
-		result, err := mcputil.GetToolResult[InsertFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting after line")
+		result, err := mcputil.GetToolResult[InsertFileLinesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error inserting after line")
 
 		requireInsertFileLinesResult(t, result, err, insertFileLinesResultOpts{
 			ExpectedFilePath:   testFile.Filepath,
@@ -142,11 +142,11 @@ func TestInsertFileLinesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      testFile.Filepath,
 			"position":      "before",
@@ -154,7 +154,7 @@ func TestInsertFileLinesTool(t *testing.T) {
 			"new_content":   "Inserted before line 2",
 		})
 
-		result, err := mcputil.GetToolResult[InsertFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting before line")
+		result, err := mcputil.GetToolResult[InsertFileLinesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error inserting before line")
 
 		requireInsertFileLinesResult(t, result, err, insertFileLinesResultOpts{
 			ExpectedFilePath:   testFile.Filepath,

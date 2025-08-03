@@ -3,7 +3,6 @@ package mcputil
 import (
 	"context"
 
-	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -53,14 +52,14 @@ func NewServer(opts ServerOpts) Server {
 }
 
 func (s *mcpServer) AddTool(tool Tool) (err error) {
-	var mcpTool mcp.Tool
+	var mcpTool mcpTool
 
 	errs := make([]error, 0)
 	opts := tool.Options()
 
 	// Build mcp mcpTool options
-	var toolOpts []mcp.ToolOption
-	toolOpts = append(toolOpts, mcp.WithDescription(opts.Description))
+	var toolOpts []mcpToolOption
+	toolOpts = append(toolOpts, mcpWithDescription(opts.Description))
 
 	// Add properties using PropertyOptionsGetter interface
 	for _, prop := range opts.Properties {
@@ -71,10 +70,10 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 	}
 
 	// Create the mcpTool
-	mcpTool = mcp.NewTool(opts.Name, toolOpts...)
+	mcpTool = mcpNewTool(opts.Name, toolOpts...)
 
 	// Add the mcpTool with wrapper handler
-	s.srv.AddTool(mcpTool, func(ctx context.Context, req mcp.CallToolRequest) (tr *mcp.CallToolResult, err error) {
+	s.srv.AddTool(mcpTool, func(ctx context.Context, req CallToolRequest) (tr *CallToolResult, err error) {
 		var jsonRes *jsonResult
 		var errRes *errorResult
 		var ok bool
@@ -86,7 +85,7 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 		// Check preconditions first
 		err = tool.EnsurePreconditions(wrappedReq)
 		if err != nil {
-			tr = mcp.NewToolResultError(err.Error())
+			tr = mcpNewToolResultError(err.Error())
 			goto end
 		}
 
@@ -99,16 +98,16 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 		// Convert result
 		jsonRes, ok = result.(*jsonResult)
 		if ok {
-			tr = mcp.NewToolResultText(jsonRes.json)
+			tr = mcpNewToolResultText(jsonRes.json)
 			goto end
 		}
 		errRes, ok = result.(*errorResult)
 		if ok {
-			tr = mcp.NewToolResultError(errRes.message)
+			tr = mcpNewToolResultError(errRes.message)
 			goto end
 		}
 
-		tr = mcp.NewToolResultError("unknown result type")
+		tr = mcpNewToolResultError("unknown result type")
 	end:
 		return tr, err
 	})

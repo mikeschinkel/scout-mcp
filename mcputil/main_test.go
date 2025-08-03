@@ -17,6 +17,7 @@ func TestMain(m *testing.M) {
 	// Need to register for standalone testing
 	// When paired with a app-specific tools package this will be registered.
 	mcputil.RegisterTool(mcputil.NewStartSessionTool(nil))
+	mcputil.RegisterTool(mcputil.NewHelpTool(nil))
 
 	// Run tests
 	code := m.Run()

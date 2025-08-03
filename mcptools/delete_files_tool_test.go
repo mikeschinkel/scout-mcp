@@ -74,7 +74,7 @@ func TestDeleteFilesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
@@ -82,12 +82,12 @@ func TestDeleteFilesTool(t *testing.T) {
 		_, err := os.Stat(fileToDelete.Filepath)
 		require.NoError(t, err, "File should exist before deletion")
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          fileToDelete.Filepath,
 		})
 
-		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting file")
+		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error deleting file")
 
 		requireDeleteFilesResult(t, result, err, deleteFilesResultOpts{
 			ExpectedPath:     fileToDelete.Filepath,
@@ -106,16 +106,16 @@ func TestDeleteFilesTool(t *testing.T) {
 
 		tf.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          nonexistentFile.Filepath,
 		})
 
-		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle nonexistent file")
+		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle nonexistent file")
 
 		requireDeleteFilesResult(t, result, err, deleteFilesResultOpts{
 			ExpectError:      true,
@@ -140,20 +140,20 @@ func TestDeleteFilesTool(t *testing.T) {
 
 		tf.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
 		// We want to delete the parent directory, so get the directory path
 		subDir := filepath.Dir(subDirFile.Filepath)
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          subDir,
 			"recursive":     true,
 		})
 
-		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting directory")
+		result, err := mcputil.GetToolResult[DeleteFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error deleting directory")
 
 		requireDeleteFilesResult(t, result, err, deleteFilesResultOpts{
 			ExpectedPath:     subDir,

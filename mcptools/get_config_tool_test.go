@@ -70,15 +70,15 @@ func TestGetConfigTool(t *testing.T) {
 		defer tf.Cleanup()
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[ConfigResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error getting config")
+		result, err := mcputil.GetToolResult[ConfigResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error getting config")
 
 		requireConfigResult(t, result, err, configToolResultOpts{
 			ExpectMinPaths: 1,

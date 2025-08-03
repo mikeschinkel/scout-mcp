@@ -111,18 +111,18 @@ func TestInsertAtPatternTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          testFile.Filepath,
 			"after_pattern": "func main() {",
 			"new_content":   "\n\t// Added comment",
 		})
 
-		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting after pattern")
+		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error inserting after pattern")
 
 		requireInsertAtPatternResult(t, result, err, insertAtPatternResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -151,18 +151,18 @@ func TestInsertAtPatternTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token":  testToken,
 			"path":           testFile.Filepath,
 			"before_pattern": "func main()",
 			"new_content":    "// Main function\n",
 		})
 
-		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error inserting before pattern")
+		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error inserting before pattern")
 
 		requireInsertAtPatternResult(t, result, err, insertAtPatternResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -191,11 +191,11 @@ func TestInsertAtPatternTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token":  testToken,
 			"path":           testFile.Filepath,
 			"before_pattern": "func \\w+\\(\\)",
@@ -203,7 +203,7 @@ func TestInsertAtPatternTool(t *testing.T) {
 			"regex":          true,
 		})
 
-		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with regex pattern")
+		result, err := mcputil.GetToolResult[InsertAtPatternResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with regex pattern")
 
 		requireInsertAtPatternResult(t, result, err, insertAtPatternResultOpts{
 			ExpectedFilePath:  testFile.Filepath,

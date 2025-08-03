@@ -51,6 +51,7 @@ test: test-unit test-integration
 # Run unit tests (mcptools package tests)
 test-unit:
 	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
+	@go test -v -timeout $(TEST_TIMEOUT) ./mcputil/...
 	@go test -v -timeout $(TEST_TIMEOUT) ./mcptools/...
 	@echo "$(GREEN)✅ Unit tests completed$(NC)"
 

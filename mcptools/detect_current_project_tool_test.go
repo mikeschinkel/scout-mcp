@@ -138,15 +138,15 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		defer tf.Cleanup()
 		// No projects added - empty directory
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with empty directory")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with empty directory")
 
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertNoCurrentProject: true,
@@ -167,15 +167,15 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			Permissions: 0644,
 		})
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with single project")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with single project")
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertCurrentProject:     true,
 			AssertNoRecentProjects:   true,
@@ -197,16 +197,16 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			Permissions: 0644,
 		})
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token":          testToken,
 			"ignore_git_requirement": true,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with ignore_git_requirement")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with ignore_git_requirement")
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertCurrentProject:    true,
 			AssertNoRecentProjects:  true,
@@ -242,15 +242,15 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with clear winner")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with clear winner")
 
 		projectCount := 1
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
@@ -290,15 +290,15 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with multiple recent projects")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with multiple recent projects")
 
 		// For multiple recent projects (within 24 hours), there should be no current project
 		// and RequiresChoice should be true
@@ -336,15 +336,15 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with hidden directories")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with hidden directories")
 
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertCurrentProject:     true,
@@ -385,18 +385,18 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		tf1.Setup(t)
 		tf2.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{
 				tf1.TempDir(),
 				tf2.TempDir(),
 			},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with multiple allowed paths")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with multiple allowed paths")
 
 		projectCount := 1
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
@@ -442,18 +442,18 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		tf.Setup(t)
 
 		// Configure tool with project directories as allowed paths
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{
 				pf1.Dir,
 				pf2.Dir,
 			},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with multiple project paths")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with multiple project paths")
 
 		projectCount := 1
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
@@ -473,15 +473,15 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 		tf.Setup(t)
 
 		// Configure tool with no allowed paths
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should error with no allowed paths")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should error with no allowed paths")
 
 		requireProductDetectionResult(t, result, err, productDetectionResultOpts{
 			AssertError: "no allowed paths configured",
@@ -521,16 +521,16 @@ func TestDetectCurrentProjectTool(t *testing.T) {
 			}, "README.md", "package.json", "main.go", "config.yaml")
 		}
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"max_projects":  3,
 		})
 
-		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error with max_projects limit")
+		result, err := mcputil.GetToolResult[mcptools.ProjectDetectionResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with max_projects limit")
 
 		// Should have limited results to max_projects (3)
 		// The most recent project should be current, others in recent projects

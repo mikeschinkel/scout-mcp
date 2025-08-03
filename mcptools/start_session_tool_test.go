@@ -110,16 +110,16 @@ func TestStartSessionTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
 		// start_session tool doesn't require any parameters
-		req := testutil.NewMockRequest(testutil.Params{})
+		req := mcputil.NewMockRequest(mcputil.Params{})
 
 		mcputil.RegisterPayloadType(&mcptools.StartSessionResult{})
 		result, err := mcputil.GetToolResult[mcputil.StartSessionResult](
-			mcputil.CallResult(testutil.CallTool(tool, req)),
+			mcputil.CallResult(mcputil.CallTool(tool, req)),
 			"Should not error creating session",
 		)
 
@@ -137,14 +137,14 @@ func TestStartSessionTool(t *testing.T) {
 		defer tf.Cleanup()
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{}, // No allowed paths
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{})
+		req := mcputil.NewMockRequest(mcputil.Params{})
 
 		result, err := mcputil.GetToolResult[mcputil.StartSessionResult](
-			mcputil.CallResult(testutil.CallTool(tool, req)),
+			mcputil.CallResult(mcputil.CallTool(tool, req)),
 			"Should not error creating session without allowed paths",
 		)
 

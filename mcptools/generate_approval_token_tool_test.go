@@ -56,11 +56,11 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 		defer tf.Cleanup()
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"file_actions": []any{
 				mcptools.FileAction{Action: "create", Path: "/test/file1.txt", Purpose: "test creation"},
@@ -69,7 +69,7 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 			"operations": []any{"create_file", "update_file"},
 		})
 
-		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error generating approval token")
+		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error generating approval token")
 
 		requireGenerateApprovalTokenResult(t, result, err, generateApprovalTokenResultOpts{})
 	})
@@ -79,11 +79,11 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 		defer tf.Cleanup()
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"file_actions": []any{
 				mcptools.FileAction{Action: "delete", Path: "/test/file.txt", Purpose: "test deletion"},
@@ -91,7 +91,7 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 			"operations": []any{"delete_files"},
 		})
 
-		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error generating delete approval token")
+		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error generating delete approval token")
 
 		requireGenerateApprovalTokenResult(t, result, err, generateApprovalTokenResultOpts{})
 	})
@@ -101,18 +101,18 @@ func TestGenerateApprovalTokenTool(t *testing.T) {
 		defer tf.Cleanup()
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
 		// Note: The tool treats missing file_actions and operations as empty arrays,
 		// which is valid behavior - it generates a token for empty action lists
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			// Missing file_actions and operations - treated as empty arrays
 		})
 
-		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Tool accepts empty file_actions and operations")
+		result, err := mcputil.GetToolResult[GenerateApprovalTokenResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Tool accepts empty file_actions and operations")
 
 		requireGenerateApprovalTokenResult(t, result, err, generateApprovalTokenResultOpts{})
 	})

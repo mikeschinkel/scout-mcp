@@ -111,18 +111,18 @@ func TestDeleteFileLinesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      testFile.Filepath,
 			"start_line":    "3",
 			"end_line":      "3",
 		})
 
-		result, err := mcputil.GetToolResult[DeleteFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting single line")
+		result, err := mcputil.GetToolResult[DeleteFileLinesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error deleting single line")
 
 		requireDeleteFileLinesResult(t, result, err, deleteFileLinesResultOpts{
 			ExpectedFilePath:  testFile.Filepath,
@@ -147,18 +147,18 @@ func TestDeleteFileLinesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      testFile.Filepath,
 			"start_line":    "2",
 			"end_line":      "4",
 		})
 
-		result, err := mcputil.GetToolResult[DeleteFileLinesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error deleting multiple lines")
+		result, err := mcputil.GetToolResult[DeleteFileLinesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error deleting multiple lines")
 
 		requireDeleteFileLinesResult(t, result, err, deleteFileLinesResultOpts{
 			ExpectedFilePath:  testFile.Filepath,

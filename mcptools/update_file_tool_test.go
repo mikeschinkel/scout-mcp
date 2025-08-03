@@ -81,17 +81,17 @@ func TestUpdateFileTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      testFile.Filepath,
 			"new_content":   "Updated content",
 		})
 
-		result, err := mcputil.GetToolResult[UpdateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error updating file")
+		result, err := mcputil.GetToolResult[UpdateFileResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error updating file")
 
 		requireUpdateFileResult(t, result, err, updateFileResultOpts{
 			ShouldUpdateFile: true,
@@ -109,17 +109,17 @@ func TestUpdateFileTool(t *testing.T) {
 		})
 		tf.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      nonexistentFile.Filepath,
 			"new_content":   "This should fail",
 		})
 
-		result, err := mcputil.GetToolResult[UpdateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle nonexistent file")
+		result, err := mcputil.GetToolResult[UpdateFileResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle nonexistent file")
 
 		requireUpdateFileResult(t, result, err, updateFileResultOpts{
 			ExpectError:      true,

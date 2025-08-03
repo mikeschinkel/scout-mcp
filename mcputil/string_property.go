@@ -2,8 +2,6 @@ package mcputil
 
 import (
 	"fmt"
-
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 var _ Property = (*stringProperty)(nil)
@@ -15,6 +13,10 @@ type stringProperty struct {
 	minLen       *int
 	maxLen       *int
 	pattern      *string
+}
+
+func (p *stringProperty) setBase(prop *property) {
+	p.property = prop
 }
 
 func (p *stringProperty) SetDefault(s any) Property {
@@ -35,8 +37,8 @@ func (p *stringProperty) DefaultValue() any {
 	return p.defaultValue
 }
 
-func (p *stringProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithString(p.GetName(), opts...)
+func (p *stringProperty) mcpToolOption(opts []mcpPropertyOption) mcpToolOption {
+	return mcpWithString(p.GetName(), opts...)
 }
 
 func (*stringProperty) Property() {}
@@ -63,22 +65,22 @@ func (p *stringProperty) PropertyOptions() []PropertyOption {
 
 	return opts
 }
-func (p *stringProperty) mcpPropertyOptions() []mcp.PropertyOption {
+func (p *stringProperty) mcpPropertyOptions() []mcpPropertyOption {
 	opts := p.property.mcpPropertyOptions()
 	if p.defaultValue != nil {
-		opts = append(opts, mcp.DefaultString(*p.defaultValue))
+		opts = append(opts, mcpDefaultString(*p.defaultValue))
 	}
 	if p.enum != nil {
-		opts = append(opts, mcp.Enum(p.enum...))
+		opts = append(opts, mcpEnum(p.enum...))
 	}
 	if p.minLen != nil {
-		opts = append(opts, mcp.MinLength(*p.minLen))
+		opts = append(opts, mcpMinLength(*p.minLen))
 	}
 	if p.maxLen != nil {
-		opts = append(opts, mcp.MaxLength(*p.maxLen))
+		opts = append(opts, mcpMaxLength(*p.maxLen))
 	}
 	if p.pattern != nil {
-		opts = append(opts, mcp.Pattern(*p.pattern))
+		opts = append(opts, mcpPattern(*p.pattern))
 	}
 	return opts
 }

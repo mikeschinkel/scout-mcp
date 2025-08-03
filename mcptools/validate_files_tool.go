@@ -25,6 +25,12 @@ func init() {
 				RecursiveProperty,
 				ExtensionsProperty.Description("Extensions of files to process for this tool"),
 			},
+			Requires: []mcputil.Requirement{
+				mcputil.RequiresOneOf{
+					ParamNames: []string{"files", "paths"},
+					Message:    "Either 'files' (array of file paths) or 'paths' (array of directory paths) parameter is required",
+				},
+			},
 		}),
 	})
 }

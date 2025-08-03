@@ -119,16 +119,16 @@ func TestReadFilesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"paths":         []any{testFile.Filepath},
 		})
 
-		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error reading single file")
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error reading single file")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			ExpectFiles:     1,
@@ -154,11 +154,11 @@ func TestReadFilesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"paths": []any{
 				pf1.Filepath,
@@ -166,7 +166,7 @@ func TestReadFilesTool(t *testing.T) {
 			},
 		})
 
-		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error reading multiple files")
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error reading multiple files")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			ExpectFiles:      2,
@@ -190,17 +190,17 @@ func TestReadFilesTool(t *testing.T) {
 		}, "README.md", "main.go", "config.yaml")
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"paths":         []any{pf.Dir},
 			"recursive":     true,
 		})
 
-		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error reading directory")
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error reading directory")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			MinFiles:         3, // At least the 3 files we created
@@ -218,16 +218,16 @@ func TestReadFilesTool(t *testing.T) {
 		})
 		tf.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"paths":         []any{missingFile.Filepath},
 		})
 
-		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle nonexistent file gracefully")
+		result, err := mcputil.GetToolResult[ReadFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle nonexistent file gracefully")
 
 		requireReadFilesResult(t, result, err, readFilesResultOpts{
 			ExpectPartialError: true,

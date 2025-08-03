@@ -2,49 +2,23 @@ package mcputil
 
 import (
 	"fmt"
-
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// toolRequest implements ToolRequest interface by wrapping mcp.CallToolRequest
+// ToolRequest provides access to tool call parameters with additional array support
+type ToolRequest interface {
+	CallToolRequest() CallToolRequest
+	RequireArray(key string) ([]any, error)
+	GetArray(key string, defaultValue []any) []any
+}
+
+// toolRequest implements ToolRequest interface by wrapping CallToolRequest
 type toolRequest struct {
-	req mcp.CallToolRequest
+	req CallToolRequest
 }
 
-func (w *toolRequest) RequireString(key string) (string, error) {
-	return w.req.RequireString(key)
-}
-
-func (w *toolRequest) RequireInt(key string) (int, error) {
-	return w.req.RequireInt(key)
-}
-
-func (w *toolRequest) RequireFloat(key string) (float64, error) {
-	return w.req.RequireFloat(key)
-}
-
-func (w *toolRequest) RequireBool(key string) (bool, error) {
-	return w.req.RequireBool(key)
-}
-
-func (w *toolRequest) GetString(key string, defaultValue string) string {
-	return w.req.GetString(key, defaultValue)
-}
-
-func (w *toolRequest) GetInt(key string, defaultValue int) int {
-	return w.req.GetInt(key, defaultValue)
-}
-
-func (w *toolRequest) GetFloat(key string, defaultValue float64) float64 {
-	return w.req.GetFloat(key, defaultValue)
-}
-
-func (w *toolRequest) GetBool(key string, defaultValue bool) bool {
-	return w.req.GetBool(key, defaultValue)
-}
-
-func (w *toolRequest) GetArguments() map[string]any {
-	return w.req.GetArguments()
+// CallToolRequest returns the underlying CallToolRequest
+func (w *toolRequest) CallToolRequest() CallToolRequest {
+	return w.req
 }
 
 func (w *toolRequest) RequireArray(key string) (array []any, err error) {

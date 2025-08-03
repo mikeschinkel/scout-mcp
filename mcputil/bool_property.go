@@ -2,8 +2,6 @@ package mcputil
 
 import (
 	"fmt"
-
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 var _ Property = (*boolProperty)(nil)
@@ -11,6 +9,10 @@ var _ Property = (*boolProperty)(nil)
 type boolProperty struct {
 	*property
 	defaultValue *bool
+}
+
+func (p *boolProperty) setBase(prop *property) {
+	p.property = prop
 }
 
 func (p *boolProperty) SetDefault(b any) Property {
@@ -31,8 +33,8 @@ func (p *boolProperty) DefaultValue() any {
 	return p.defaultValue
 }
 
-func (p *boolProperty) mcpToolOption(opts []mcp.PropertyOption) mcp.ToolOption {
-	return mcp.WithBoolean(p.GetName(), opts...)
+func (p *boolProperty) mcpToolOption(opts []mcpPropertyOption) mcpToolOption {
+	return mcpWithBoolean(p.GetName(), opts...)
 }
 
 func (*boolProperty) Property() {}

@@ -1,9 +1,7 @@
-package testutil
+package mcputil
 
 import (
 	"path/filepath"
-
-	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
 // MockConfig implements mcputil.Config for testing
@@ -16,7 +14,7 @@ type MockConfigArgs struct {
 }
 
 // NewMockConfig creates a mock config with specified allowed paths
-func NewMockConfig(args MockConfigArgs) mcputil.Config {
+func NewMockConfig(args MockConfigArgs) Config {
 	return &MockConfig{
 		allowedPaths: args.AllowedPaths,
 	}

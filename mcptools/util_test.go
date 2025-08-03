@@ -2,9 +2,10 @@ package mcptools_test
 
 import (
 	"github.com/mikeschinkel/scout-mcp/mcptools"
+	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
-var testToken = "test-session-Token" // Unit tests don't validate tokens
+var testToken = mcputil.TestToken
 
 // Create set of expected tools
 var toolNamesMap = mcptools.ToolNamesMap

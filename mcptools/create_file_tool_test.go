@@ -76,18 +76,18 @@ func TestCreateFileTool(t *testing.T) {
 		})
 		tf.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      newFile.Filepath,
 			"new_content":   "This is new content",
 			"create_dirs":   true,
 		})
 
-		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error creating file")
+		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error creating file")
 
 		requireCreateFileResult(t, result, err, createFileResultOpts{
 			ShouldCreateFile: true,
@@ -107,18 +107,18 @@ func TestCreateFileTool(t *testing.T) {
 
 		tf.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      newFile.Filepath,
 			"new_content":   "Content in nested directory",
 			"create_dirs":   true,
 		})
 
-		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error creating file with nested directories")
+		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error creating file with nested directories")
 
 		requireCreateFileResult(t, result, err, createFileResultOpts{
 			ShouldCreateFile: true,
@@ -143,18 +143,18 @@ func TestCreateFileTool(t *testing.T) {
 		})
 		tf.Setup(t)
 
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"filepath":      newFile.Filepath,
 			"new_content":   "This should fail",
 			"create_dirs":   false,
 		})
 
-		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle missing parent directory")
+		result, err := mcputil.GetToolResult[CreateFileResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle missing parent directory")
 
 		requireCreateFileResult(t, result, err, createFileResultOpts{
 			ExpectError:      true,

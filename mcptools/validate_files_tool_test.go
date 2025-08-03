@@ -114,18 +114,18 @@ func TestValidateFilesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{testFile.Filepath},
 			"paths":         []any{tf.TempDir()},
 			"language":      "go",
 		})
 
-		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error validating valid Go file")
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error validating valid Go file")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:   1,
@@ -150,18 +150,18 @@ func TestValidateFilesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{testFile.Filepath},
 			"paths":         []any{tf.TempDir()},
 			"language":      "go",
 		})
 
-		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error when validating invalid file")
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error when validating invalid file")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:    1,
@@ -191,11 +191,11 @@ func TestValidateFilesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{},
 			"paths":         []any{tf.TempDir()},
@@ -204,7 +204,7 @@ func TestValidateFilesTool(t *testing.T) {
 			"recursive":     true,
 		})
 
-		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should not error validating directory")
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error validating directory")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:    2,
@@ -229,18 +229,18 @@ func TestValidateFilesTool(t *testing.T) {
 		})
 
 		tf.Setup(t)
-		tool.SetConfig(testutil.NewMockConfig(testutil.MockConfigArgs{
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
 			AllowedPaths: []string{tf.TempDir()},
 		}))
 
-		req := testutil.NewMockRequest(testutil.Params{
+		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{testFile.Filepath},
 			"paths":         []any{tf.TempDir()},
 			"language":      "python",
 		})
 
-		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(testutil.CallTool(tool, req)), "Should handle unsupported language gracefully")
+		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle unsupported language gracefully")
 
 		requireValidateFilesResult(t, result, err, validateFilesResultOpts{
 			ExpectedTotalFiles:    1,
