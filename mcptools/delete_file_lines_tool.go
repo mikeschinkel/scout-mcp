@@ -109,7 +109,7 @@ func (t *DeleteFileLinesTool) deleteFileLines(filePath string, startLine, endLin
 		goto end
 	}
 
-	originalContent, err = readFile(t.Config(), filePath)
+	originalContent, err = ReadFile(t.Config(), filePath)
 	if err != nil {
 		goto end
 	}
@@ -123,7 +123,7 @@ func (t *DeleteFileLinesTool) deleteFileLines(filePath string, startLine, endLin
 
 	updatedContent = t.removeLines(lines, startLine, endLine)
 
-	err = writeFile(t.Config(), filePath, updatedContent)
+	err = WriteFile(t.Config(), filePath, updatedContent)
 
 end:
 	return err

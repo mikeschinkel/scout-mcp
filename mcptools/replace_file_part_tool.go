@@ -163,7 +163,7 @@ func (t *ReplaceFilePartTool) replaceFilePart(filePath, language, partType, part
 		goto end
 	}
 
-	originalContent, err = readFile(t.Config(), filePath)
+	originalContent, err = ReadFile(t.Config(), filePath)
 	if err != nil {
 		goto end
 	}
@@ -218,7 +218,7 @@ func (t *ReplaceFilePartTool) replaceGoPart(filePath, originalContent, partType,
 	}
 
 	// Write the updated content
-	err = writeFile(t.Config(), filePath, updatedContent)
+	err = WriteFile(t.Config(), filePath, updatedContent)
 
 end:
 	return err

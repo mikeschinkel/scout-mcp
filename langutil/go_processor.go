@@ -18,18 +18,20 @@ const (
 	PackageGoPart PartType = "package"
 )
 
-// GoLanguage implements the Language interface for Go
-type GoLanguage struct{}
+var _ Processor = (*GoProcessor)(nil)
+
+// GoProcessor implements the Language interface for Go
+type GoProcessor struct{}
 
 func init() {
-	RegisterLanguage(&GoLanguage{})
+	RegisterProcessor(&GoProcessor{})
 }
 
-func (g *GoLanguage) Name() string {
+func (g *GoProcessor) Language() Language {
 	return "go"
 }
 
-func (g *GoLanguage) SupportedPartTypes() []PartType {
+func (g *GoProcessor) SupportedPartTypes() []PartType {
 	return []PartType{
 		FuncGoPart,
 		TypeGoPart,
@@ -40,7 +42,7 @@ func (g *GoLanguage) SupportedPartTypes() []PartType {
 	}
 }
 
-func (g *GoLanguage) FindPart(source string, partType PartType, partName string) (pi *PartInfo, err error) {
+func (g *GoProcessor) FindPart(args PartArgs) (pi *PartInfo, err error) {
 	var fs *token.FileSet
 	var file *ast.File
 	var start, end token.Pos
@@ -51,14 +53,14 @@ func (g *GoLanguage) FindPart(source string, partType PartType, partName string)
 
 	// Parse the Go file
 	fs = token.NewFileSet()
-	file, err = parser.ParseFile(fs, "", source, parser.ParseComments)
+	file, err = parser.ParseFile(fs, "", args.Content, parser.ParseComments)
 	if err != nil {
 		err = fmt.Errorf("failed to parse Go file: %w", err)
 		goto end
 	}
 
 	// Find the part
-	start, end, found, err = g.findGoPart(file, partType, partName)
+	start, end, found, err = g.findGoPart(file, args)
 	if err != nil {
 		goto end
 	}
@@ -76,28 +78,28 @@ func (g *GoLanguage) FindPart(source string, partType PartType, partName string)
 	pi.EndLine = endPos.Line
 	pi.StartOffset = startPos.Offset
 	pi.EndOffset = endPos.Offset
-	pi.Content = source[startPos.Offset:endPos.Offset]
+	pi.Content = args.Content[startPos.Offset:endPos.Offset]
 
 end:
 	return pi, err
 }
 
-func (g *GoLanguage) ReplacePart(source string, partType PartType, partName string, newContent string) (result string, err error) {
+func (g *GoProcessor) ReplacePart(args PartArgs) (result string, err error) {
 	var partInfo *PartInfo
 
 	// Find the part first
-	partInfo, err = g.FindPart(source, partType, partName)
+	partInfo, err = g.FindPart(args)
 	if err != nil {
 		goto end
 	}
 
 	if !partInfo.Found {
-		err = fmt.Errorf("%s '%s' not found in file", partType, partName)
+		err = fmt.Errorf("%s '%s' not found in file", args.PartType, args.PartName)
 		goto end
 	}
 
 	// Replace the content
-	result = source[:partInfo.StartOffset] + newContent + source[partInfo.EndOffset:]
+	result = args.Content[:partInfo.StartOffset] + args.NewContent + args.Content[partInfo.EndOffset:]
 
 	// Validate the result
 	err = g.ValidateSyntax(result)
@@ -110,10 +112,10 @@ end:
 	return result, err
 }
 
-func (g *GoLanguage) ValidateContent(partType PartType, content string) (err error) {
-	content = strings.TrimSpace(content)
+func (g *GoProcessor) ValidateContent(args PartArgs) (err error) {
+	content := strings.TrimSpace(args.Content)
 
-	switch partType {
+	switch args.PartType {
 	case FuncGoPart:
 		if !strings.HasPrefix(content, "func ") {
 			err = fmt.Errorf("func replacement must start with 'func ', got: %s", content[:min(20, len(content))])
@@ -139,13 +141,13 @@ func (g *GoLanguage) ValidateContent(partType PartType, content string) (err err
 			err = fmt.Errorf("package replacement must start with 'package ', got: %s", content[:min(20, len(content))])
 		}
 	default:
-		err = fmt.Errorf("unsupported part type for Go: %s", partType)
+		err = fmt.Errorf("unsupported part type for Go: %s", args.PartType)
 	}
 
 	return err
 }
 
-func (g *GoLanguage) ValidateSyntax(source string) (err error) {
+func (g *GoProcessor) ValidateSyntax(source string) (err error) {
 	var fs *token.FileSet
 
 	fs = token.NewFileSet()
@@ -154,8 +156,9 @@ func (g *GoLanguage) ValidateSyntax(source string) (err error) {
 	return err
 }
 
-func (g *GoLanguage) findGoPart(file *ast.File, partType PartType, partName string) (startPos, endPos token.Pos, found bool, err error) {
-	switch partType {
+func (g *GoProcessor) findGoPart(file *ast.File, args PartArgs) (startPos, endPos token.Pos, found bool, err error) {
+	partName := args.PartName
+	switch args.PartType {
 	case PackageGoPart:
 		if file.Name.Name == partName {
 			startPos = file.Name.Pos()
@@ -173,13 +176,13 @@ func (g *GoLanguage) findGoPart(file *ast.File, partType PartType, partName stri
 	case FuncGoPart:
 		startPos, endPos, found = g.findGoFunc(file, partName)
 	default:
-		err = fmt.Errorf("unsupported part type: %s", partType)
+		err = fmt.Errorf("unsupported part type: %s", args.PartType)
 	}
 
 	return startPos, endPos, found, err
 }
 
-func (g *GoLanguage) findGoImport(file *ast.File, importPath string) (startPos, endPos token.Pos, found bool) {
+func (g *GoProcessor) findGoImport(file *ast.File, importPath string) (startPos, endPos token.Pos, found bool) {
 	for _, imp := range file.Imports {
 		if imp.Path.Value == `"`+importPath+`"` || imp.Path.Value == importPath {
 			startPos = imp.Pos()
@@ -191,7 +194,7 @@ func (g *GoLanguage) findGoImport(file *ast.File, importPath string) (startPos, 
 	return
 }
 
-func (g *GoLanguage) findGoConst(file *ast.File, constName string) (startPos, endPos token.Pos, found bool) {
+func (g *GoProcessor) findGoConst(file *ast.File, constName string) (startPos, endPos token.Pos, found bool) {
 	for _, decl := range file.Decls {
 		if genDecl, ok := decl.(*ast.GenDecl); ok && genDecl.Tok == token.CONST {
 			for _, spec := range genDecl.Specs {
@@ -211,7 +214,7 @@ func (g *GoLanguage) findGoConst(file *ast.File, constName string) (startPos, en
 	return
 }
 
-func (g *GoLanguage) findGoVar(file *ast.File, varName string) (startPos, endPos token.Pos, found bool) {
+func (g *GoProcessor) findGoVar(file *ast.File, varName string) (startPos, endPos token.Pos, found bool) {
 	for _, decl := range file.Decls {
 		if genDecl, ok := decl.(*ast.GenDecl); ok && genDecl.Tok == token.VAR {
 			for _, spec := range genDecl.Specs {
@@ -231,7 +234,7 @@ func (g *GoLanguage) findGoVar(file *ast.File, varName string) (startPos, endPos
 	return
 }
 
-func (g *GoLanguage) findGoType(file *ast.File, typeName string) (startPos, endPos token.Pos, found bool) {
+func (g *GoProcessor) findGoType(file *ast.File, typeName string) (startPos, endPos token.Pos, found bool) {
 	for _, decl := range file.Decls {
 		if genDecl, ok := decl.(*ast.GenDecl); ok && genDecl.Tok == token.TYPE {
 			for _, spec := range genDecl.Specs {
@@ -249,7 +252,7 @@ func (g *GoLanguage) findGoType(file *ast.File, typeName string) (startPos, endP
 	return
 }
 
-func (g *GoLanguage) findGoFunc(file *ast.File, funcName string) (startPos, endPos token.Pos, found bool) {
+func (g *GoProcessor) findGoFunc(file *ast.File, funcName string) (startPos, endPos token.Pos, found bool) {
 	for _, decl := range file.Decls {
 		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
 			var name string
@@ -282,11 +285,4 @@ func (g *GoLanguage) findGoFunc(file *ast.File, funcName string) (startPos, endP
 		}
 	}
 	return
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

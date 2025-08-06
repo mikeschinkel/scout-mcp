@@ -191,7 +191,7 @@ func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions)
 	// Second pass: read all collected files
 	results = make([]FileReadResult, 0, len(filesToRead))
 	for _, filePath := range filesToRead {
-		var content string
+		var content []byte
 		var fileInfo os.FileInfo
 		var err error
 
@@ -206,7 +206,7 @@ func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions)
 			continue
 		}
 
-		content, err = t.ReadFile(filePath)
+		content, err = os.ReadFile(filePath)
 		if err != nil {
 			results = append(results, FileReadResult{
 				Path:  filePath,
@@ -221,7 +221,7 @@ func (t *ReadFilesTool) readMultiplePaths(paths []string, opts ReadFilesOptions)
 		results = append(results, FileReadResult{
 			Path:    filePath,
 			Name:    filepath.Base(filePath),
-			Content: content,
+			Content: string(content),
 			Size:    fileInfo.Size(),
 		})
 

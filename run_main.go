@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mikeschinkel/scout-mcp/langutil"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 )
 
@@ -21,6 +22,13 @@ func RunMain() (err error) {
 		goto end
 	}
 	logger.Info("CLI Args:", "args", os.Args[1:])
+
+	// Initialize logger to file
+	err = Initialize()
+	if err != nil {
+		logger.Error("Failed to initialize %s: %v", AppName, err)
+		goto end
+	}
 
 	args, err = ParseArgs()
 	if err != nil {
@@ -67,6 +75,12 @@ func RunMain() (err error) {
 
 end:
 	return err
+}
+
+func Initialize() (err error) {
+	return langutil.Initialize(langutil.Args{
+		AppName: AppName,
+	})
 }
 
 func InitializeFileLogger() (err error) {

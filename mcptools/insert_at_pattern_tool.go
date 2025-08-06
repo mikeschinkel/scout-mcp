@@ -120,7 +120,7 @@ func (t *InsertAtPatternTool) insertAtPattern(filePath, beforePattern, afterPatt
 		goto end
 	}
 
-	originalContent, err = readFile(t.Config(), filePath)
+	originalContent, err = ReadFile(t.Config(), filePath)
 	if err != nil {
 		goto end
 	}
@@ -136,7 +136,7 @@ func (t *InsertAtPatternTool) insertAtPattern(filePath, beforePattern, afterPatt
 		goto end
 	}
 
-	err = writeFile(t.Config(), filePath, updatedContent)
+	err = WriteFile(t.Config(), filePath, updatedContent)
 
 end:
 	return err

@@ -60,17 +60,27 @@ func (t *FindFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest) (r
 		goto end
 	}
 
-	err = t.validateInputs(language, partType)
+	err = t.validateInputs(langutil.Language(language), partType)
 	if err != nil {
 		goto end
 	}
 
-	originalContent, err = t.findFilePart(filePath, language, partType, partName)
+	originalContent, err = t.findFilePart(langutil.PartArgs{
+		Language: langutil.Language(language),
+		Filepath: filePath,
+		PartType: langutil.PartType(partType),
+		PartName: partName,
+	})
 	if err != nil {
 		goto end
 	}
 
-	partInfo, err = langutil.FindPart(language, originalContent, langutil.PartType(partType), partName)
+	partInfo, err = langutil.FindPart(langutil.PartArgs{
+		Language: langutil.Language(language),
+		Content:  originalContent,
+		PartType: langutil.PartType(partType),
+		PartName: partName,
+	})
 	if err != nil {
 		goto end
 	}
@@ -98,7 +108,7 @@ end:
 	return result, err
 }
 
-func (t *FindFilePartTool) validateInputs(language, partType string) (err error) {
+func (t *FindFilePartTool) validateInputs(language langutil.Language, partType string) (err error) {
 	var supportedTypes []langutil.PartType
 	var validType bool
 
@@ -124,16 +134,16 @@ end:
 	return err
 }
 
-func (t *FindFilePartTool) findFilePart(filePath, language, partType, partName string) (content string, err error) {
+func (t *FindFilePartTool) findFilePart(args langutil.PartArgs) (content string, err error) {
 
-	if !t.IsAllowedPath(filePath) {
-		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
+	if !t.IsAllowedPath(args.Filepath) {
+		err = fmt.Errorf("access denied: path not allowed: %s", args.Filepath)
 		goto end
 	}
 
 	// TODO: This is unfinished
 
-	content, err = readFile(t.Config(), filePath)
+	content, err = ReadFile(t.Config(), args.Filepath)
 
 end:
 	return content, err

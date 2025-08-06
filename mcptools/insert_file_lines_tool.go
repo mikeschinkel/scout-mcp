@@ -96,7 +96,7 @@ func (t *InsertFileLinesTool) insertAtLine(filePath string, lineNumber int, cont
 		goto end
 	}
 
-	originalContent, err = readFile(t.Config(), filePath)
+	originalContent, err = ReadFile(t.Config(), filePath)
 	if err != nil {
 		goto end
 	}
@@ -110,7 +110,7 @@ func (t *InsertFileLinesTool) insertAtLine(filePath string, lineNumber int, cont
 
 	updatedContent = t.insertContent(lines, lineNumber, content, position)
 
-	err = writeFile(t.Config(), filePath, updatedContent)
+	err = WriteFile(t.Config(), filePath, updatedContent)
 
 end:
 	return err

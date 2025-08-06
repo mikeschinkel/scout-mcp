@@ -121,8 +121,8 @@ func TestValidateFilesTool(t *testing.T) {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{testFile.Filepath},
-			"paths":         []any{tf.TempDir()},
-			"language":      "go",
+			//"paths":         []any{tf.TempDir()},
+			"language": "go",
 		})
 
 		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error validating valid Go file")
@@ -157,8 +157,8 @@ func TestValidateFilesTool(t *testing.T) {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{testFile.Filepath},
-			"paths":         []any{tf.TempDir()},
-			"language":      "go",
+			//"paths":         []any{tf.TempDir()},
+			"language": "go",
 		})
 
 		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error when validating invalid file")
@@ -236,8 +236,8 @@ func TestValidateFilesTool(t *testing.T) {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"files":         []any{testFile.Filepath},
-			"paths":         []any{tf.TempDir()},
-			"language":      "python",
+			//"paths":         []any{tf.TempDir()},
+			"language": "python",
 		})
 
 		result, err := mcputil.GetToolResult[ValidateFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle unsupported language gracefully")

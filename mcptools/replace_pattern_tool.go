@@ -108,7 +108,7 @@ func (t *ReplacePatternTool) replaceInFile(filePath, pattern, replacement string
 		goto end
 	}
 
-	originalContent, err = readFile(t.Config(), filePath)
+	originalContent, err = ReadFile(t.Config(), filePath)
 	if err != nil {
 		goto end
 	}
@@ -118,7 +118,7 @@ func (t *ReplacePatternTool) replaceInFile(filePath, pattern, replacement string
 		goto end
 	}
 
-	err = writeFile(t.Config(), filePath, updatedContent)
+	err = WriteFile(t.Config(), filePath, updatedContent)
 
 end:
 	return count, err
