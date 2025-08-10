@@ -6,8 +6,10 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -52,7 +54,7 @@ func NewServer(opts ServerOpts) Server {
 		serverOpts = append(serverOpts, server.WithPromptCapabilities(true))
 	}
 	if opts.Logging {
-		serverOpts = append(serverOpts, server.WithRecovery())
+		serverOpts = append(serverOpts, withRecovery())
 	}
 
 	srv := server.NewMCPServer(opts.Name, opts.Version, serverOpts...)
@@ -62,6 +64,25 @@ func NewServer(opts ServerOpts) Server {
 		Stdin:  opts.Stdin,
 		Stdout: opts.Stdout,
 	}
+}
+
+func withRecovery() server.ServerOption {
+	return server.WithToolHandlerMiddleware(func(next server.ToolHandlerFunc) server.ToolHandlerFunc {
+		return func(ctx context.Context, request mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					stack := debug.Stack()
+					err = fmt.Errorf(
+						"panic recovered in %s tool handler: %v\n\nStack trace:\n%s",
+						request.Params.Name,
+						r,
+						stack,
+					)
+				}
+			}()
+			return next(ctx, request)
+		}
+	})
 }
 
 func (s *mcpServer) AddTool(tool Tool) (err error) {
