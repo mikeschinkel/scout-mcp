@@ -9,6 +9,7 @@ import (
 
 	"github.com/mikeschinkel/scout-mcp/langutil"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
+	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
 type RunArgs struct {
@@ -122,7 +123,10 @@ func InitializeFileLogger() (err error) {
 
 	// Use JSON logging for structured logs
 	SetLogger(logger)
+
+	//TODO These should be opt-in
 	mcptools.SetLogger(logger)
+	mcputil.SetLogger(logger)
 
 	logger.Info("Logger initialized", "log_file", logPath)
 
