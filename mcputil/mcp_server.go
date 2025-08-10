@@ -2,6 +2,11 @@ package mcputil
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/mark3labs/mcp-go/server"
 )
@@ -15,7 +20,9 @@ type Server interface {
 
 // mcpServer implements Server interface
 type mcpServer struct {
-	srv *server.MCPServer
+	srv    *server.MCPServer
+	Stdin  io.Reader
+	Stdout io.Writer
 }
 
 // ServerOpts contains options for creating an MCP server
@@ -27,6 +34,8 @@ type ServerOpts struct {
 	ListChanged bool // Resource list changed capability
 	Prompts     bool
 	Logging     bool
+	Stdin       io.Reader
+	Stdout      io.Writer
 }
 
 // NewServer creates a new MCP server with the given options
@@ -48,7 +57,11 @@ func NewServer(opts ServerOpts) Server {
 
 	srv := server.NewMCPServer(opts.Name, opts.Version, serverOpts...)
 
-	return &mcpServer{srv: srv}
+	return &mcpServer{
+		srv:    srv,
+		Stdin:  opts.Stdin,
+		Stdout: opts.Stdout,
+	}
 }
 
 func (s *mcpServer) AddTool(tool Tool) (err error) {
@@ -116,7 +129,21 @@ end:
 }
 
 func (s *mcpServer) ServeStdio() error {
-	return server.ServeStdio(s.srv)
+	sss := server.NewStdioServer(s.srv)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Set up signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
+	return sss.Listen(ctx, s.Stdin, s.Stdout)
 }
 
 func (s *mcpServer) Shutdown(context.Context) error {

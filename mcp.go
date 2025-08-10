@@ -14,6 +14,8 @@ var allowedPaths = make(map[string]struct{})
 type MCPServer struct {
 	config    *Config
 	mcpServer mcputil.Server
+	Stdin     io.Reader
+	StdOut    io.Writer
 }
 
 func NewMCPServer(opts Opts) (s *MCPServer, err error) {
@@ -35,6 +37,8 @@ func NewMCPServer(opts Opts) (s *MCPServer, err error) {
 		ListChanged: false,
 		Prompts:     false,
 		Logging:     true,
+		Stdin:       opts.Stdin,
+		Stdout:      opts.Stdout,
 	})
 
 	// Register tools
@@ -146,6 +150,14 @@ func (s *MCPServer) loadConfig(opts Opts) (config *Config, err error) {
 		err = fmt.Errorf("no allowed paths specified in config file or command line")
 		goto end
 	}
+	if opts.Stdin == nil {
+		opts.Stdin = os.Stdin
+	}
+	s.Stdin = opts.Stdin
+	if opts.Stdout == nil {
+		opts.Stdout = os.Stdout
+	}
+	s.StdOut = opts.Stdout
 
 	// Validate and normalize paths
 	err = config.Validate()
@@ -170,19 +182,5 @@ func (s *MCPServer) registerTools() (err error) {
 			panic(err)
 		}
 	}
-	return err
-}
-
-func StartMCP(opts Opts) (err error) {
-	var mcpServer *MCPServer
-
-	mcpServer, err = NewMCPServer(opts)
-	if err != nil {
-		goto end
-	}
-
-	err = mcpServer.StartMCP()
-
-end:
 	return err
 }

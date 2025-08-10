@@ -1,9 +1,5 @@
 package scout
 
-import (
-	"os"
-)
-
 type Args struct {
 	AdditionalPaths []string
 	ServerOpts      MCPServerOpts
@@ -11,12 +7,9 @@ type Args struct {
 	InitialPath     string
 }
 
-func ParseArgs() (args Args, err error) {
-	var osArgs []string
+func ParseArgs(osArgs []string) (args Args, err error) {
 	var i int
 	var arg string
-
-	osArgs = os.Args[1:] // Skip program name
 
 	if len(osArgs) == 0 {
 		goto end

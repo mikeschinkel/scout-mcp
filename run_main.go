@@ -2,6 +2,7 @@ package scout
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -10,7 +11,13 @@ import (
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 )
 
-func RunMain() (err error) {
+type RunArgs struct {
+	Args   []string
+	Stdin  io.Reader
+	Stdout io.Writer
+}
+
+func RunMain(ra RunArgs) (err error) {
 	var server *MCPServer
 	var args Args
 	var serverOpts Opts
@@ -30,7 +37,7 @@ func RunMain() (err error) {
 		goto end
 	}
 
-	args, err = ParseArgs()
+	args, err = ParseArgs(ra.Args[1:])
 	if err != nil {
 		logger.Error("Error parsing arguments", "error", err)
 		goto end
@@ -49,6 +56,8 @@ func RunMain() (err error) {
 	serverOpts = Opts{
 		OnlyMode:        args.ServerOpts.OnlyMode,
 		AdditionalPaths: args.AdditionalPaths,
+		Stdin:           ra.Stdin,
+		Stdout:          ra.Stdout,
 	}
 
 	server, err = NewMCPServer(serverOpts)
