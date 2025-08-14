@@ -29,7 +29,7 @@ It’s ideal for REST API testing, JSON-RPC validation, and any situation where 
 * **Declarative**: Define assertions in a `map[string]any` with GJSON paths as keys.
 * **Deep path support**: Navigate JSON easily using [tidwall/gjson](https://github.com/tidwall/gjson) syntax.
 * **Length checks**: Use `#` suffix in paths.
-* **Map-over-array**: `[].subpath` to collect fields from every element.
+* **Arrays**: `[].subpath` to collect fields from every element.
 * **Order-sensitive / order-insensitive** comparisons.
 * **Markers**: `NotNull{}`, `NotEmpty{}` for common non-nil/empty checks.
 * **Pipe functions**: Transform/assert values inline with syntax like
@@ -107,7 +107,7 @@ We use [GJSON path syntax](https://github.com/tidwall/gjson/blob/master/SYNTAX.m
 "result.content.#": 2  // array length == 2
 ```
 
-### **Map-over-array**
+### **Array operator**
 
 Collect a property from every element in an array:
 
@@ -124,7 +124,7 @@ By default, array and collected-slice comparisons are **order-sensitive**.
 For order-insensitive comparisons, wrap expected values with `AnyOrder` or `AnyOrderEq`:
 
 ```go
-// Map-over-array, order-insensitive
+// Array, order-insensitive
 "result.content.[].type": jsontest.AnyOrder("object", "object")
 
 // Array directly at path, order-insensitive
@@ -159,11 +159,12 @@ Syntax: `"path|func()"` or `"path|func()|subpath"` (functions before subpaths ar
 Available pipe functions:
 
 | Function     | Returns | Description                                       |
-| ------------ | ------- | ------------------------------------------------- |
+|--------------|---------|---------------------------------------------------|
 | `notNull()`  | bool    | True if value exists and is not null              |
 | `notEmpty()` | bool    | True if value is non-empty (same rules as marker) |
 | `len()`      | int     | Length of array, object, or string (0 for others) |
 | `exists()`   | bool    | True if the path exists                           |
+| `json()`     | string  | Unescapes embedded JSON                           |
 
 Examples:
 

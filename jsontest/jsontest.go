@@ -2,12 +2,15 @@ package jsontest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/tidwall/gjson"
 )
+
+/* ---------- Core struct ---------- */
 
 type jsonTest struct {
 	data     []byte
@@ -32,17 +35,28 @@ func newJSONTest(path string, args jtArgs) *jsonTest {
 	return jt
 }
 
+/* ---------- Helpers: path + pipe engine ---------- */
+
 func (jt *jsonTest) handlePiped(path string) (err error) {
-	val := gjson.GetBytes(jt.data, jt.pipes[0])
-	if !val.Exists() {
-		err = fmt.Errorf("missing path: %s", jt.pipes[0])
-		goto end
+	var val gjson.Result
+	val, err = jt.evalBase(jt.pipes[0]) // supports [] in base
+	if err != nil {
+		// Special case: if next pipe is exists() we allow missing base and evaluate to false
+		if len(jt.pipes) > 1 && jt.pipes[1] == "exists()" {
+			// create scalar false result to feed the rest of the pipeline
+			val = gjson.Parse("false")
+			err = nil
+		} else {
+			goto end
+		}
 	}
-	val, err = jt.applyPipesJSON(val)
+
+	val, err = jt.applyPipes(val, jt.pipes[1:])
 	if err != nil {
 		err = fmt.Errorf("pipe error at %s: %v", path, err)
 		goto end
 	}
+
 	err = jt.compareResolvedValue(path, val)
 end:
 	return err
@@ -58,6 +72,178 @@ func (jt *jsonTest) handlePlain(path string) (err error) {
 end:
 	return err
 }
+
+/* evalBase resolves the first path token. It supports map-over arrays via recursion. */
+func (jt *jsonTest) evalBase(expr string) (res gjson.Result, err error) {
+	var cur gjson.Result
+	cur = gjson.ParseBytes(jt.data)
+	res, err = jt.resolveRelative(cur, expr)
+	if err != nil {
+		goto end
+	}
+	if !res.Exists() {
+		err = fmt.Errorf("missing path: %s", expr)
+		goto end
+	}
+end:
+	return res, err
+}
+
+/* resolveRelative resolves expr relative to cur (supports nested "[]." map-over). */
+func (jt *jsonTest) resolveRelative(cur gjson.Result, expr string) (res gjson.Result, err error) {
+	var out any
+	var bytes []byte
+	var idx int
+	var prefix, suffix string
+	var arr gjson.Result
+	var items []gjson.Result
+	var collected []any
+
+	// Recurse over "[]."
+	idx = strings.Index(expr, "[].")
+	if idx < 0 {
+		// No map-over; just relative get
+		res = gjson.Get(cur.Raw, expr)
+		goto end
+	}
+
+	prefix = expr[:idx]
+	suffix = expr[idx+3:]
+
+	arr = gjson.Get(cur.Raw, prefix)
+	if !arr.Exists() {
+		err = fmt.Errorf("missing path: %s", prefix)
+		goto end
+	}
+	if !arr.IsArray() {
+		err = fmt.Errorf("path is not an array: %s", prefix)
+		goto end
+	}
+
+	items = arr.Array()
+	collected = make([]any, 0, len(items))
+	for _, it := range items {
+		var sub gjson.Result
+		sub, err = jt.resolveRelative(it, suffix)
+		if err != nil {
+			goto end
+		}
+		// Convert sub into interface{} so we can build a JSON array
+		var v any
+		if sub.Raw == "" {
+			// treat as null
+			v = nil
+		} else {
+			if err = json.Unmarshal([]byte(sub.Raw), &v); err != nil {
+				// If Raw is a primitive without quotes (e.g., 123, true), Unmarshal works.
+				// If it's a bare string without quotes (shouldn't happen), fall back to String().
+				v = sub.Value()
+			}
+		}
+		collected = append(collected, v)
+	}
+	out = collected
+
+	bytes, _ = json.Marshal(out)
+	res = gjson.ParseBytes(bytes)
+end:
+	return res, err
+}
+
+/*
+applyPipes executes pipe tokens over the current gjson.Result.
+
+	Supports: json(), exists(), len(), notNull(), notEmpty(), and relative subpaths (with recursion & "[].").
+*/
+func (jt *jsonTest) applyPipes(start gjson.Result, tokens []string) (res gjson.Result, err error) {
+	res = start
+	for _, p := range tokens {
+		switch p {
+		case "json()":
+			// expects the current value to be a STRING containing JSON
+			var inner any
+			if err = json.Unmarshal([]byte(res.String()), &inner); err != nil {
+				err = fmt.Errorf("json(): failed to parse string as JSON: %w", err)
+				goto end
+			}
+			b, _ := json.Marshal(inner)
+			res = gjson.ParseBytes(b)
+
+		case "exists()":
+			if res.Exists() {
+				res = gjson.Parse("true")
+			} else {
+				res = gjson.Parse("false")
+			}
+
+		case "notNull()":
+			if res.Exists() && strings.TrimSpace(res.Raw) != "null" {
+				res = gjson.Parse("true")
+			} else {
+				res = gjson.Parse("false")
+			}
+
+		case "notEmpty()":
+			var b bool
+			b = jt.isNonEmpty(res)
+			if b {
+				res = gjson.Parse("true")
+			} else {
+				res = gjson.Parse("false")
+			}
+
+		case "len()":
+			var n int
+			switch {
+			case res.IsArray():
+				n = len(res.Array())
+			default:
+				// object? use Map(); string? use String(); primitives => 0
+				m := res.Map()
+				if len(m) > 0 {
+					n = len(m)
+				} else {
+					s := res.String()
+					n = len(s)
+				}
+			}
+			res = gjson.Parse(fmt.Sprintf("%d", n))
+
+		default:
+			// Treat as a relative subpath (may contain "[].")
+			// Subpaths after a scalar don’t make sense; detect and error early.
+			if isScalar(res) && strings.ContainsAny(p, ".[]#") {
+				err = fmt.Errorf("cannot apply subpath %q after scalar value", p)
+				goto end
+			}
+			res, err = jt.resolveRelative(res, p)
+			if err != nil {
+				goto end
+			}
+			if !res.Exists() {
+				err = fmt.Errorf("missing subpath after pipe: %s", p)
+				goto end
+			}
+		}
+	}
+end:
+	return res, err
+}
+
+func isScalar(r gjson.Result) bool {
+	// Heuristic: object => Map() not empty or Raw starts with '{'
+	// array => IsArray()
+	if r.IsArray() {
+		return false
+	}
+	if strings.HasPrefix(strings.TrimSpace(r.Raw), "{") {
+		return false
+	}
+	// numbers, strings, bools, null => scalar
+	return true
+}
+
+/* ---------- Array handlers (ordered vs any-order) ---------- */
 
 type arrayArgs struct {
 	path   string
@@ -104,7 +290,7 @@ end:
 	return err
 }
 
-// handleArray handles "arr.[].subpath" with ordered and AnyOrder comparisons.
+// handleTypedArray handles type-specific "arr.[].subpath"
 func handleTypedArray[T any](exp []T, results []gjson.Result, args arrayArgs, convertFunc func(gjson.Result) T) (err error) {
 	var errs []error
 	got := make([]T, 0, len(results))
@@ -116,38 +302,42 @@ func handleTypedArray[T any](exp []T, results []gjson.Result, args arrayArgs, co
 		}
 		got = append(got, convertFunc(sub))
 	}
+	err = errors.Join(errs...)
+	if err != nil {
+		goto end
+	}
 	if !reflect.DeepEqual(exp, got) {
 		err = fmt.Errorf("path %s: expected %v, got %v", args.path, exp, got)
 		goto end
 	}
 end:
-	return nil
+	return err
 }
 
 func (jt *jsonTest) handleTypedArray(args arrayArgs, results []gjson.Result) (err error) {
 	switch exp := jt.expected.(type) {
 	case []string:
-		err = handleTypedArray[string](exp, results, args, func(result gjson.Result) string {
+		err = handleTypedArray(exp, results, args, func(result gjson.Result) string {
 			return result.String()
 		})
 
 	case []int:
-		err = handleTypedArray[int](exp, results, args, func(result gjson.Result) int {
+		err = handleTypedArray(exp, results, args, func(result gjson.Result) int {
 			return int(result.Int())
 		})
 
 	case []int64:
-		err = handleTypedArray[int64](exp, results, args, func(result gjson.Result) int64 {
+		err = handleTypedArray(exp, results, args, func(result gjson.Result) int64 {
 			return result.Int()
 		})
 
 	case []float64:
-		err = handleTypedArray[float64](exp, results, args, func(result gjson.Result) float64 {
+		err = handleTypedArray(exp, results, args, func(result gjson.Result) float64 {
 			return result.Float()
 		})
 
 	case []bool:
-		err = handleTypedArray[bool](exp, results, args, func(result gjson.Result) bool {
+		err = handleTypedArray(exp, results, args, func(result gjson.Result) bool {
 			return result.Bool()
 		})
 	default:
@@ -156,6 +346,8 @@ func (jt *jsonTest) handleTypedArray(args arrayArgs, results []gjson.Result) (er
 	return err
 }
 
+/* ---------- Pipes: split & classify ---------- */
+
 // classifyPath splits a raw key into (kind, basePath, pipes).
 // - arr.[].subpath => map-over
 // - base|... => piped
@@ -163,10 +355,8 @@ func (jt *jsonTest) handleTypedArray(args arrayArgs, results []gjson.Result) (er
 func (jt *jsonTest) classifyPath(path string, parts []string) pathKind {
 	switch {
 	case strings.Contains(path, "[]."):
-		// TODO This does not support pipes and arrays; we need recursion
 		jt.kind = arrayPath
 	case len(parts) > 1:
-		// TODO This does not support arrays and pipes; we need recursion
 		jt.kind = pipedPath
 	default:
 		jt.kind = plainPath
@@ -213,84 +403,89 @@ func (jt *jsonTest) applyPipesJSON(start gjson.Result) (gjson.Result, error) {
 	return cur, nil
 }
 
-// compareResolvedValue routes to array vs scalar handling (and AnyOrder), reusing helpers.
-func (jt *jsonTest) compareResolvedValue(path string, val gjson.Result) error {
-	// If an array is returned at this path, handle slice comparisons (AnyOrder or ordered).
-	if val.IsArray() {
-		items := val.Array()
+/* ---------- Comparison ---------- */
 
-		// AnyOrder? (expected is a named slice type with marker)
-		if _, ok := jt.expected.(anyOrderMarker); ok {
-			got := jt.collectArrayAs(items)
-			if !jt.elementsMatch(got) {
-				return fmt.Errorf("path (any-order) %s: elements don't match - expected %v, got %v", path, jt.expected, got)
-			}
-			return nil
+func (jt *jsonTest) compareResolvedValue(path string, val gjson.Result) (err error) {
+	var actual any
+	var items []gjson.Result
+
+	// Marker: NotNull
+	if _, ok := jt.expected.(NotNull); ok {
+		if !val.Exists() || strings.TrimSpace(val.Raw) == "null" {
+			err = fmt.Errorf("path %s: expected not null", path)
 		}
-
-		// Order-sensitive for common slice types.
-		switch exp := jt.expected.(type) {
-		case []string:
-			got := make([]string, 0, len(items))
-			for _, it := range items {
-				got = append(got, it.String())
-			}
-			if !reflect.DeepEqual(exp, got) {
-				return fmt.Errorf("path %s: expected %v, got %v", path, exp, got)
-			}
-			return nil
-
-		case []int:
-			got := make([]int, 0, len(items))
-			for _, it := range items {
-				got = append(got, int(it.Int()))
-			}
-			if !reflect.DeepEqual(exp, got) {
-				return fmt.Errorf("path %s: expected %v, got %v", path, exp, got)
-			}
-			return nil
-
-		case []int64:
-			got := make([]int64, 0, len(items))
-			for _, it := range items {
-				got = append(got, it.Int())
-			}
-			if !reflect.DeepEqual(exp, got) {
-				return fmt.Errorf("path %s: expected %v, got %v", path, exp, got)
-			}
-			return nil
-
-		case []float64:
-			got := make([]float64, 0, len(items))
-			for _, it := range items {
-				got = append(got, it.Float())
-			}
-			if !reflect.DeepEqual(exp, got) {
-				return fmt.Errorf("path %s: expected %v, got %v", path, exp, got)
-			}
-			return nil
-
-		case []bool:
-			got := make([]bool, 0, len(items))
-			for _, it := range items {
-				got = append(got, it.Bool())
-			}
-			if !reflect.DeepEqual(exp, got) {
-				return fmt.Errorf("path %s: expected %v, got %v", path, exp, got)
-			}
-			return nil
-
-		default:
-			return fmt.Errorf("unsupported expected slice type for array path=%s type=%T", path, jt.expected)
-		}
+		goto end
 	}
 
-	// Scalar path: coerce only when necessary, then compare.
-	actual := jt.coerceToTypeSmart(val)
-	if !reflect.DeepEqual(jt.expected, actual) {
-		return fmt.Errorf("path %s: expected %v, got %v", path, jt.expected, actual)
+	// Marker: NotEmpty
+	if _, ok := jt.expected.(NotEmpty); ok {
+		if !jt.isNonEmpty(val) {
+			err = fmt.Errorf("path %s: expected not empty", path)
+		}
+		goto end
 	}
-	return nil
+
+	// Array handling
+	if !val.IsArray() {
+		// Scalar path: coerce only when necessary, then compare.
+		actual = jt.coerceToTypeSmart(val)
+		if !reflect.DeepEqual(jt.expected, actual) {
+			err = fmt.Errorf("path %s: expected %v, got %v", path, jt.expected, actual)
+		}
+		goto end
+	}
+
+	items = val.Array()
+
+	// AnyOrder? (expected is a named slice type with marker)
+	if _, ok := jt.expected.(anyOrderMarker); ok {
+		got := jt.collectArrayAs(items)
+		if !jt.elementsMatch(got) {
+			err = fmt.Errorf("path (any-order) %s: elements don't match - expected %v, got %v", path, jt.expected, got)
+		}
+		goto end
+	}
+
+	// Order-sensitive for common slice types.
+	switch exp := jt.expected.(type) {
+	case []string:
+		err = compareTypedResolvedValue(exp, items, path, func(result gjson.Result) string {
+			return result.String()
+		})
+	case []int:
+		err = compareTypedResolvedValue(exp, items, path, func(result gjson.Result) int {
+			return int(result.Int())
+		})
+	case []int64:
+		err = compareTypedResolvedValue(exp, items, path, func(result gjson.Result) int64 {
+			return result.Int()
+		})
+	case []float64:
+		err = compareTypedResolvedValue(exp, items, path, func(result gjson.Result) float64 {
+			return result.Float()
+		})
+	case []bool:
+		err = compareTypedResolvedValue(exp, items, path, func(result gjson.Result) bool {
+			return result.Bool()
+		})
+	default:
+		err = fmt.Errorf("unsupported expected slice type for array path=%s type=%T", path, jt.expected)
+		goto end
+	}
+
+end:
+	return err
+}
+
+func compareTypedResolvedValue[T any](exp []T, items []gjson.Result, path string, convertFunc func(gjson.Result) T) (err error) {
+	got := make([]T, 0, len(items))
+	for _, it := range items {
+		got = append(got, convertFunc(it))
+	}
+	if !reflect.DeepEqual(exp, got) {
+		err = fmt.Errorf("path %s: expected %v, got %v", path, exp, got)
+	}
+	return err
 }
 
 // collectArrayAs converts gjson array items into the same element type as `expected` (AnyOrderSlice[T]).
@@ -390,4 +585,20 @@ func (jt *jsonTest) elementsMatch(actual any) bool {
 		actCounts[actVal.Index(i).Interface()]++
 	}
 	return reflect.DeepEqual(expCounts, actCounts)
+}
+
+func (jt *jsonTest) isNonEmpty(v gjson.Result) bool {
+	switch {
+	case !v.Exists():
+		return false
+	case v.IsArray():
+		return len(v.Array()) > 0
+	default:
+		m := v.Map()
+		if len(m) > 0 {
+			return true
+		}
+		// string
+		return len(v.String()) > 0 || strings.TrimSpace(v.Raw) == "true" || strings.TrimSpace(v.Raw) == "false" || strings.TrimSpace(v.Raw) == "0" || strings.TrimSpace(v.Raw) == "1"
+	}
 }

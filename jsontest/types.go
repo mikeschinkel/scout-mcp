@@ -1,5 +1,8 @@
 package jsontest
 
+type NotNull struct{}
+type NotEmpty struct{}
+
 type anyOrderMarker interface{ anyOrder() }
 
 // AnyOrderSlice is a named slice type used to signal order-insensitive comparison.
