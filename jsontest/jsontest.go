@@ -59,112 +59,100 @@ end:
 	return err
 }
 
+type arrayArgs struct {
+	path   string
+	prefix string
+	suffix string
+}
+
 // handleArray handles "arr.[].subpath" with ordered and AnyOrder comparisons.
-func (jt *jsonTest) handleArray(rawPath string) (err error) {
-	var results []gjson.Result
+func (jt *jsonTest) handleArray(path string) (err error) {
 	var ok bool
+	var args arrayArgs
 
-	idx := strings.Index(rawPath, "[].")
-	prefix := rawPath[:idx]
-	suffix := rawPath[idx+3:]
+	idx := strings.Index(path, "[].")
+	args = arrayArgs{
+		path:   path,
+		prefix: path[:idx],
+		suffix: path[idx+3:],
+	}
 
-	arr := gjson.GetBytes(jt.data, prefix)
+	arr := gjson.GetBytes(jt.data, args.prefix)
 	if !arr.Exists() {
-		err = fmt.Errorf("missing path: %s", prefix)
+		err = fmt.Errorf("missing path: %s", args.prefix)
 		goto end
 	}
 	if !arr.IsArray() {
-		err = fmt.Errorf("path is not an array: %s", prefix)
+		err = fmt.Errorf("path is not an array: %s", args.prefix)
 		goto end
 	}
-
 	// AnyOrder via reflection into the expected slice element type.
 	_, ok = jt.expected.(anyOrderMarker)
 	if ok {
-		got := jt.collectArraySubpathAs(arr.Array(), suffix)
+		got := jt.collectArraySubpathAs(arr.Array(), args.suffix)
 		if !jt.elementsMatch(got) {
-			return fmt.Errorf("path (any-order) %s: elements don't match - expected %v, got %v", rawPath, jt.expected, got)
+			err = fmt.Errorf("path (any-order) %s: elements don't match - expected %v, got %v", path, jt.expected, got)
 		}
-		return nil
+		goto end
 	}
 
 	// Ordered comparisons for common slice types.
-	results = arr.Array()
-	switch exp := jt.expected.(type) {
-	case []string:
-		got := make([]string, 0, len(results))
-		for _, item := range results {
-			sub := gjson.Get(item.Raw, suffix)
-			if !sub.Exists() {
-				return fmt.Errorf("missing subpath %q inside %s", suffix, prefix)
-			}
-			got = append(got, sub.String())
-		}
-		if !reflect.DeepEqual(exp, got) {
-			return fmt.Errorf("path %s: expected %v, got %v", rawPath, exp, got)
-		}
-		return nil
 
-	case []int:
-		got := make([]int, 0, len(results))
-		for _, item := range results {
-			sub := gjson.Get(item.Raw, suffix)
-			if !sub.Exists() {
-				return fmt.Errorf("missing subpath %q inside %s", suffix, prefix)
-			}
-			got = append(got, int(sub.Int()))
-		}
-		if !reflect.DeepEqual(exp, got) {
-			return fmt.Errorf("path %s: expected %v, got %v", rawPath, exp, got)
-		}
-		return nil
+	err = jt.handleTypedArray(args, arr.Array())
 
-	case []int64:
-		got := make([]int64, 0, len(results))
-		for _, item := range results {
-			sub := gjson.Get(item.Raw, suffix)
-			if !sub.Exists() {
-				return fmt.Errorf("missing subpath %q inside %s", suffix, prefix)
-			}
-			got = append(got, sub.Int())
-		}
-		if !reflect.DeepEqual(exp, got) {
-			return fmt.Errorf("path %s: expected %v, got %v", rawPath, exp, got)
-		}
-		return nil
+end:
+	return err
+}
 
-	case []float64:
-		got := make([]float64, 0, len(results))
-		for _, item := range results {
-			sub := gjson.Get(item.Raw, suffix)
-			if !sub.Exists() {
-				return fmt.Errorf("missing subpath %q inside %s", suffix, prefix)
-			}
-			got = append(got, sub.Float())
+// handleArray handles "arr.[].subpath" with ordered and AnyOrder comparisons.
+func handleTypedArray[T any](exp []T, results []gjson.Result, args arrayArgs, convertFunc func(gjson.Result) T) (err error) {
+	var errs []error
+	got := make([]T, 0, len(results))
+	for _, item := range results {
+		sub := gjson.Get(item.Raw, args.suffix)
+		if !sub.Exists() {
+			errs = append(errs, fmt.Errorf("missing subpath %q inside %s", args.suffix, args.prefix))
+			continue
 		}
-		if !reflect.DeepEqual(exp, got) {
-			return fmt.Errorf("path %s: expected %v, got %v", rawPath, exp, got)
-		}
-		return nil
-
-	case []bool:
-		got := make([]bool, 0, len(results))
-		for _, item := range results {
-			sub := gjson.Get(item.Raw, suffix)
-			if !sub.Exists() {
-				return fmt.Errorf("missing subpath %q inside %s", suffix, prefix)
-			}
-			got = append(got, sub.Bool())
-		}
-		if !reflect.DeepEqual(exp, got) {
-			return fmt.Errorf("path %s: expected %v, got %v", rawPath, exp, got)
-		}
-		return nil
-
-	default:
-		return fmt.Errorf("unsupported expected slice type for [] path=%s type=%T", rawPath, jt.expected)
+		got = append(got, convertFunc(sub))
+	}
+	if !reflect.DeepEqual(exp, got) {
+		err = fmt.Errorf("path %s: expected %v, got %v", args.path, exp, got)
+		goto end
 	}
 end:
+	return nil
+}
+
+func (jt *jsonTest) handleTypedArray(args arrayArgs, results []gjson.Result) (err error) {
+	switch exp := jt.expected.(type) {
+	case []string:
+		err = handleTypedArray[string](exp, results, args, func(result gjson.Result) string {
+			return result.String()
+		})
+
+	case []int:
+		err = handleTypedArray[int](exp, results, args, func(result gjson.Result) int {
+			return int(result.Int())
+		})
+
+	case []int64:
+		err = handleTypedArray[int64](exp, results, args, func(result gjson.Result) int64 {
+			return result.Int()
+		})
+
+	case []float64:
+		err = handleTypedArray[float64](exp, results, args, func(result gjson.Result) float64 {
+			return result.Float()
+		})
+
+	case []bool:
+		err = handleTypedArray[bool](exp, results, args, func(result gjson.Result) bool {
+			return result.Bool()
+		})
+	default:
+		err = fmt.Errorf("unsupported expected slice type for [] path=%s type=%T", args.path, jt.expected)
+	}
 	return err
 }
 
