@@ -17,6 +17,8 @@ func ConvertContainedSlice(input any) []any {
 		return convertTypedSlice(v)
 	case []bool:
 		return convertTypedSlice(v)
+	case []any:
+		return v
 	default:
 		return convertSliceByReflection(input)
 	}

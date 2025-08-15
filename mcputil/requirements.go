@@ -14,7 +14,7 @@ func (r RequiresOneOf) IsSatisfied(req ToolRequest) (satisfied bool) {
 	var args map[string]any
 	var value any
 	var exists bool
-	var arr []interface{}
+	var arr []any
 	var ok bool
 
 	args = req.CallToolRequest().GetArguments()
@@ -30,7 +30,7 @@ func (r RequiresOneOf) IsSatisfied(req ToolRequest) (satisfied bool) {
 		}
 
 		// For arrays, check if not empty
-		arr, ok = value.([]interface{})
+		arr, ok = value.([]any)
 		if !ok {
 			// Not an array, and not empty
 			satisfied = true
@@ -73,7 +73,7 @@ func (r RequiresAllOf) IsSatisfied(req ToolRequest) (satisfied bool) {
 	var args map[string]any
 	var value any
 	var exists bool
-	var arr []interface{}
+	var arr []any
 	var ok bool
 
 	satisfied = true
@@ -85,7 +85,7 @@ func (r RequiresAllOf) IsSatisfied(req ToolRequest) (satisfied bool) {
 			goto end
 		}
 		// For arrays, check if not empty
-		arr, ok = value.([]interface{})
+		arr, ok = value.([]any)
 		if ok && len(arr) == 0 {
 			satisfied = false
 			goto end

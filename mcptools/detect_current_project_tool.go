@@ -68,13 +68,11 @@ func (t *DetectCurrentProjectTool) Handle(_ context.Context, req mcputil.ToolReq
 	// Parse parameters
 	maxProjects, err = MaxProjectsProperty.Int(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	ignoreGitRequirement, err = IgnoreGitProperty.Bool(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -83,7 +81,6 @@ func (t *DetectCurrentProjectTool) Handle(_ context.Context, req mcputil.ToolReq
 
 	detectionResult, err = t.detectCurrentProject(maxProjects, ignoreGitRequirement)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -270,7 +267,7 @@ func (t *DetectCurrentProjectTool) scanSinglePathForProjects(basePath string, ig
 		recentFileTime, err = t.findMostRecentFileTime(projectPath)
 		if err != nil {
 			// Log error but continue - use directory modification time as fallback
-			logger.Error("Failed to get recent file time", "path", projectPath, "error", err)
+			logger.Info("Failed to get recent file time", "path", projectPath, "error", err)
 			var info os.FileInfo
 			info, err = entry.Info()
 			if err != nil {

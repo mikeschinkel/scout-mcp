@@ -317,7 +317,7 @@ func TestRequiresAllOf_IsSatisfied(t *testing.T) {
 			},
 			args: args{
 				req: newMockRequest(map[string]any{
-					"param1": []interface{}{}, // Empty array
+					"param1": []any{}, // Empty array
 				}),
 			},
 			wantSatisfied: false,
@@ -330,7 +330,7 @@ func TestRequiresAllOf_IsSatisfied(t *testing.T) {
 			},
 			args: args{
 				req: newMockRequest(map[string]any{
-					"param1": []interface{}{"item1"}, // Non-empty array
+					"param1": []any{"item1"}, // Non-empty array
 				}),
 			},
 			wantSatisfied: true,
@@ -523,7 +523,7 @@ func TestRequiresOneOf_IsSatisfied(t *testing.T) {
 			},
 			args: args{
 				req: newMockRequest(map[string]any{
-					"param1": []interface{}{}, // Empty array
+					"param1": []any{}, // Empty array
 				}),
 			},
 			wantSatisfied: false,
@@ -536,7 +536,7 @@ func TestRequiresOneOf_IsSatisfied(t *testing.T) {
 			},
 			args: args{
 				req: newMockRequest(map[string]any{
-					"param1": []interface{}{"item1"}, // Non-empty array
+					"param1": []any{"item1"}, // Non-empty array
 				}),
 			},
 			wantSatisfied: true,

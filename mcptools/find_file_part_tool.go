@@ -90,7 +90,7 @@ func (t *FindFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest) (r
 		goto end
 	}
 
-	result = mcputil.NewToolResultJSON(map[string]interface{}{
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"found":        true,
 		"part_type":    partType,
 		"part_name":    partName,

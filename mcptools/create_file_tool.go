@@ -2,6 +2,7 @@ package mcptools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,13 +41,11 @@ func (t *CreateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	filePath, err = FilepathProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	content, err = NewContentProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -56,18 +55,21 @@ func (t *CreateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	// Check path is allowed
 	if !t.IsAllowedPath(filePath) {
-		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", filePath))
+		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}
 
 	// Check if file already exists
-	_, err = os.Stat(filePath)
-	if err == nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("file already exists: %s", filePath))
+	err = checkFileExists(filePath)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		// This is what we want
+		err = nil
+	case errors.Is(err, os.ErrExist):
+		err = fmt.Errorf("file already exists: %s", filePath)
 		goto end
-	}
-	if !os.IsNotExist(err) {
-		result = mcputil.NewToolResultError(fmt.Errorf("error checking file: %v", err))
+	default:
+		err = fmt.Errorf("error checking file: %v", err)
 		goto end
 	}
 
@@ -77,19 +79,19 @@ func (t *CreateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 		err = os.MkdirAll(fileDir, 0755)
 	}
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to create directories: %v", err))
+		err = fmt.Errorf("failed to create directories: %v", err)
 		goto end
 	}
 
 	// Create the file
 	err = os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to create file: %v", err))
+		err = fmt.Errorf("failed to create file: %v", err)
 		goto end
 	}
 
 	logger.Info("Tool completed", "tool", "create_file", "success", true, "path", filePath)
-	result = mcputil.NewToolResultJSON(map[string]interface{}{
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"success":   true,
 		"file_path": filePath,
 		"size":      len(content),

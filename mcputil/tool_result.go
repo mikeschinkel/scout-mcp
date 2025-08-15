@@ -14,6 +14,16 @@ type callResult struct {
 
 //goland:noinspection GoExportedFuncWithUnexportedType
 func CallResult(tr ToolResult, err error) callResult {
+	if err != nil {
+		var intErr *InternalError
+		if errors.As(err,&intErr) {
+			// If it is an internal error, pass it on
+			goto end
+		}
+		// If it is not an internal error, convert to an error result
+		tr = NewToolResultError(err)
+	}
+end:
 	return callResult{
 		ToolResult: tr,
 		Error:      err,

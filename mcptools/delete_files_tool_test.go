@@ -119,7 +119,7 @@ func TestDeleteFilesTool(t *testing.T) {
 
 		requireDeleteFilesResult(t, result, err, deleteFilesResultOpts{
 			ExpectError:      true,
-			ExpectedErrorMsg: "no such file or directory",
+			ExpectedErrorMsg: "file or directory does not exist",
 		})
 	})
 

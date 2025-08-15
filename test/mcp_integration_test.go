@@ -18,7 +18,7 @@ var expectedRegisteredTools = []string{
 	"update_file_lines", "delete_file_lines", "insert_file_lines",
 	"insert_at_pattern", "replace_pattern",
 	"find_file_part", "replace_file_part",
-	"request_approval", "generate_approval_token",
+	"request_approval",
 }
 
 // TestToolRegistrationCompleteness verifies our expected tool list matches actual registrations
@@ -68,13 +68,13 @@ func TestMCPServerCommunication(t *testing.T) {
 			// required properties and complex requirements (like RequiresOneOf)
 			if tool.HasRequiredParams() {
 				// For tools that require parameters, expect controlled validation errors
-				err := env.CallToolExpectError(t, toolName, map[string]interface{}{})
+				err := env.CallToolExpectError(t, toolName, map[string]any{})
 				assert.Error(t, err, "Tool %s should return validation error (proving MCP server routing works)", toolName)
 				// Validation errors prove the tool was reached through MCP server
 				assert.NotEmpty(t, err.Error(), "Tool %s should return non-empty validation error", toolName)
 			} else {
 				// For tools that work with empty params, expect success
-				result := env.CallTool(t, toolName, map[string]interface{}{})
+				result := env.CallTool(t, toolName, map[string]any{})
 				assert.NotNil(t, result, "Tool %s should return result through MCP server", toolName)
 			}
 		})

@@ -35,7 +35,6 @@ func (t *GetConfigTool) Handle(_ context.Context, _ mcputil.ToolRequest) (result
 
 	config, err = t.getConfigInfo(t.Config())
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 

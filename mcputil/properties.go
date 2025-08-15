@@ -146,7 +146,7 @@ end:
 	return s, err
 }
 
-// AnySlice return AnySlice value. If a default value it set we use that but if no
+// AnySlice returns a slice of []any as a value. If a default value it set we use that but if no
 // default value is set and the property does not exist, we throw an error.
 func (p *property) AnySlice(tr ToolRequest) (s []any, err error) {
 	if p.required {

@@ -1,26 +1,30 @@
 package scout
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
-var allowedPaths = make(map[string]struct{})
-
 type MCPServer struct {
-	config    *Config
-	mcpServer mcputil.Server
-	Stdin     io.Reader
-	StdOut    io.Writer
+	config          *Config
+	additionalPaths map[string]struct{}
+	allowedPaths    map[string]struct{}
+	mcpServer       mcputil.Server
+	Stdin           io.Reader
+	StdOut          io.Writer
 }
 
 func NewMCPServer(opts Opts) (s *MCPServer, err error) {
 
-	s = &MCPServer{}
+	s = &MCPServer{
+		additionalPaths: toExistenceMap(opts.AdditionalPaths),
+	}
 
 	// Load config and validate paths
 	s.config, err = s.loadConfig(opts)
@@ -51,21 +55,27 @@ end:
 	return s, err
 }
 
-func (s *MCPServer) StartMCP() (err error) {
+func (s *MCPServer) StartMCP(ctx context.Context) (err error) {
 	logger.Info("MCP server starting with stdio transport")
 	logger.Info("Allowed directories:")
-	for dir := range allowedPaths {
+	for dir := range s.AllowedPaths() {
 		logger.Info("Directory", "path", dir)
 	}
 
 	// Start the stdio server (blocking)
-	err = s.mcpServer.ServeStdio()
+	err = s.mcpServer.ServeStdio(ctx)
 
 	return err
 }
 
 func (s *MCPServer) AllowedPaths() map[string]struct{} {
-	return allowedPaths
+	if s.allowedPaths != nil {
+		goto end
+	}
+	s.allowedPaths = maps.Clone(s.config.validPaths)
+	maps.Copy(s.allowedPaths, s.additionalPaths)
+end:
+	return s.allowedPaths
 }
 
 func (s *MCPServer) ReloadConfig() (err error) {

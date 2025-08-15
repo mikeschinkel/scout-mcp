@@ -319,3 +319,4 @@ When making changes, ensure they maintain the existing security model, follow th
 
 ### Current Bugs/TODOs
 - [ ] Add logic to track what files have been read and require reading files before updating them.
+- [ ] Add test to ensure that "/tmp" is always an allowed path but that we don't have it duplicated.

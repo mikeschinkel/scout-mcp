@@ -3,6 +3,7 @@ package mcputil
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 )
 
 // ToolHandler is the function signature for tool handlers
@@ -22,8 +23,8 @@ type Tool interface {
 	Name() string
 	Options() ToolOptions
 	Handle(context.Context, ToolRequest) (ToolResult, error)
-	EnsurePreconditions(ToolRequest) error
-	SetConfig(c Config)
+	EnsurePreconditions(context.Context, ToolRequest) error
+	SetConfig(Config)
 	HasRequiredParams() bool
 }
 
@@ -54,6 +55,12 @@ type jsonResult struct {
 	json string
 }
 
+// NewToolResultJSON creates a JSON result for a tool call
+func NewToolResultJSON(data any) ToolResult {
+	jsonData, _ := json.Marshal(data)
+	return &jsonResult{json: string(jsonData)}
+}
+
 func (*jsonResult) ToolResult() {}
 
 func (t *jsonResult) Value() string {
@@ -64,19 +71,36 @@ type errorResult struct {
 	message string
 }
 
+// NewToolResultError creates an error result for a tool call
+func NewToolResultError(err error) ToolResult {
+	return &errorResult{message: err.Error()}
+}
+
 func (*errorResult) ToolResult() {}
 
 func (e *errorResult) Value() string {
 	return e.message
 }
 
-// NewToolResultError creates an error result for a tool call
-func NewToolResultError(err error) ToolResult {
-	return &errorResult{message: err.Error()}
+
+// InternalError represents system-level errors that should be returned as errors
+type InternalError struct {
+	message string
+	cause   error
 }
 
-// NewToolResultJSON creates a JSON result for a tool call
-func NewToolResultJSON(data any) ToolResult {
-	jsonData, _ := json.Marshal(data)
-	return &jsonResult{json: string(jsonData)}
+func (e *InternalError) Error() string {
+	return e.message
+}
+
+func (e *InternalError) Unwrap() error {
+	return e.cause
+}
+
+// NewInternalError creates a system-level error
+func NewInternalError(cause error,format string, args ...any) *InternalError {
+	return &InternalError{
+		cause: cause,
+		message: fmt.Sprintf(format, args...),
+	}
 }

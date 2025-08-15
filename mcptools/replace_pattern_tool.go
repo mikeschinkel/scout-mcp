@@ -82,7 +82,7 @@ func (t *ReplacePatternTool) Handle(_ context.Context, req mcputil.ToolRequest) 
 		message = fmt.Sprintf("Successfully replaced %d occurrences of '%s' in %s", replacementCount, pattern, filePath)
 	}
 
-	result = mcputil.NewToolResultJSON(map[string]interface{}{
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"success":           replacementCount > 0,
 		"file_path":         filePath,
 		"pattern":           pattern,

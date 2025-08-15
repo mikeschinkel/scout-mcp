@@ -1,6 +1,7 @@
 package mcptools
 
 import (
+	"os"
 	"path/filepath"
 
 	"golang.org/x/text/cases"
@@ -30,4 +31,18 @@ func errorsStringSlice(errs []error) (es []string) {
 		es[i] = err.Error()
 	}
 	return es
+}
+
+// checkFileExists returns a file error no matter what
+//
+//	os.ErrExists — when the file exists
+//	os.ErrNotExists — when the file does not exist
+//	os.Err??? — some other error
+func checkFileExists(fp string) (err error) {
+	// Check if file already exists
+	_, err = os.Stat(fp)
+	if err == nil {
+		err = os.ErrExist
+	}
+	return err
 }

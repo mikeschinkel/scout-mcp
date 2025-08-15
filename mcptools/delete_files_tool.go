@@ -38,13 +38,11 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	filePath, err = PathProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	recursive, err = RecursiveProperty.Bool(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -52,18 +50,18 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	// Check path is allowed
 	if !t.IsAllowedPath(filePath) {
-		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", filePath))
+		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}
 
 	// Check if file/directory exists
 	fileInfo, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
-		result = mcputil.NewToolResultError(fmt.Errorf("file or directory does not exist: %s", filePath))
+		err = fmt.Errorf("file or directory does not exist: %s", filePath)
 		goto end
 	}
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("error checking file: %v", err))
+		err = fmt.Errorf("error checking file: %v", err)
 		goto end
 	}
 
@@ -71,7 +69,7 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	if fileInfo.IsDir() {
 		fileType = "directory"
 		if !recursive {
-			result = mcputil.NewToolResultError(fmt.Errorf("cannot delete directory without recursive flag: %s", filePath))
+			err = fmt.Errorf("cannot delete directory without recursive flag: %s", filePath)
 			goto end
 		}
 		// Use RemoveAll for recursive directory deletion
@@ -83,12 +81,12 @@ func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	}
 
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to delete %s: %v", fileType, err))
+		err = fmt.Errorf("failed to delete %s: %v", fileType, err)
 		goto end
 	}
 
 	logger.Info("Tool completed", "tool", "delete_files", "success", true, "path", filePath, "type", fileType)
-	result = mcputil.NewToolResultJSON(map[string]interface{}{
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"success":      true,
 		"deleted_path": filePath,
 		"file_type":    fileType,

@@ -67,7 +67,7 @@ func CreateDefaultConfig(args Args) (err error) {
 	}
 
 	config = NewConfig(ConfigArgs{
-		AllowedPaths:   allowedPaths,
+		AllowedPaths:   append(allowedPaths, "/tmp"),
 		Port:           ConfigPort,
 		AllowedOrigins: allowedOrigins,
 	})
@@ -184,11 +184,12 @@ func (c *Config) AllowedOrigins() []string {
 }
 
 func (c *Config) Reset() {
+	c.validPaths = make(map[string]struct{})
+	c.validPaths["/tmp"] = struct{}{}
 	jc := c.JSONConfig
 	if jc.AllowedPaths == nil {
-		c.JSONConfig.AllowedPaths = []string{}
+		c.JSONConfig.AllowedPaths = []string{"/tmp"}
 	}
-	c.validPaths = make(map[string]struct{})
 	if jc.AllowedOrigins == nil {
 		c.JSONConfig.AllowedOrigins = allowedOrigins
 	}

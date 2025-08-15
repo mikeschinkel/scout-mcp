@@ -55,7 +55,7 @@ func (tf *TestFixture) Setup(t *testing.T) {
 	}
 
 	// Set up all the project fixtures
-	tf.RemoveFiles(t)
+	// tf.RemoveFiles(t) // BUG: This removes the directory we just created
 	for _, pf := range tf.ProjectFixtures {
 		pf.Setup(t, tf)
 	}

@@ -78,7 +78,7 @@ func (t *InsertAtPatternTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		goto end
 	}
 
-	result = mcputil.NewToolResultJSON(map[string]interface{}{
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"success":   true,
 		"file_path": filePath,
 		"pattern":   getPatternForResult(beforePattern, afterPattern),

@@ -123,7 +123,7 @@ func TestUpdateFileTool(t *testing.T) {
 
 		requireUpdateFileResult(t, result, err, updateFileResultOpts{
 			ExpectError:      true,
-			ExpectedErrorMsg: "no such file or directory",
+			ExpectedErrorMsg: "file does not exist",
 		})
 	})
 }

@@ -1,6 +1,7 @@
 package scout
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -18,25 +19,19 @@ type RunArgs struct {
 	Stdout io.Writer
 }
 
-func RunMain(ra RunArgs) (err error) {
+func RunMain(ctx context.Context, ra RunArgs) (err error) {
 	var server *MCPServer
 	var args Args
 	var serverOpts Opts
 
-	// Initialize logger to file
-	err = InitializeFileLogger()
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
-		goto end
-	}
-	logger.Info("CLI Args:", "args", os.Args[1:])
-
-	// Initialize logger to file
+	// Initialize scout package
 	err = Initialize()
 	if err != nil {
 		logger.Error("Failed to initialize %s: %v", AppName, err)
 		goto end
 	}
+
+	logger.Info("CLI Args:", "args", os.Args[1:])
 
 	args, err = ParseArgs(ra.Args[1:])
 	if err != nil {
@@ -67,6 +62,7 @@ func RunMain(ra RunArgs) (err error) {
 			ShowUsageError(err)
 			goto end
 		}
+
 		logger.Error("Failed to create server", "error", err)
 		goto end
 	}
@@ -77,7 +73,7 @@ func RunMain(ra RunArgs) (err error) {
 		logger.Info("Directory", "path", path)
 	}
 
-	err = server.StartMCP()
+	err = server.StartMCP(ctx)
 	if err != nil {
 		logger.Error("MCP server failed", "error", err)
 		goto end
@@ -88,12 +84,24 @@ end:
 }
 
 func Initialize() (err error) {
-	return langutil.Initialize(langutil.Args{
+
+	err = initializeFileLogger()
+	if err != nil {
+		err = fmt.Errorf("failed to initialize logger: %v\n", err)
+		goto end
+	}
+
+	logger.Info("Logger initialized\n")
+
+	err = langutil.Initialize(langutil.Args{
 		AppName: AppName,
 	})
+
+end:
+	return err
 }
 
-func InitializeFileLogger() (err error) {
+func initializeFileLogger() (err error) {
 	var logger *slog.Logger
 	var logDir string
 	var logPath string
@@ -105,13 +113,12 @@ func InitializeFileLogger() (err error) {
 		goto end
 	}
 
-	logDir = filepath.Join(homeDir, "Library", "Logs", "scout-mcp")
+	logDir = filepath.Join(homeDir, ".config", "scout-mcp")
 	err = os.MkdirAll(logDir, 0755)
 	if err != nil {
 		goto end
 	}
-
-	logPath = filepath.Join(logDir, "scout-mcp.log")
+	logPath = filepath.Join(logDir, "errors.log")
 	logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		goto end
@@ -124,7 +131,7 @@ func InitializeFileLogger() (err error) {
 	// Use JSON logging for structured logs
 	SetLogger(logger)
 
-	//TODO These should be opt-in
+	//TODO These should be registered by the package, not hard-coded here.
 	mcptools.SetLogger(logger)
 	mcputil.SetLogger(logger)
 

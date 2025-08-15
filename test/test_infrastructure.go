@@ -76,7 +76,7 @@ func NewDirectServerTestEnv(t *testing.T) *DirectServerTestEnv {
 	require.NotNil(t, startSessionTool, "start_session tool should be available")
 
 	// Create empty request for start_session (it doesn't need parameters)
-	req := mcputil.NewMockRequest(map[string]interface{}{})
+	req := mcputil.NewMockRequest(map[string]any{})
 
 	result, err := startSessionTool.Handle(ctx, req)
 	require.NoError(t, err, "start_session should succeed")
@@ -130,7 +130,7 @@ func (env *DirectServerTestEnv) Cleanup() {
 }
 
 // CallTool calls a tool directly with the given arguments
-func (env *DirectServerTestEnv) CallTool(t *testing.T, toolName string, args map[string]interface{}) mcputil.ToolResult {
+func (env *DirectServerTestEnv) CallTool(t *testing.T, toolName string, args map[string]any) mcputil.ToolResult {
 	t.Helper()
 
 	// Add session token if not present
@@ -145,8 +145,10 @@ func (env *DirectServerTestEnv) CallTool(t *testing.T, toolName string, args map
 	// Create request
 	req := mcputil.NewMockRequest(args)
 
+	ctx := context.Background()
+
 	// Check preconditions first (like the real MCP server does)
-	err := tool.EnsurePreconditions(req)
+	err := tool.EnsurePreconditions(ctx, req)
 	if err != nil {
 		require.NoError(t, err, "Tool %s preconditions failed", toolName)
 	}
@@ -159,7 +161,7 @@ func (env *DirectServerTestEnv) CallTool(t *testing.T, toolName string, args map
 }
 
 // CallToolExpectError calls a tool and expects it to return an error
-func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName string, args map[string]interface{}) error {
+func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName string, args map[string]any) error {
 	t.Helper()
 
 	// Add session token if not present
@@ -174,8 +176,10 @@ func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName strin
 	// Create request
 	req := mcputil.NewMockRequest(args)
 
+	ctx := context.Background()
+
 	// Check preconditions first (like the real MCP server does)
-	err := tool.EnsurePreconditions(req)
+	err := tool.EnsurePreconditions(ctx, req)
 	if err != nil {
 		// Precondition failed - this is the expected error
 		return err
@@ -187,7 +191,10 @@ func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName strin
 		// Go error returned
 		return err
 	}
-
+	if result==nil {
+		t.Fatalf("Result must not be nil when err is nil for tool '%s'", toolName)
+		return nil
+	}
 	// Try to get the result value - if it's an error result, it will contain the error message
 	resultValue := result.Value()
 	if resultValue != "" {
@@ -196,7 +203,7 @@ func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName strin
 		// For successful results, it contains JSON
 
 		// Try to parse as JSON first - if it fails, assume it's an error message
-		var temp interface{}
+		var temp any
 		err := json.Unmarshal([]byte(resultValue), &temp)
 		if err != nil {
 			// Not valid JSON, likely an error message
@@ -206,7 +213,7 @@ func (env *DirectServerTestEnv) CallToolExpectError(t *testing.T, toolName strin
 
 	// No error found - this is unexpected
 	require.Fail(t, "Tool %s should return error but returned success", toolName)
-	return nil
+	return err
 }
 
 // GetTestDir returns the test directory path

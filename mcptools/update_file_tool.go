@@ -38,13 +38,11 @@ func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	filePath, err = FilepathProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	content, err = NewContentProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -52,24 +50,24 @@ func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 
 	// Check path is allowed
 	if !t.IsAllowedPath(filePath) {
-		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", filePath))
+		err = fmt.Errorf("access denied: path not allowed: %s", filePath)
 		goto end
 	}
 
 	// Check if file exists
 	fileInfo, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
-		result = mcputil.NewToolResultError(fmt.Errorf("file does not exist: %s", filePath))
+		err = fmt.Errorf("file does not exist: %s", filePath)
 		goto end
 	}
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("error checking file: %v", err))
+		err = fmt.Errorf("error checking file: %v", err)
 		goto end
 	}
 
 	// Don't allow updating directories
 	if fileInfo.IsDir() {
-		result = mcputil.NewToolResultError(fmt.Errorf("cannot update directory: %s", filePath))
+		err = fmt.Errorf("cannot update directory: %s", filePath)
 		goto end
 	}
 
@@ -78,12 +76,12 @@ func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (res
 	// Update the file
 	err = os.WriteFile(filePath, []byte(content), fileInfo.Mode())
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("failed to update file: %v", err))
+		err = fmt.Errorf("failed to update file: %v", err)
 		goto end
 	}
 
 	logger.Info("Tool completed", "tool", "update_file", "success", true, "path", filePath)
-	result = mcputil.NewToolResultJSON(map[string]interface{}{
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"success":   true,
 		"file_path": filePath,
 		"old_size":  oldSize,

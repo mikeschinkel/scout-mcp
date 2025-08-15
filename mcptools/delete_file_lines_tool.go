@@ -69,7 +69,7 @@ func (t *DeleteFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest)
 		message = fmt.Sprintf("Successfully deleted lines %d-%d from %s", startLine, endLine, filePath)
 	}
 
-	result = mcputil.NewToolResultJSON(map[string]interface{}{
+	result = mcputil.NewToolResultJSON(map[string]any{
 		"success":       true,
 		"file_path":     filePath,
 		"start_line":    startLine,

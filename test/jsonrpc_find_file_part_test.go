@@ -1,0 +1,35 @@
+package test
+
+// getJSONRPCFindFilePartTest returns the test definition for find_file_part tool
+import (
+	"testing"
+	
+	"github.com/mikeschinkel/scout-mcp/testutil"
+)
+
+func TestFindFilePartToolWithJSONRPC(t *testing.T) {
+	fixture := testutil.NewTestFixture("find-file-part-test")
+	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
+	})
+	fixture.Setup(t)
+	defer fixture.Cleanup()
+	
+	RunJSONRPCTest(t, fixture, test{
+		name: "find_file_part",
+		arguments: findFilePartArgs{
+			Path:     "main.go",
+			Language: "go",
+			PartType: "func",
+			PartName: "main",
+		},
+		expected: map[string]any{
+			"jsonrpc":                               "2.0",
+			"result.content.#":                      1,
+			"result.content.0.type":                 "text",
+			"result.content.0.text|json()|found":         true,
+			"result.content.0.text|json()|part_name":     "main",
+			"result.content.0.text|json()|part_type":     "func",
+		},
+	})
+}

@@ -1,8 +1,13 @@
 package langutil
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+)
+
+var (
+	ErrLanguageNotSupported = errors.New("language/file type not supported")
 )
 
 // Processor represents a programming language handler
@@ -39,7 +44,10 @@ func RegisterProcessor(p Processor) {
 func GetProcessor(name Language) (p Processor, err error) {
 	p, exists := processors[strings.ToLower(string(name))]
 	if !exists {
-		err = fmt.Errorf("language '%s' not supported. Available processors: %v", name, GetLanguages())
+		err = errors.Join(ErrLanguageNotSupported,
+			fmt.Errorf("language=%s", name),
+			fmt.Errorf("available=[%v]", GetLanguages()),
+		)
 	}
 	return p, err
 }

@@ -552,27 +552,6 @@ Request user approval for risky operations with risk assessment.
 }
 ```
 
-### `generate_approval_token`
-Generate approval tokens after user confirmation for secure operation execution.
-
-**Parameters:**
-- `session_token` (required): Session token from start_session
-- `file_actions` (required): Array of file actions that were approved
-- `operations` (required): Array of operations approved ("create", "update", "delete")
-- `session_id` (optional): Session identifier for this approval
-
-**Example:**
-```json
-{
-  "tool": "generate_approval_token",
-  "parameters": {
-    "session_token": "your-session-token",
-    "file_actions": ["update_config.json"],
-    "operations": ["update"]
-  }
-}
-```
-
 ## Best Practices
 
 ### Getting Started

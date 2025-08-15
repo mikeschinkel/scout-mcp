@@ -36,6 +36,9 @@ end:
 
 // GetRegisteredToolNames returns the names of all registered tools
 func GetRegisteredToolNames() []string {
+	if registeredTools == nil {
+		panic("No Scout MCP server tools have been registered.\nDid you forget to import github.com/mikeschinkel/scout-mcp/mcptools for side effects (by prefixing it with '_')?")
+	}
 	names := make([]string, 0, len(registeredTools))
 	for _, tool := range registeredTools {
 		names = append(names, tool.Name())

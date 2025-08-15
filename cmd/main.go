@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
 
 	"github.com/mikeschinkel/scout-mcp"
@@ -9,7 +11,8 @@ import (
 func main() {
 	var err error
 
-	err = scout.RunMain(scout.RunArgs{
+	_, _ = fmt.Fprintf(os.Stderr, "%s running...\n[Press Ctrl-C to terminate]", scout.ServerName)
+	err = scout.RunMain(context.Background(), scout.RunArgs{
 		Args:   os.Args,
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,

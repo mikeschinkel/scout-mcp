@@ -61,49 +61,42 @@ func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (re
 
 	searchPath, err = RequiredPathProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	recursive, err = RecursiveProperty.Bool(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	pattern, err = PatternProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	namePattern, err = NamePatternProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	filesOnly, err = FilesOnlyProperty.Bool(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	dirsOnly, err = DirsOnlyProperty.Bool(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	maxResults, err = MaxResultsProperty.Int(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	extensions, err = ExtensionsProperty.StringSlice(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("invalid extensions array: %v", err))
+		err = fmt.Errorf("invalid extensions array: %v", err)
 		goto end
 	}
 
@@ -120,7 +113,7 @@ func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (re
 
 	// Check path is allowed
 	if !t.IsAllowedPath(searchPath) {
-		result = mcputil.NewToolResultError(fmt.Errorf("access denied: path not allowed: %s", searchPath))
+		err = fmt.Errorf("access denied: path not allowed: %s", searchPath)
 		goto end
 	}
 
@@ -134,7 +127,6 @@ func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (re
 		MaxResults:  maxResults,
 	})
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 

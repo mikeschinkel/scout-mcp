@@ -19,9 +19,9 @@ type InitializeParams struct {
 
 type ServerCapabilities struct {
 	Tools     []ToolDefinition       `json:"tools"`
-	Resources map[string]interface{} `json:"resources,omitempty"`
-	Prompts   map[string]interface{} `json:"prompts,omitempty"`
-	Logging   map[string]interface{} `json:"logging,omitempty"`
+	Resources map[string]any `json:"resources,omitempty"`
+	Prompts   map[string]any `json:"prompts,omitempty"`
+	Logging   map[string]any `json:"logging,omitempty"`
 }
 
 type ToolsCapability struct {

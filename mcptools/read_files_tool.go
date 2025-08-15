@@ -20,7 +20,7 @@ func init() {
 			QuickHelp:   "Read multiple files efficiently (read before updating)",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				PathsProperty.Required(),
+				RequiredPathsProperty,
 				ExtensionsProperty.Description("Filter by file extensions (e.g., ['.go', '.txt']) - applies to directories only"),
 				RecursiveProperty,
 				PatternProperty.Description("Filename pattern to match (case-insensitive substring) - applies to directories only"),
@@ -48,36 +48,33 @@ func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 
 	paths, err = PathsProperty.StringSlice(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("invalid paths array: %v", err))
+		err = fmt.Errorf("invalid paths array: %v", err)
 		goto end
 	}
 
 	if len(paths) == 0 {
-		result = mcputil.NewToolResultError(fmt.Errorf("paths array cannot be empty"))
+		err = fmt.Errorf("paths array cannot be empty")
 		goto end
 	}
 
 	extensions, err = ExtensionsProperty.StringSlice(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(fmt.Errorf("invalid extensions array: %v", err))
+		err = fmt.Errorf("invalid extensions array: %v", err)
 		goto end
 	}
 
 	recursive, err = RecursiveProperty.Bool(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	pattern, err = PatternProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	maxFiles, err = MaxFilesProperty.Int(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
@@ -96,7 +93,6 @@ func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 		MaxFiles:   maxFiles,
 	})
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 

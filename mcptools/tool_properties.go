@@ -8,6 +8,7 @@ var (
 	RequiredSessionTokenProperty = mcputil.RequiredSessionTokenProperty
 	RequiredFilesProperty        = FilesProperty.Required()
 	RequiredPathProperty         = PathProperty.Required()
+	RequiredPathsProperty         = PathsProperty.Required()
 )
 
 var (

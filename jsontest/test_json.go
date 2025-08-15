@@ -3,7 +3,6 @@ package jsontest
 import (
 	"errors"
 	"fmt"
-	"testing"
 )
 
 // ---------- Public API ----------
@@ -18,8 +17,7 @@ const (
 
 // TestJSON asserts JSON content against declarative checks and returns an aggregated error.
 // Keep it small: classify the path, dispatch to a focused handler, accumulate errors.
-func TestJSON(t *testing.T, data []byte, checks map[string]any) (err error) {
-	t.Helper()
+func TestJSON(data []byte, checks map[string]any) (err error) {
 	var errs []error
 
 	for path, expected := range checks {

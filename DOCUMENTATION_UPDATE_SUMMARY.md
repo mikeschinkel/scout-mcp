@@ -48,7 +48,7 @@ expectedTools := []string{
 
 // Add session management to all tests
 func getSessionToken(t *testing.T, client *MCPClient, ctx context.Context) string {
-    resp, err := client.CallTool(ctx, "start_session", map[string]interface{}{})
+    resp, err := client.CallTool(ctx, "start_session", map[string]any{})
     require.NoError(t, err)
     require.Nil(t, resp.Error)
     

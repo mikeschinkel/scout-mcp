@@ -39,3 +39,12 @@ func validatePath(path string) (err error) {
 end:
 	return err
 }
+
+// toExistenceMap takes a []comparable and returns a map[comparable]struct{}
+func toExistenceMap[K comparable](s []K) (m map[K]struct{}) {
+	m = make(map[K]struct{}, len(s))
+	for _, v := range s {
+		m[v] = struct{}{}
+	}
+	return m
+}

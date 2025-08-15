@@ -41,13 +41,11 @@ func (t *RequestApprovalTool) Handle(_ context.Context, req mcputil.ToolRequest)
 
 	operation, err = operationProperty.String(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	files, err = RequiredFilesProperty.StringSlice(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 

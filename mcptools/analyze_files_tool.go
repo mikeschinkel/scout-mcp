@@ -20,7 +20,7 @@ func init() {
 			Description: "Analyze files",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				FilesProperty.Required(),
+				RequiredFilesProperty,
 			},
 		}),
 	})
@@ -40,18 +40,16 @@ func (t *AnalyzeFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (r
 
 	files, err = FilesProperty.StringSlice(req)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 
 	if len(files) == 0 {
-		result = mcputil.NewToolResultError(fmt.Errorf("files array cannot be empty"))
+		err = fmt.Errorf("no files to analyze; the 'files' parameter cannot be empty")
 		goto end
 	}
 
 	fileResults, totalSize, totalErrors, err = t.analyzeFiles(files)
 	if err != nil {
-		result = mcputil.NewToolResultError(err)
 		goto end
 	}
 

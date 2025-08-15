@@ -2,6 +2,7 @@ package mcputil
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,8 +17,8 @@ import (
 // Server represents an MCP server
 type Server interface {
 	AddTool(Tool) error
-	ServeStdio() error
-	Shutdown(ctx context.Context) error
+	ServeStdio(ctx context.Context) error
+	Shutdown(context.Context) error
 }
 
 // mcpServer implements Server interface
@@ -117,7 +118,7 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 		wrappedReq := &toolRequest{req: req}
 
 		// Check preconditions first
-		err = tool.EnsurePreconditions(wrappedReq)
+		err = tool.EnsurePreconditions(ctx, wrappedReq)
 		if err != nil {
 			tr = mcpNewToolResultError(err.Error())
 			goto end
@@ -126,7 +127,19 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 		// Call user handler
 		result, err = tool.Handle(ctx, wrappedReq)
 		if err != nil {
-			goto end
+			var internalError *InternalError
+			if errors.As(err, &internalError) {
+				// This is a system error - log it and return as error to become mcp.INTERNAL_ERROR
+				if logger != nil {
+					logger.Error("Internal tool error", "tool", req.Params.Name, "error", err)
+				}
+				goto end
+			} else {
+				// This is an application error - convert to tool result
+				tr = mcpNewToolResultError(err.Error())
+				err = nil
+				goto end
+			}
 		}
 
 		// Convert result
@@ -136,12 +149,11 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 			goto end
 		}
 		errRes, ok = result.(*errorResult)
-		if ok {
+		if !ok {
 			tr = mcpNewToolResultError(errRes.message)
 			goto end
 		}
-
-		tr = mcpNewToolResultError("unknown result type")
+		tr = mcpNewToolResultError(fmt.Sprintf("unknown result type: %v",result))
 	end:
 		return tr, err
 	})
@@ -149,10 +161,10 @@ end:
 	return err
 }
 
-func (s *mcpServer) ServeStdio() error {
+func (s *mcpServer) ServeStdio(ctx context.Context) error {
 	sss := server.NewStdioServer(s.srv)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Set up signal handling
@@ -163,11 +175,36 @@ func (s *mcpServer) ServeStdio() error {
 		<-sigChan
 		cancel()
 	}()
-
-	return sss.Listen(ctx, s.Stdin, s.Stdout)
+	cr := NewCapturingReader(s.Stdin)
+	err := sss.Listen(ctx, cr, s.Stdout)
+	if err != nil {
+		err = fmt.Errorf("ERROR: %w [REQUEST: %s]", err, cr.Capture)
+	}
+	return err
 }
 
 func (s *mcpServer) Shutdown(context.Context) error {
 	// mcp-go may not have explicit shutdown - check docs
 	return nil
+}
+
+var _ io.Reader = (*CapturingReader)(nil)
+
+type CapturingReader struct {
+	io.Reader
+	Capture []byte
+}
+
+func NewCapturingReader(reader io.Reader) *CapturingReader {
+	return &CapturingReader{Reader: reader}
+}
+
+func (c *CapturingReader) Read(p []byte) (n int, err error) {
+	n, err = c.Reader.Read(p)
+	if err != nil {
+		goto end
+	}
+	c.Capture = append(c.Capture, p...)
+end:
+	return n, err
 }

@@ -47,6 +47,5 @@ var ToolNamesMap = map[string]NULL{
 	"validate_files":          {},
 	"analyze_files":           {},
 	"request_approval":        {},
-	"generate_approval_token": {},
 	"detect_current_project":  {},
 }

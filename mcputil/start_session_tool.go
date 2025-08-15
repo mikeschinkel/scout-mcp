@@ -61,18 +61,24 @@ type StartSessionTool struct {
 
 var instructions = `🎯 MCP Session Started Successfully!
 
-Your session token is valid for 24 hours and will be required for all subsequent tool calls.
+Your session token is valid for 24 hours and will be REQUIRED for all subsequent tool calls.
 
-REQUIRED: 
-- Log all tool failures in ./MCP_USABILITY_CONCERNS.md - match the file's existing format.
+ON ANY SCOUT MCP TOOL ERROR
+	1. You MUST IMMEDIATELY STOP and report the error. Provide the user with:
+		A. The request you sent, in the JSONRPC 2.0 format a MCP Server expects,   
+		B. The error message you received, and
+		C. What you expected do happen.
+	2. Log all tool failures in ./MCP_USABILITY_CONCERNS.md, then 
+	3. Stop and wait for instructions from the user.
 
 IMPORTANT INSTRUCTIONS:
 1. **Session Token Required**: All tools (except start_session) require session_token parameter
 2. **Token Expiration**: Tokens expire after 24 hours or when server restarts
+
 `
 
 // EnsurePreconditions bypasses session validation for start_session but runs other preconditions
-func (t *StartSessionTool) EnsurePreconditions(_ ToolRequest) (err error) {
+func (t *StartSessionTool) EnsurePreconditions(context.Context, ToolRequest) (err error) {
 	// start_session tool doesn't require any preconditions
 	// Future non-session preconditions could be added here if needed
 	return nil
