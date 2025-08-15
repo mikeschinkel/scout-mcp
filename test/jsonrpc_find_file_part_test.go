@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCFindFilePartTest returns the test definition for find_file_part tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestFindFilePartToolWithJSONRPC tests the find_file_part tool via JSON-RPC.
 func TestFindFilePartToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("find-file-part-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

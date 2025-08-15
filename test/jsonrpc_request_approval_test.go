@@ -1,8 +1,8 @@
 package test
 
-// getJSONRPCRequestApprovalTest returns the test definition for request_approval tool
 import "testing"
 
+// TestRequestApprovalToolWithJSONRPC tests the request_approval tool via JSON-RPC.
 func TestRequestApprovalToolWithJSONRPC(t *testing.T) {
 	RunJSONRPCTest(t, nil, test{
 		name: "request_approval",

@@ -1,8 +1,8 @@
 package test
 
-// getJSONRPCStartSessionTest returns the test definition for start_session tool
 import "testing"
 
+// TestStartSessionToolWithJSONRPC tests the start_session tool via JSON-RPC.
 func TestStartSessionToolWithJSONRPC(t *testing.T) {
 	RunJSONRPCTest(t, nil, test{
 		name: "start_session",

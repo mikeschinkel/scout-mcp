@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCValidateFilesTest returns the test definition for validate_files tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestValidateFilesToolWithJSONRPC tests the validate_files tool via JSON-RPC.
 func TestValidateFilesToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("validate-files-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

@@ -6,7 +6,7 @@ import (
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
-// getJSONRPCAnalyzeFilesTest returns the test definition for analyze_files tool
+// TestAnalyzeFilesToolWithJSONRPC tests the analyze_files tool via JSON-RPC.
 func TestAnalyzeFilesToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("analyze-files-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCInsertFileLinesTest returns the test definition for insert_file_lines tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestInsertFileLinesToolWithJSONRPC tests the insert_file_lines tool via JSON-RPC.
 func TestInsertFileLinesToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("insert-file-lines-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

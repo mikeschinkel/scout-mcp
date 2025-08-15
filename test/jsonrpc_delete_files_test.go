@@ -6,7 +6,7 @@ import (
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
-// getJSONRPCDeleteFilesTest returns the test definition for delete_files tool
+// TestDeleteFilesToolWithJSONRPC tests the delete_files tool via JSON-RPC.
 func TestDeleteFilesToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("delete-files-test")
 	fixture.AddFileFixture("test.go", testutil.FileFixtureArgs{

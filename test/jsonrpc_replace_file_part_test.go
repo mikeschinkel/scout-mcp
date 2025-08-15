@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCReplaceFilePartTest returns the test definition for replace_file_part tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestReplaceFilePartToolWithJSONRPC tests the replace_file_part tool via JSON-RPC.
 func TestReplaceFilePartToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("replace-file-part-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

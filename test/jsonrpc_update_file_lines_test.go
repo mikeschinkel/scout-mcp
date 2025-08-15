@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCUpdateFileLinesTest returns the test definition for update_file_lines tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestUpdateFileLinesToolWithJSONRPC tests the update_file_lines tool via JSON-RPC.
 func TestUpdateFileLinesToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("update-file-lines-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

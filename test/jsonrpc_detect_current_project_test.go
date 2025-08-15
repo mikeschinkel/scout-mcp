@@ -1,6 +1,5 @@
 package test
 
-// getJSONRPCDetectCurrentProjectTest returns the test definition for detect_current_project tool
 import (
 	"testing"
 	"time"
@@ -8,6 +7,7 @@ import (
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestDetectCurrentProjectToolWithJSONRPC tests the detect_current_project tool via JSON-RPC.
 func TestDetectCurrentProjectToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("detect-current-project-test")
 	// Create multiple project directories with .git to test project detection

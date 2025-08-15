@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCInsertAtPatternTest returns the test definition for insert_at_pattern tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestInsertAtPatternToolWithJSONRPC tests the insert_at_pattern tool via JSON-RPC.
 func TestInsertAtPatternToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("insert-at-pattern-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

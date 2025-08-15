@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCReplacePatternTest returns the test definition for replace_pattern tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestReplacePatternToolWithJSONRPC tests the replace_pattern tool via JSON-RPC.
 func TestReplacePatternToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("replace-pattern-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{

@@ -25,7 +25,7 @@ func TestMain(m *testing.M) {
 	// Setup code here if needed
 	// For example: initialize test data, mock services, etc.
 	// Create log file for JSON responses
-	logFile, err := os.OpenFile("test_responses.jsonl", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logFile, err := os.OpenFile("../log/test_responses.jsonl", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("Failed to create log file: %v", err)
 	}

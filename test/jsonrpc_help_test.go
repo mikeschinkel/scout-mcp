@@ -1,8 +1,8 @@
 package test
 
-// getJSONRPCHelpTest returns the test definition for help tool
 import "testing"
 
+// TestHelpToolWithJSONRPC tests the help tool via JSON-RPC.
 func TestHelpToolWithJSONRPC(t *testing.T) {
 	RunJSONRPCTest(t, nil, test{
 		name: "help",

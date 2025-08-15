@@ -1,12 +1,12 @@
 package test
 
-// getJSONRPCSearchFilesTest returns the test definition for search_files tool
 import (
 	"testing"
 	
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
+// TestSearchFilesToolWithJSONRPC tests the search_files tool via JSON-RPC.
 func TestSearchFilesToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("search-files-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
