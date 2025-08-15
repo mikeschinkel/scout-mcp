@@ -14,21 +14,25 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// Server represents an MCP server
+// Server represents an MCP server instance that can register tools
+// and serve requests via stdio transport.
 type Server interface {
 	AddTool(Tool) error
 	ServeStdio(ctx context.Context) error
 	Shutdown(context.Context) error
 }
 
-// mcpServer implements Server interface
+// mcpServer implements Server interface using mark3labs/mcp-go library.
+// It wraps the underlying MCP server with additional functionality for
+// session validation and tool registration.
 type mcpServer struct {
 	srv    *server.MCPServer
 	Stdin  io.Reader
 	Stdout io.Writer
 }
 
-// ServerOpts contains options for creating an MCP server
+// ServerOpts contains options for creating an MCP server including
+// capability flags and IO configuration for stdio transport.
 type ServerOpts struct {
 	Name        string
 	Version     string
@@ -41,7 +45,9 @@ type ServerOpts struct {
 	Stdout      io.Writer
 }
 
-// NewServer creates a new MCP server with the given options
+// NewServer creates a new MCP server with the given options.
+// It configures capabilities and sets up stdio transport for
+// communication with MCP clients like Claude Desktop.
 func NewServer(opts ServerOpts) Server {
 	var serverOpts []server.ServerOption
 
@@ -67,6 +73,8 @@ func NewServer(opts ServerOpts) Server {
 	}
 }
 
+// withRecovery creates a middleware that recovers from panics in tool handlers
+// and converts them to proper error responses with stack traces for debugging.
 func withRecovery() server.ServerOption {
 	return server.WithToolHandlerMiddleware(func(next server.ToolHandlerFunc) server.ToolHandlerFunc {
 		return func(ctx context.Context, request mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
@@ -86,6 +94,8 @@ func withRecovery() server.ServerOption {
 	})
 }
 
+// AddTool registers a tool with the MCP server, validating preconditions
+// and wrapping the tool handler with session enforcement and error handling.
 func (s *mcpServer) AddTool(tool Tool) (err error) {
 	var mcpTool mcpTool
 
@@ -153,7 +163,7 @@ func (s *mcpServer) AddTool(tool Tool) (err error) {
 			tr = mcpNewToolResultError(errRes.message)
 			goto end
 		}
-		tr = mcpNewToolResultError(fmt.Sprintf("unknown result type: %v",result))
+		tr = mcpNewToolResultError(fmt.Sprintf("unknown result type: %v", result))
 	end:
 		return tr, err
 	})
@@ -161,6 +171,9 @@ end:
 	return err
 }
 
+// ServeStdio starts the MCP server listening on stdio transport.
+// This is a blocking call that handles MCP protocol communication
+// until the context is canceled or an error occurs.
 func (s *mcpServer) ServeStdio(ctx context.Context) error {
 	sss := server.NewStdioServer(s.srv)
 
@@ -183,6 +196,8 @@ func (s *mcpServer) ServeStdio(ctx context.Context) error {
 	return err
 }
 
+// Shutdown gracefully shuts down the MCP server.
+// Currently a no-op as mcp-go may not have explicit shutdown.
 func (s *mcpServer) Shutdown(context.Context) error {
 	// mcp-go may not have explicit shutdown - check docs
 	return nil
@@ -190,15 +205,21 @@ func (s *mcpServer) Shutdown(context.Context) error {
 
 var _ io.Reader = (*CapturingReader)(nil)
 
+// CapturingReader wraps an io.Reader to capture all read data
+// for debugging and error reporting purposes.
 type CapturingReader struct {
 	io.Reader
 	Capture []byte
 }
 
+// NewCapturingReader creates a new CapturingReader that captures
+// all data read from the underlying reader.
 func NewCapturingReader(reader io.Reader) *CapturingReader {
 	return &CapturingReader{Reader: reader}
 }
 
+// Read implements io.Reader by reading from the underlying reader
+// while capturing the read data for later inspection.
 func (c *CapturingReader) Read(p []byte) (n int, err error) {
 	n, err = c.Reader.Read(p)
 	if err != nil {

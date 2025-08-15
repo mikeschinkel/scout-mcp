@@ -8,11 +8,13 @@ import (
 	"golang.org/x/text/language"
 )
 
+// titleCase converts a string to title case using English language rules.
 func titleCase(s string) string {
 	return cases.Title(language.English).String(s)
 }
 
-// Add this utility function (probably in util.go)
+// makeRelativePath converts an absolute path to a relative path from the given root,
+// prefixing with ~ to indicate home directory context.
 func makeRelativePath(path, root string) (rel string, err error) {
 
 	rel, err = filepath.Rel(root, path)
@@ -25,6 +27,7 @@ end:
 	return path, err
 }
 
+// errorsStringSlice converts a slice of errors to a slice of error strings.
 func errorsStringSlice(errs []error) (es []string) {
 	es = make([]string, len(errs))
 	for i, err := range errs {

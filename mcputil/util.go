@@ -6,7 +6,8 @@ import (
 	"reflect"
 )
 
-// ConvertContainedSlice converts a sliced contained in an `any` into a slice of any — e.g. []any
+// ConvertContainedSlice converts a slice contained in an `any` into a slice of any — e.g. []any.
+// It handles common slice types and falls back to reflection for unknown types.
 func ConvertContainedSlice(input any) []any {
 	switch v := input.(type) {
 	case []string:
@@ -23,6 +24,8 @@ func ConvertContainedSlice(input any) []any {
 		return convertSliceByReflection(input)
 	}
 }
+
+// convertTypedSlice converts a typed slice to []any.
 func convertTypedSlice[T any](input []T) []any {
 	output := make([]any, len(input))
 	for i, val := range input {
@@ -31,6 +34,7 @@ func convertTypedSlice[T any](input []T) []any {
 	return output
 }
 
+// convertSliceByReflection uses reflection to convert any slice type to []any.
 func convertSliceByReflection(input any) (output []any) {
 	var n int
 
@@ -50,7 +54,8 @@ end:
 
 }
 
-// ConvertContainedSlice converts a sliced contained in an `any` into a slice of any — e.g. []any
+// convertSliceOfAny converts a []any to a typed slice, validating each element.
+// Returns an error if any elements cannot be converted to type T.
 func convertSliceOfAny[T any](input []any) (output []T, err error) {
 	var t T
 	var errs []error
@@ -70,7 +75,7 @@ func convertSliceOfAny[T any](input []any) (output []T, err error) {
 	return output, err
 }
 
-// empty returns true if an any value is nil or equals ""
+// empty returns true if an any value is nil or equals "".
 func empty(value any) (empty bool) {
 	if value == nil {
 		empty = true

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// mustClose closes an io.Closer and terminates the program on error.
 func mustClose(c io.Closer) {
 	err := c.Close()
 	if err != nil {
@@ -15,6 +16,8 @@ func mustClose(c io.Closer) {
 	}
 }
 
+// validatePath validates that the given path exists and is a directory.
+// Returns an error if the path is invalid, doesn't exist, or is not a directory.
 func validatePath(path string) (err error) {
 	var absPath string
 	var pathInfo os.FileInfo

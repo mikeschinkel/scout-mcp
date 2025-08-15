@@ -4,8 +4,10 @@ import (
 	"fmt"
 )
 
+// NULL is a zero-memory type used as a value for existence maps.
 type NULL = struct{}
 
+// RelativePosition specifies where to insert content relative to a pattern.
 type RelativePosition string
 
 const (
@@ -13,6 +15,7 @@ const (
 	AfterPosition  RelativePosition = "after"
 )
 
+// Validate checks if the RelativePosition has a valid value.
 func (rp RelativePosition) Validate() (err error) {
 	switch rp {
 	case BeforePosition:
@@ -29,23 +32,23 @@ func (rp RelativePosition) Validate() (err error) {
 
 // ToolNamesMap is the set of expected tools
 var ToolNamesMap = map[string]NULL{
-	"start_session":           {},
-	"read_files":              {},
-	"search_files":            {},
-	"get_config":              {},
-	"help":                    {},
-	"create_file":             {},
-	"update_file":             {},
-	"delete_files":            {},
-	"update_file_lines":       {},
-	"delete_file_lines":       {},
-	"insert_file_lines":       {},
-	"insert_at_pattern":       {},
-	"replace_pattern":         {},
-	"find_file_part":          {},
-	"replace_file_part":       {},
-	"validate_files":          {},
-	"analyze_files":           {},
-	"request_approval":        {},
-	"detect_current_project":  {},
+	"start_session":          {},
+	"read_files":             {},
+	"search_files":           {},
+	"get_config":             {},
+	"help":                   {},
+	"create_file":            {},
+	"update_file":            {},
+	"delete_files":           {},
+	"update_file_lines":      {},
+	"delete_file_lines":      {},
+	"insert_file_lines":      {},
+	"insert_at_pattern":      {},
+	"replace_pattern":        {},
+	"find_file_part":         {},
+	"replace_file_part":      {},
+	"validate_files":         {},
+	"analyze_files":          {},
+	"request_approval":       {},
+	"detect_current_project": {},
 }

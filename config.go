@@ -11,11 +11,15 @@ import (
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
+// allowedOrigins contains the default list of allowed origins for MCP connections.
+// These origins are always included in the server configuration.
 var allowedOrigins = []string{
 	"https://claude.ai",
 	"https://*.anthropic.com",
 }
 
+// GetConfigPath returns the full path to the Scout-MCP configuration file
+// in the user's home directory (~/.config/scout-mcp/scout-mcp.json).
 func GetConfigPath() (configPath string, err error) {
 	var homeDir string
 	var configDir string
@@ -32,6 +36,9 @@ end:
 	return configPath, err
 }
 
+// CreateDefaultConfig creates a new configuration file with default settings
+// and the specified allowed paths. The config file is written to the user's
+// Scout-MCP configuration directory.
 func CreateDefaultConfig(args Args) (err error) {
 	var homeDir string
 	var config *Config
@@ -102,17 +109,22 @@ end:
 
 var _ mcputil.Config = (*Config)(nil)
 
-// Config struct with private fields + embedded JSONConfig
+// Config represents the Scout-MCP server configuration, containing
+// allowed paths, port settings, and runtime validation state.
+// It embeds JSONConfig for serialization while maintaining private runtime data.
 type Config struct {
 	JSONConfig                     // Embedded for JSON operations
 	validPaths map[string]struct{} // Private runtime index
 	path       string
 }
 
+// ServerName returns the name of the MCP server.
 func (c *Config) ServerName() string {
 	return ServerName
 }
 
+// ToMap converts the Config to a map[string]any representation
+// for JSON serialization and API responses.
 func (c *Config) ToMap() (m map[string]any, err error) {
 	var b []byte
 	b, err = json.Marshal(c)
@@ -127,13 +139,16 @@ end:
 	return m, err
 }
 
-// JSONConfig for serialization (exported fields)
+// JSONConfig contains the serializable configuration fields that are
+// written to and read from the configuration file.
 type JSONConfig struct {
 	AllowedPaths   []string `json:"allowed_paths"`
 	Port           string   `json:"port"`
 	AllowedOrigins []string `json:"allowed_origins"`
 }
 
+// ConfigArgs contains the arguments needed to create a new Config instance,
+// including initial paths, port, and allowed origins.
 type ConfigArgs struct {
 	InitialPath    string
 	AllowedPaths   []string
@@ -141,6 +156,8 @@ type ConfigArgs struct {
 	AllowedOrigins []string
 }
 
+// NewConfig creates a new Config instance with the provided arguments.
+// It initializes both the JSON-serializable fields and runtime validation state.
 func NewConfig(args ConfigArgs) *Config {
 	c := &Config{
 		JSONConfig: JSONConfig{
@@ -153,13 +170,19 @@ func NewConfig(args ConfigArgs) *Config {
 	return c
 }
 
+// Initialize sets up the config with the default configuration file path.
 func (c *Config) Initialize() (err error) {
 	c.path, err = GetConfigPath()
 	return err
 }
+
+// Path returns the file path where the configuration is stored
+// Path returns the file path where the configuration is stored.
 func (c *Config) Path() string {
 	return c.path
+i
 }
+// AllowedPaths returns a deduplicated slice of all allowed directory paths.
 func (c *Config) AllowedPaths() []string {
 	index := make(map[string]struct{}, len(c.JSONConfig.AllowedPaths))
 	for _, path := range c.JSONConfig.AllowedPaths {
@@ -171,18 +194,22 @@ func (c *Config) AllowedPaths() []string {
 	return slices.Collect(maps.Keys(index))
 }
 
+// SetAllowedPaths updates the list of allowed paths with a clone of the provided slice.
 func (c *Config) SetAllowedPaths(paths []string) {
 	c.JSONConfig.AllowedPaths = slices.Clone(paths)
 }
 
+// ServerPort returns the configured server port.
 func (c *Config) ServerPort() string {
 	return c.JSONConfig.Port
 }
 
+// AllowedOrigins returns the list of allowed request origins.
 func (c *Config) AllowedOrigins() []string {
 	return c.JSONConfig.AllowedOrigins
 }
 
+// Reset initializes the config's runtime state including default paths and origins.
 func (c *Config) Reset() {
 	c.validPaths = make(map[string]struct{})
 	c.validPaths["/tmp"] = struct{}{}
@@ -195,6 +222,8 @@ func (c *Config) Reset() {
 	}
 }
 
+// IsAllowedPath checks if the given path is within any of the allowed directories.
+// It converts the target path to absolute form and checks against all allowed paths.
 func (c *Config) IsAllowedPath(targetPath string) (allowed bool) {
 
 	// Fails one if os.Getwd() fails, so lets ignore that as that failure will be
@@ -213,6 +242,8 @@ end:
 	return allowed
 }
 
+// Validate checks that all configured paths exist and are directories,
+// building the internal validation map for runtime path checking.
 func (c *Config) Validate() (err error) {
 	var absPath string
 	var pathInfo os.FileInfo

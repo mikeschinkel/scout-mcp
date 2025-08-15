@@ -9,6 +9,9 @@ import (
 // ToolHandler is the function signature for tool handlers
 type ToolHandler func(context.Context, ToolRequest) (ToolResult, error)
 
+// Config provides access to server configuration including allowed paths,
+// port settings, and security restrictions. Tools receive a Config instance
+// to validate operations against the server's security policies.
 type Config interface {
 	IsAllowedPath(string) bool
 	Path() string
@@ -19,6 +22,9 @@ type Config interface {
 	ToMap() (map[string]any, error)
 }
 
+// Tool represents an MCP tool that can be invoked by clients.
+// Tools must implement session validation, parameter checking,
+// and operation handling with appropriate security controls.
 type Tool interface {
 	Name() string
 	Options() ToolOptions
@@ -51,6 +57,8 @@ type ToolResult interface {
 }
 
 // ToolResult implementations
+
+// jsonResult implements ToolResult for JSON responses.
 type jsonResult struct {
 	json string
 }
@@ -61,12 +69,15 @@ func NewToolResultJSON(data any) ToolResult {
 	return &jsonResult{json: string(jsonData)}
 }
 
+// ToolResult implements the ToolResult interface marker method.
 func (*jsonResult) ToolResult() {}
 
+// Value returns the JSON string representation of the result.
 func (t *jsonResult) Value() string {
 	return t.json
 }
 
+// errorResult implements ToolResult for error responses.
 type errorResult struct {
 	message string
 }
@@ -76,12 +87,13 @@ func NewToolResultError(err error) ToolResult {
 	return &errorResult{message: err.Error()}
 }
 
+// ToolResult implements the ToolResult interface marker method.
 func (*errorResult) ToolResult() {}
 
+// Value returns the error message string.
 func (e *errorResult) Value() string {
 	return e.message
 }
-
 
 // InternalError represents system-level errors that should be returned as errors
 type InternalError struct {
@@ -89,18 +101,20 @@ type InternalError struct {
 	cause   error
 }
 
+// Error returns the formatted error message.
 func (e *InternalError) Error() string {
 	return e.message
 }
 
+// Unwrap returns the underlying cause error for error wrapping.
 func (e *InternalError) Unwrap() error {
 	return e.cause
 }
 
 // NewInternalError creates a system-level error
-func NewInternalError(cause error,format string, args ...any) *InternalError {
+func NewInternalError(cause error, format string, args ...any) *InternalError {
 	return &InternalError{
-		cause: cause,
+		cause:   cause,
 		message: fmt.Sprintf(format, args...),
 	}
 }

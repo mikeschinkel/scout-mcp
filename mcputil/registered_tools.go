@@ -4,11 +4,18 @@ import (
 	"strings"
 )
 
+// registeredTools holds all tools that have been registered with the MCP server.
+// Tools are registered during package initialization via init() functions.
 var registeredTools []Tool
 
+// RegisteredTools returns a slice of all registered tools.
+// This is used by the MCP server to get the complete list of available tools.
 func RegisteredTools() []Tool {
 	return registeredTools
 }
+
+// RegisteredToolsMap returns a map of tool names to Tool instances
+// for efficient tool lookup by name.
 func RegisteredToolsMap() (m map[string]Tool) {
 	m = make(map[string]Tool, len(registeredTools))
 	for _, tool := range registeredTools {
@@ -17,10 +24,14 @@ func RegisteredToolsMap() (m map[string]Tool) {
 	return m
 }
 
+// RegisterTool adds a tool to the global registry.
+// This is typically called during package initialization.
 func RegisterTool(tool Tool) {
 	registeredTools = append(registeredTools, tool)
 }
 
+// GetRegisteredTool finds a registered tool by name (case-insensitive).
+// Returns nil if no tool with the given name is found.
 func GetRegisteredTool(name string) (t Tool) {
 	name = strings.ToLower(name)
 	for _, tool := range registeredTools {

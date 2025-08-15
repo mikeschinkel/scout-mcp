@@ -1,3 +1,7 @@
+// Package scout provides a secure Model Context Protocol (MCP) server
+// for file operations with explicit directory whitelisting and session-based
+// instruction enforcement. The server enables Claude to perform safe file
+// operations through stdio transport with comprehensive approval workflows.
 package scout
 
 import (
@@ -11,6 +15,9 @@ import (
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
+// MCPServer represents a Model Context Protocol server instance that provides
+// secure file operations to Claude through stdio transport. It manages
+// directory whitelisting, session tokens, and user approval workflows.
 type MCPServer struct {
 	config          *Config
 	additionalPaths map[string]struct{}
@@ -20,6 +27,9 @@ type MCPServer struct {
 	StdOut          io.Writer
 }
 
+// NewMCPServer creates a new MCP server instance with the given options.
+// It loads configuration, validates paths, and registers all available tools.
+// The server is ready to start serving requests via stdio transport.
 func NewMCPServer(opts Opts) (s *MCPServer, err error) {
 
 	s = &MCPServer{
@@ -55,6 +65,8 @@ end:
 	return s, err
 }
 
+// StartMCP starts the MCP server and begins serving requests via stdio transport.
+// This is a blocking call that runs until the context is canceled or an error occurs.
 func (s *MCPServer) StartMCP(ctx context.Context) (err error) {
 	logger.Info("MCP server starting with stdio transport")
 	logger.Info("Allowed directories:")
@@ -68,6 +80,8 @@ func (s *MCPServer) StartMCP(ctx context.Context) (err error) {
 	return err
 }
 
+// AllowedPaths returns a map of all directories that the server is allowed to access.
+// This includes both paths from the configuration file and additional paths provided at startup.
 func (s *MCPServer) AllowedPaths() map[string]struct{} {
 	if s.allowedPaths != nil {
 		goto end
@@ -78,6 +92,8 @@ end:
 	return s.allowedPaths
 }
 
+// ReloadConfig reloads the server configuration from disk and updates allowed paths.
+// This allows for dynamic reconfiguration without restarting the server.
 func (s *MCPServer) ReloadConfig() (err error) {
 	var config *Config
 	var allowedPaths map[string]struct{}
@@ -100,6 +116,8 @@ end:
 	return err
 }
 
+// loadConfig loads the MCP server configuration from file and command-line options.
+// It handles OnlyMode which ignores config files and uses only command-line paths.
 func (s *MCPServer) loadConfig(opts Opts) (config *Config, err error) {
 	var configFile *os.File
 	var fileData []byte
@@ -179,10 +197,14 @@ end:
 	return config, err
 }
 
+// ConfigSetter is implemented by types that can receive configuration updates.
+// Tools implement this interface to be notified when server configuration changes.
 type ConfigSetter interface {
 	SetConfig(*Config)
 }
 
+// registerTools registers all available MCP tools with the server.
+// Each tool receives the current configuration and is added to the MCP server.
 func (s *MCPServer) registerTools() (err error) {
 	for _, t := range mcputil.RegisteredTools() {
 		t.SetConfig(s.config)
