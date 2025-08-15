@@ -1,3 +1,4 @@
+// Package fileutil provides utilities for finding and filtering files by extension patterns.
 package fileutil
 
 import (
@@ -8,14 +9,16 @@ import (
 	"strings"
 )
 
+// FindFileArgs contains the arguments for finding files with specific criteria.
 type FindFileArgs struct {
-	Recursive  bool
-	Paths      []string
-	Extensions []string
-	extsRE     *regexp.Regexp
-	Path       string
+	Recursive  bool           // Whether to search directories recursively
+	Paths      []string       // List of paths to search
+	Extensions []string       // File extensions to match (e.g., ".go", ".txt")
+	extsRE     *regexp.Regexp // Compiled regex for extension matching
+	Path       string         // Single path to search (merged with Paths)
 }
 
+// newFindFileArgs creates a new FindFileArgs with compiled extension regex.
 func newFindFileArgs(args FindFileArgs) FindFileArgs {
 	exts := make([]string, 0, len(args.Extensions))
 	for _, ext := range args.Extensions {
@@ -27,11 +30,12 @@ func newFindFileArgs(args FindFileArgs) FindFileArgs {
 	}
 }
 
-// matches returns true of the path matches the criteria in args
+// matches returns true if the path matches the extension criteria in args.
 func (args FindFileArgs) matches(path string) bool {
 	return args.extsRE.MatchString(path)
 }
 
+// FindFiles searches for files matching the specified criteria and returns their paths.
 func FindFiles(args FindFileArgs) (found []string, err error) {
 	// Merge Path into Paths OR convert Path to a slice
 	if args.Path != "" {
@@ -51,6 +55,7 @@ end:
 	return found, err
 }
 
+// findFiles is a helper function that finds files in a single path.
 func findFiles(path string, args FindFileArgs) (files []string, err error) {
 	var info os.FileInfo
 
@@ -98,6 +103,7 @@ end:
 	return files, err
 }
 
+// listDirFiles lists files in a single directory that match the extension criteria.
 func listDirFiles(path string, args FindFileArgs) (files []string, err error) {
 	var entries []os.DirEntry
 
