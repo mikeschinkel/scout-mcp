@@ -14,18 +14,22 @@ import (
 
 /* ---------- Core struct ---------- */
 
+// jsonTest represents a single JSON assertion test with path, data, and expected value.
 type jsonTest struct {
-	data     []byte
-	kind     pathKind
-	path     string
-	pipes    []string
-	expected any
-}
-type jtArgs struct {
-	data     []byte
-	expected any
+	data     []byte   // JSON data being tested
+	kind     pathKind // Type of path (plain, piped, or array)
+	path     string   // Original path expression
+	pipes    []string // Split pipe tokens for piped paths
+	expected any      // Expected value for comparison
 }
 
+// jtArgs contains arguments for creating a new jsonTest instance.
+type jtArgs struct {
+	data     []byte // JSON data to test
+	expected any    // Expected value for assertion
+}
+
+// newJSONTest creates a new jsonTest instance with classified path type and pipe tokens.
 func newJSONTest(path string, args jtArgs) *jsonTest {
 	jt := &jsonTest{
 		path:     path,
@@ -39,39 +43,38 @@ func newJSONTest(path string, args jtArgs) *jsonTest {
 
 /* ---------- Helpers: path + pipe engine ---------- */
 
+// handlePiped processes a path with pipe functions (e.g., "path|func()|other()").
 func (jt *jsonTest) handlePiped(path string) (err error) {
-    var base gjson.Result
-    var tokens []string
-    var val PipeState
+	var base gjson.Result
+	var tokens []string
+	var val PipeState
 
-    tokens = jt.pipes
-    if len(tokens) == 0 {
-        err = errors.New("internal: no pipe tokens")
-        goto end
-    }
+	tokens = jt.pipes
+	if len(tokens) == 0 {
+		err = errors.New("internal: no pipe tokens")
+		goto end
+	}
 
-    // Resolve the base token relative to the root JSON.
-    base, err = jt.resolveRelative(gjson.ParseBytes(jt.data), tokens[0])
-    if err != nil {
-        goto end
-    }
+	// Resolve the base token relative to the root JSON.
+	base, err = jt.resolveRelative(gjson.ParseBytes(jt.data), tokens[0])
+	if err != nil {
+		goto end
+	}
 
+	val, err = jt.runPipes(path, tokens[1:], &PipeState{
+		Value:   base,
+		Present: base.Exists(),
+	})
+	if err != nil {
+		goto end
+	}
 
-
-    val, err = jt.runPipes(path, tokens[1:], &PipeState{
-			Value:     base,
-			Present: base.Exists(),
-		})
-    if err != nil {
-        goto end
-    }
-
-    err = jt.compareResolvedValue(path, val.Value)
+	err = jt.compareResolvedValue(path, val.Value)
 end:
-    return err
+	return err
 }
 
-
+// handlePlain processes a plain GJSON path without pipe functions.
 func (jt *jsonTest) handlePlain(path string) (err error) {
 	val := gjson.GetBytes(jt.data, path)
 	if !val.Exists() {
@@ -83,7 +86,7 @@ end:
 	return err
 }
 
-/* evalBase resolves the first path token. It supports map-over arrays via recursion. */
+// evalBase resolves the first path token and supports map-over arrays via recursion.
 func (jt *jsonTest) evalBase(expr string) (res gjson.Result, err error) {
 	var cur gjson.Result
 	cur = gjson.ParseBytes(jt.data)
@@ -173,11 +176,8 @@ end:
 	return res, err
 }
 
-/*
-applyPipes executes pipe tokens over the current gjson.Result.
-
-	Supports: json(), exists(), len(), notNull(), notEmpty(), and relative subpaths (with recursion & "[].").
-*/
+// applyPipes executes pipe tokens over the current gjson.Result.
+// Supports: json(), exists(), len(), notNull(), notEmpty(), and relative subpaths (with recursion & "[].").
 func (jt *jsonTest) applyPipes(start gjson.Result, tokens []string) (res gjson.Result, err error) {
 	res = start
 	for _, p := range tokens {
@@ -253,6 +253,7 @@ end:
 	return res, err
 }
 
+// isScalar determines if a gjson.Result represents a scalar value (not array or object).
 func isScalar(r gjson.Result) (scalar bool) {
 	var raw string
 	// Heuristic: object => Map() not empty or Raw starts with '{'
@@ -270,13 +271,13 @@ end:
 	return scalar
 }
 
-
 /* ---------- Array handlers (ordered vs any-order) ---------- */
 
+// arrayArgs contains arguments for array processing functions.
 type arrayArgs struct {
-	path   string
-	prefix string
-	suffix string
+	path   string // Full path being processed
+	prefix string // Path prefix before "[].subpath"
+	suffix string // Path suffix after "[].subpath"
 }
 
 // handleArray handles "arr.[].subpath" with ordered and AnyOrder comparisons.
@@ -289,7 +290,6 @@ func (jt *jsonTest) handleArray(path string) (err error) {
 	}
 	return jt.compareResolvedValue(path, val)
 }
-
 
 // handleTypedArray handles type-specific "arr.[].subpath"
 func handleTypedArray[T any](exp []T, results []gjson.Result, args arrayArgs, convertFunc func(gjson.Result) T) (err error) {
@@ -315,6 +315,7 @@ end:
 	return err
 }
 
+// handleTypedArray processes typed array comparisons using type-specific conversion functions.
 func (jt *jsonTest) handleTypedArray(args arrayArgs, results []gjson.Result) (err error) {
 	switch exp := jt.expected.(type) {
 	case []string:
@@ -406,6 +407,7 @@ func (jt *jsonTest) applyPipesJSON(start gjson.Result) (gjson.Result, error) {
 
 /* ---------- Comparison ---------- */
 
+// compareResolvedValue compares a resolved JSON value against the expected value with type-aware comparison.
 func (jt *jsonTest) compareResolvedValue(path string, val gjson.Result) (err error) {
 	var actual any
 	var items []gjson.Result
@@ -478,6 +480,7 @@ end:
 	return err
 }
 
+// compareTypedResolvedValue compares expected values with JSON array items using a type-specific converter function.
 func compareTypedResolvedValue[T any](exp []T, items []gjson.Result, path string, convertFunc func(gjson.Result) T) (err error) {
 	got := make([]T, 0, len(items))
 	for _, it := range items {
@@ -588,18 +591,20 @@ func (jt *jsonTest) elementsMatch(actual any) bool {
 	return reflect.DeepEqual(expCounts, actCounts)
 }
 
+// jsonBoolOrNumRegexp matches boolean and numeric JSON values for non-empty validation.
 var jsonBoolOrNumRegexp = regexp.MustCompile(
 	`^(?:true|false|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)$`,
 )
 
+// isNonEmpty determines if a gjson.Result represents a non-empty value based on its type.
 func (jt *jsonTest) isNonEmpty(v gjson.Result) (nonEmpty bool) {
 	switch {
 	case !v.Exists():
 		goto end
 	case v.IsArray():
-		nonEmpty= len(v.Array()) > 0
+		nonEmpty = len(v.Array()) > 0
 	case IsJSONObject(v):
-		nonEmpty= len(v.Map()) > 0 // {} -> false
+		nonEmpty = len(v.Map()) > 0 // {} -> false
 	default:
 		s := v.String()
 		if s != "" {
@@ -624,9 +629,10 @@ func splitArray(expr string) (prefix, suffix string, ok bool) {
 	return prefix, suffix, true
 }
 
+// PipeState represents the state of a value as it passes through pipe functions.
 type PipeState struct {
-	Value     gjson.Result
-	Present bool
+	Value   gjson.Result // Current JSON value being processed
+	Present bool         // Whether the value exists/is present
 }
 
 // runPipes executes tokens over st, tracking "present" through the chain.

@@ -7,12 +7,13 @@ import (
 
 // ---------- Public API ----------
 
+// pathKind represents the type of JSON path being processed.
 type pathKind int
 
 const (
-	plainPath pathKind = iota
-	pipedPath
-	arrayPath
+	plainPath pathKind = iota // Plain GJSON path without special syntax
+	pipedPath                 // Path with pipe functions (e.g., "path|func()")
+	arrayPath                 // Array iteration path (e.g., "arr.[].subpath")
 )
 
 // TestJSON asserts JSON content against declarative checks and returns an aggregated error.
