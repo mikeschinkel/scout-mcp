@@ -2,11 +2,11 @@ package test
 
 import (
 	"testing"
-	
+
 	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
-// getJSONRPCDeleteFileLinesTest returns the test definition for delete_file_lines tool
+// TestDeleteFileLinesToolWithJSONRPC runs the test for the 'delete_file_lines' MCP Server tool.
 func TestDeleteFileLinesToolWithJSONRPC(t *testing.T) {
 	fixture := testutil.NewTestFixture("delete-file-lines-test")
 	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
@@ -14,7 +14,7 @@ func TestDeleteFileLinesToolWithJSONRPC(t *testing.T) {
 	})
 	fixture.Setup(t)
 	defer fixture.Cleanup()
-	
+
 	RunJSONRPCTest(t, fixture, test{
 		name: "delete_file_lines",
 		arguments: deleteFileLinesArgs{
@@ -23,12 +23,12 @@ func TestDeleteFileLinesToolWithJSONRPC(t *testing.T) {
 			EndLine:   3,
 		},
 		expected: map[string]any{
-			"jsonrpc":                               "2.0",
-			"result.content.#":                      1,
-			"result.content.0.type":                 "text",
-			"result.content.0.text|json()|success":       true,
-			"result.content.0.text|json()|start_line":    3,
-			"result.content.0.text|json()|end_line":      3,
+			"jsonrpc":                                 "2.0",
+			"result.content.#":                        1,
+			"result.content.0.type":                   "text",
+			"result.content.0.text|json()|success":    true,
+			"result.content.0.text|json()|start_line": 3,
+			"result.content.0.text|json()|end_line":   3,
 		},
 	})
 }
