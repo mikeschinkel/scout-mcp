@@ -15,10 +15,12 @@ func init() {
 
 var _ jsontest.PipeFunc = (*ExistsPipeFunc)(nil)
 
+// ExistsPipeFunc implements the exists() pipe function that checks if a JSON path exists.
 type ExistsPipeFunc struct {
 	jsontest.BasePipeFunc
 }
 
+// Handle checks if the current value exists and returns true/false accordingly.
 func (e ExistsPipeFunc) Handle(ctx context.Context, ps *jsontest.PipeState) (err error) {
 	if ps.Present {
 		ps.Value = gjson.Parse("true")

@@ -16,10 +16,12 @@ func init() {
 
 var _ jsontest.PipeFunc = (*NotNullPipeFunc)(nil)
 
+// NotNullPipeFunc implements the notNull() pipe function that checks if a value is not null.
 type NotNullPipeFunc struct {
 	jsontest.BasePipeFunc
 }
 
+// Handle checks if the current value exists and is not null, returning true/false accordingly.
 func (n NotNullPipeFunc) Handle(ctx context.Context, ps *jsontest.PipeState) (err error) {
 	if ps.Present && strings.TrimSpace(ps.Value.Raw) != "null" {
 		ps.Value = gjson.Parse("true")

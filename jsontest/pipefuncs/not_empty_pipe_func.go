@@ -17,14 +17,17 @@ func init() {
 
 var _ jsontest.PipeFunc = (*NotEmptyPipeFunc)(nil)
 
+// NotEmptyPipeFunc implements the notEmpty() pipe function that checks if a value is not empty.
 type NotEmptyPipeFunc struct {
 	jsontest.BasePipeFunc
 }
 
+// notEmptyBoolOrNumRegexp matches boolean and numeric values for non-empty validation.
 var notEmptyBoolOrNumRegexp = regexp.MustCompile(
 	`^(?:true|false|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)$`,
 )
 
+// isNonEmpty determines if a gjson.Result represents a non-empty value.
 func (n NotEmptyPipeFunc) isNonEmpty(v gjson.Result) (nonEmpty bool) {
 	switch {
 	case !v.Exists():
@@ -46,6 +49,7 @@ end:
 	return nonEmpty
 }
 
+// Handle checks if the current value is not empty and returns true/false accordingly.
 func (n NotEmptyPipeFunc) Handle(ctx context.Context, ps *jsontest.PipeState) (err error) {
 	if n.isNonEmpty(ps.Value) {
 		ps.Value = gjson.Parse("true")

@@ -17,10 +17,12 @@ func init() {
 
 var _ jsontest.PipeFunc = (*JSONPipeFunc)(nil)
 
+// JSONPipeFunc implements the json() pipe function that parses a JSON string into a JSON object.
 type JSONPipeFunc struct {
 	jsontest.BasePipeFunc
 }
 
+// Handle parses the current string value as JSON and makes the parsed JSON the new current value.
 func (J JSONPipeFunc) Handle(ctx context.Context, ps *jsontest.PipeState) (err error) {
 	var inner any
 	var b []byte
