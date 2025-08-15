@@ -1,10 +1,10 @@
 # jsontest
 
-Declarative, powerful JSON assertions for Go tests with modular pipe functions
+Declarative JSON assertions for Go tests with modular pipe functions
 
 ## Overview
 
-`jsontest` is a sophisticated JSON testing framework for Go that enables declarative assertions against complex JSON responses. It's designed for JSON-RPC validation, REST API testing, and any scenario requiring deep JSON structure validation.
+`jsontest` is a JSON testing framework for Go that enables declarative assertions against complex JSON responses. It's designed for JSON-RPC validation, REST API testing, and any scenario requiring deep JSON structure validation.
 
 The package features a modular architecture with extensible pipe functions and supports sophisticated path-based assertions without repetitive unmarshalling code.
 
@@ -112,27 +112,6 @@ For order-insensitive comparisons, wrap expected values with `AnyOrder` or `AnyO
 ```go
 // Array, order-insensitive
 "result.content.[].type": jsontest.AnyOrder("object", "object")
-
-// Array directly at path, order-insensitive
-"result.tags": jsontest.AnyOrderEq("blue", "green", "red")
-```
-
----
-
-## 🏷 Markers
-
-Markers are special expected values that change assertion behavior:
-
-| Marker       | Behavior                                                                                    |
-| ------------ | ------------------------------------------------------------------------------------------- |
-| `NotNull{}`  | Passes if value exists and is not JSON null                                                 |
-| `NotEmpty{}` | Passes if value is: non-empty string, non-empty array, non-empty object, number, or boolean |
-
-Example:
-
-```go
-"result.content.0.object": jsontest.NotNull{}
-"result.content.0.object.message": jsontest.NotEmpty{}
 ```
 
 ---
@@ -191,6 +170,26 @@ func (c CustomPipeFunc) Handle(ctx context.Context, ps *jsontest.PipeState) erro
 
 ---
 
+## 🏷 Markers
+
+Markers are special expected values that change assertion behavior:
+
+| Marker       | Behavior                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------- |
+| `NotNull{}`  | Passes if value exists and is not JSON null                                                 |
+| `NotEmpty{}` | Passes if value is: non-empty string, non-empty array, non-empty object, number, or boolean |
+
+Example:
+
+```go
+"result.content.0.object": jsontest.NotNull{}
+"result.content.0.object.message": jsontest.NotEmpty{}
+```
+
+Markers provide some type safety when compared to pipe functions, but at the expense of requiring more verbose boilerplate. 
+
+---
+
 ## 🧪 Type Coercion
 
 When comparing scalars, `jsontest` coerces the value to the **type of the expected value** so you can write:
@@ -206,7 +205,7 @@ When comparing scalars, `jsontest` coerces the value to the **type of the expect
 ## ⚠️ Limitations
 
 * **Pipe Function Registration**: Must import `pipefuncs` package as side-effect or call `pipefuncs.Initialize()`
-* **Zero Arguments**: Pipe functions are currently zero-argument only
+* **Zero Arguments**: Pipe functions are currently zero-argument only with no plans to add arguments.
 * **Scalar Subpaths**: Cannot apply subpaths after scalar-returning functions (e.g., `len()|field` is invalid)
 * **Error Handling**: Pipe function errors stop processing; no fallback mechanisms
 
@@ -215,9 +214,7 @@ When comparing scalars, `jsontest` coerces the value to the **type of the expect
 * **Always Import Pipefuncs**: Use `_ "github.com/mikeschinkel/scout-mcp/jsontest/pipefuncs"` import
 * **Use Type Markers**: Prefer `NotNull{}` and `NotEmpty{}` for common validation patterns
 * **Order-Insensitive Arrays**: Use `AnyOrder()` when array order doesn't matter
-* **Logical Grouping**: Split complex assertions across multiple `TestJSON()` calls for clarity
 * **Pipe Function Naming**: End custom pipe function names with `()` (enforced by framework)
-* **Clear Path Style**: Follow project's "goto end" pattern in custom pipe functions
 
 ## 🏗️ Architecture Notes
 
