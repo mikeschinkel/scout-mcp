@@ -135,6 +135,8 @@ Scout-MCP is a secure Model Context Protocol (MCP) server that provides Claude w
 - **mcputil/**: MCP server utilities and abstractions over mark3labs/mcp-go
 - **mcptools/**: Individual tool implementations with session management and approval system
 - **langutil/**: Language-specific parsing utilities for AST-based operations
+- **jsontest/**: JSON testing framework with sophisticated path-based assertions and pipe functions
+- **jsontest/pipefuncs/**: Modular pipe function implementations (exists, notNull, notEmpty, len, json)
 
 #### MCP Server Architecture
 The server uses `github.com/mark3labs/mcp-go` for MCP protocol implementation:
@@ -170,6 +172,28 @@ All tools follow a consistent pattern in mcptools/:
 - **Path Management**: Combines config file paths with command-line arguments
 - **Flexible Arguments**: Support for `--only` mode to override config
 
+### JSON Testing Architecture
+The project includes a sophisticated JSON testing framework for validating JSON-RPC responses and complex JSON structures:
+
+#### Core Framework (`jsontest/`)
+- **JSON Path Testing**: Test JSON responses using path-based assertions (e.g., `"result.content.0.type": "text"`)
+- **Pipe Functions**: Transform and validate values using pipe syntax (e.g., `"error.message|notEmpty()": true`)
+- **Collection Testing**: Support for ordered and unordered array comparisons
+- **Type Coercion**: Smart type conversion for accurate comparisons
+
+#### Modular Pipe Functions (`jsontest/pipefuncs/`)
+- **exists()**: Check if a path exists in JSON
+- **notNull()**: Verify value is not null
+- **notEmpty()**: Validate non-empty values (arrays, objects, strings, numbers, booleans)
+- **len()**: Get length of arrays, objects, or strings  
+- **json()**: Parse JSON strings and access nested properties
+- **Extensible**: Easy to add new pipe functions with `Handle(ctx, *PipeState)` interface
+
+#### Testing Integration
+- **Integration Tests**: All `jsonrpc_*_test.go` files use `RunJSONRPCTest()` framework
+- **Protocol Testing**: JSON-RPC error handling with proper error code validation (-32602, etc.)
+- **Consistent Patterns**: Standardized testing approach across all MCP tools
+
 ### Key Files to Understand
 
 #### Core Application
@@ -194,6 +218,10 @@ All tools follow a consistent pattern in mcptools/:
 
 #### Testing Infrastructure
 - **test/direct_server_test.go**: Direct in-process MCP server testing infrastructure
+- **test/jsonrpc_test.go**: JSON-RPC testing framework using jsontest for response validation
+- **test/jsonrpc_protocol_test.go**: Protocol-level error testing with JSON-RPC error codes
+- **jsontest/**: JSON testing framework with path-based assertions and pipe functions
+- **jsontest/pipefuncs/**: Modular pipe function implementations for value transformation
 - **testutil/**: Mock configurations, requests, and test utilities
 
 ### Current Tool Implementation (20 tools)
@@ -256,7 +284,15 @@ The server communicates with Claude Desktop via stdio transport:
 
 ### Recent Major Changes
 
-#### Integration Test Refactoring (Latest)
+#### Pipe Function Architecture Refactoring (Latest)
+- **Modular Pipe Functions**: Extracted all pipe functions (exists, notNull, notEmpty, len, json) from main jsontest package into dedicated `jsontest/pipefuncs` package
+- **Clean Switch Replacement**: Replaced large switch statement with pipe function registry using `err = pf.Handle(ctx, &out)` pattern
+- **Circular Import Resolution**: Fixed import cycle by moving tests to `jsontest_test` package with side-effect import
+- **Enhanced Framework**: Added `PipeFunc()` marker method and improved error handling with panic messages for missing registrations
+- **JSON-RPC Protocol Testing**: Converted `jsonrpc_protocol_test.go` to use established `RunJSONRPCTest()` framework with proper JSON-RPC error code validation
+- **Code Quality**: Added JSON-RPC 2.0 error code constants in `mcputil` package, replacing magic numbers with named constants
+
+#### Integration Test Refactoring
 - **Modernized Test Infrastructure**: Replaced `exec.Command()` external process testing with direct in-process MCP server testing
 - **Enhanced Error Handling**: Implemented reflection-based `ToolResultError` detection for comprehensive error testing
 - **Framework-Level Validation**: Tests now use the same validation flow as the real MCP server via `EnsurePreconditions()`
