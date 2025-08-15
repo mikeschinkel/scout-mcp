@@ -177,11 +177,11 @@ func (c *Config) Initialize() (err error) {
 }
 
 // Path returns the file path where the configuration is stored
-// Path returns the file path where the configuration is stored.
 func (c *Config) Path() string {
 	return c.path
-i
 }
+
+// AllowedPaths returns a deduplicated slice of all allowed directory paths
 // AllowedPaths returns a deduplicated slice of all allowed directory paths.
 func (c *Config) AllowedPaths() []string {
 	index := make(map[string]struct{}, len(c.JSONConfig.AllowedPaths))

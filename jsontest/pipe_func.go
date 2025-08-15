@@ -39,11 +39,12 @@ func (pf BasePipeFunc) Name() string {
 // registeredPipeFunc holds all pipe functions that have been registered.
 var registeredPipeFunc []PipeFunc
 
-// RegisteredPipeFunc returns a slice of all registered pipe functions.
-func RegisteredPipeFunc() []PipeFunc {
+// RegisteredPipeFuncs returns a slice of all registered pipe functions.
+func RegisteredPipeFuncs() []PipeFunc {
 	return registeredPipeFunc
-n
 }
+
+// RegisteredPipeFuncMap returns a map of pipe function names to PipeFunc instance
 // RegisteredPipeFuncMap returns a map of pipe function names to PipeFunc instances
 // for efficient lookup by name.
 func RegisteredPipeFuncMap() (m map[string]PipeFunc) {
@@ -56,9 +57,9 @@ func RegisteredPipeFuncMap() (m map[string]PipeFunc) {
 
 // RegisterPipeFunc adds a pipe function to the global registry.
 // The function name must end with "()" to indicate it's callable.
+func RegisterPipeFunc(pf PipeFunc) {
 	if !strings.HasSuffix(pf.Name(), "()") {
 		panic(fmt.Sprintf("PipeFunc '%s' must end in '()'", pf.Name()))
-		panic(fmt.Sprintf("PipeFunc '%s' must end in '()'",pf.Name()))
 	}
 	registeredPipeFunc = append(registeredPipeFunc, pf)
 }
