@@ -30,10 +30,12 @@ func init() {
 	})
 }
 
+// ReadFilesTool reads contents of multiple files and directories with filtering options.
 type ReadFilesTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the read_files tool request and reads file contents with optional filtering.
 func (t *ReadFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var paths []string
 	var extensions []string

@@ -8,6 +8,7 @@ import (
 
 var _ mcputil.Tool = (*RequestApprovalTool)(nil)
 
+// operationProperty defines the operation description parameter for approval requests.
 var (
 	operationProperty = mcputil.String("operation", "Brief operation description").Required()
 )
@@ -29,10 +30,12 @@ func init() {
 	})
 }
 
+// RequestApprovalTool requests user approval for risky operations with visual formatting.
 type RequestApprovalTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the request_approval tool request and presents approval prompts to the user.
 func (t *RequestApprovalTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var operation, riskLevel, impactSummary, previewContent string
 	var files []string

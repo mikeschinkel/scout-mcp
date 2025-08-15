@@ -27,10 +27,12 @@ func init() {
 	})
 }
 
+// CreateFileTool creates new files in allowed directories with optional parent directory creation.
 type CreateFileTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the create_file tool request and creates a new file with the specified content.
 func (t *CreateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var content string

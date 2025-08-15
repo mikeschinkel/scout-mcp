@@ -24,10 +24,12 @@ func init() {
 	})
 }
 
+// DeleteFileTool deletes files or directories from allowed directories with optional recursive deletion.
 type DeleteFileTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the delete_files tool request and removes the specified file or directory.
 func (t *DeleteFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var recursive bool

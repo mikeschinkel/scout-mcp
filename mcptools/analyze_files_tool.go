@@ -26,10 +26,12 @@ func init() {
 	})
 }
 
+// AnalyzeFilesTool analyzes files and provides information about their structure and content.
 type AnalyzeFilesTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the analyze_files tool request and returns file analysis results.
 func (t *AnalyzeFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var files []string
 	var fileResults []FileAnalysisResult

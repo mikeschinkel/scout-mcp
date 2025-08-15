@@ -33,10 +33,12 @@ func init() {
 	})
 }
 
+// InsertAtPatternTool inserts content before or after a specified pattern in a file.
 type InsertAtPatternTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the insert_at_pattern tool request and inserts content relative to a pattern.
 func (t *InsertAtPatternTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var beforePattern string

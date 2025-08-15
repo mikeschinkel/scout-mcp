@@ -10,8 +10,10 @@ import (
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
+// homeDir stores the user's home directory path for session initialization.
 var homeDir string
 
+// instructionsMsg contains additional instructions displayed during session creation.
 var instructionsMsg = `
 MORE IMPORTANT INSTRUCTIONS:
 1. **Language Instructions**: Review the language-specific instructions for proper coding style
@@ -24,9 +26,10 @@ func init() {
 
 var _ mcputil.Payload = (*StartSessionResult)(nil)
 
+// ExtensionMappings maps file extensions to their corresponding language names.
 type ExtensionMappings map[string]string
 
-// StartSessionResult contains the generic response structure for session creation
+// StartSessionResult contains the response structure for session creation with instructions and configuration.
 type StartSessionResult struct {
 	MoreInstructions     string                  `json:"more_instructions,omitempty"` // Generic instruction payload
 	Message              string                  `json:"message"`
@@ -37,6 +40,7 @@ type StartSessionResult struct {
 	CurrentProject       *ProjectDetectionResult `json:"current_project,omitempty"` // Generic project info
 }
 
+// Payload implements the mcputil.Payload interface.
 func (sr *StartSessionResult) Payload() {}
 func (sr *StartSessionResult) ensureInstructionsDirectory() (err error) {
 	var dir string

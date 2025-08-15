@@ -1,3 +1,5 @@
+// Package mcptools provides MCP tool implementations with session management and approval workflows.
+// All tools follow a consistent pattern with session validation and risk-based approval for file operations.
 package mcptools
 
 import (
@@ -11,8 +13,8 @@ type NULL = struct{}
 type RelativePosition string
 
 const (
-	BeforePosition RelativePosition = "before"
-	AfterPosition  RelativePosition = "after"
+	BeforePosition RelativePosition = "before" // Insert content before the pattern
+	AfterPosition  RelativePosition = "after"  // Insert content after the pattern
 )
 
 // Validate checks if the RelativePosition has a valid value.
@@ -30,7 +32,7 @@ func (rp RelativePosition) Validate() (err error) {
 	return err
 }
 
-// ToolNamesMap is the set of expected tools
+// ToolNamesMap contains all supported MCP tool names for validation purposes.
 var ToolNamesMap = map[string]NULL{
 	"start_session":          {},
 	"read_files":             {},

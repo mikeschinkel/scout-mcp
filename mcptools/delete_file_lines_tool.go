@@ -25,10 +25,12 @@ func init() {
 	})
 }
 
+// DeleteFileLinesTool deletes specific lines from a file by line number range.
 type DeleteFileLinesTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the delete_file_lines tool request and removes the specified line range from a file.
 func (t *DeleteFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var startLine, endLine int

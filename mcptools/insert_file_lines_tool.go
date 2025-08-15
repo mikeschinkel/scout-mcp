@@ -27,10 +27,12 @@ func init() {
 	})
 }
 
+// InsertFileLinesTool inserts content at a specific line number in a file.
 type InsertFileLinesTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the insert_file_lines tool request and inserts content at the specified line.
 func (t *InsertFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var lineNumber int

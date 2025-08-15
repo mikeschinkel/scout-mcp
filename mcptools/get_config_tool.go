@@ -22,10 +22,12 @@ func init() {
 	})
 }
 
+// GetConfigTool retrieves the current Scout MCP server configuration including allowed paths and settings.
 type GetConfigTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the get_config tool request and returns server configuration information.
 func (t *GetConfigTool) Handle(_ context.Context, _ mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var config ConfigInfo
 

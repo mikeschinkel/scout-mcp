@@ -29,10 +29,12 @@ func init() {
 	})
 }
 
+// DetectCurrentProjectTool detects the most recently active project by analyzing modification times.
 type DetectCurrentProjectTool struct {
 	*mcputil.ToolBase
 }
 
+// ProjectInfo contains information about a detected project.
 type ProjectInfo struct {
 	Path         string    `json:"path"`
 	Name         string    `json:"name"`
@@ -42,22 +44,26 @@ type ProjectInfo struct {
 
 var _ ToolResult = (*ProjectDetectionResult)(nil)
 
+// ProjectDetectionResult contains the results of project detection.
 type ProjectDetectionResult struct {
-	CurrentProject *ProjectInfo  `json:"current_project,omitempty"`
-	RecentProjects []ProjectInfo `json:"recent_projects"`
-	RequiresChoice bool          `json:"requires_choice"`
-	ChoiceMessage  string        `json:"choice_message,omitempty"`
-	Summary        string        `json:"summary"`
+	CurrentProject *ProjectInfo  `json:"current_project,omitempty"` // The most recently active project
+	RecentProjects []ProjectInfo `json:"recent_projects"`           // List of recent projects
+	RequiresChoice bool          `json:"requires_choice"`           // Whether user choice is needed
+	ChoiceMessage  string        `json:"choice_message,omitempty"`  // Message for user choice
+	Summary        string        `json:"summary"`                   // Summary of detection results
 }
 
+// ToolResult implements the ToolResult interface.
 func (t *ProjectDetectionResult) ToolResult() {
 }
 
+// Value returns the JSON representation of the project detection result.
 func (t *ProjectDetectionResult) Value() string {
 	jsonData, _ := json.Marshal(t)
 	return string(jsonData)
 }
 
+// Handle processes the detect_current_project tool request and analyzes directory modification times.
 func (t *DetectCurrentProjectTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var maxProjects int
 	var ignoreGitRequirement bool

@@ -7,8 +7,10 @@ import (
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
+// ReadFile is an alias for mcputil.ReadFile for convenience.
 var ReadFile = mcputil.ReadFile
 
+// WriteFile writes content to a file with syntax validation for supported languages.
 func WriteFile(c mcputil.Config, filePath string, content string) (err error) {
 	var language string
 

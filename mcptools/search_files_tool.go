@@ -13,12 +13,13 @@ import (
 
 var _ mcputil.Tool = (*SearchFilesTool)(nil)
 
+// FileSearchResult represents information about a file found during search.
 type FileSearchResult struct {
-	Path     string `json:"path"`
-	Name     string `json:"name"`
-	Size     int64  `json:"size"`
-	Modified string `json:"modified"`
-	IsDir    bool   `json:"is_directory"`
+	Path     string `json:"path"`         // Full path to the file
+	Name     string `json:"name"`         // File name
+	Size     int64  `json:"size"`         // File size in bytes
+	Modified string `json:"modified"`     // Last modified time
+	IsDir    bool   `json:"is_directory"` // Whether it's a directory
 }
 
 func init() {
@@ -42,10 +43,12 @@ func init() {
 	})
 }
 
+// SearchFilesTool searches for files and directories with filtering options.
 type SearchFilesTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the search_files tool request and returns matching files and directories.
 func (t *SearchFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var searchPath string
 	var recursive bool

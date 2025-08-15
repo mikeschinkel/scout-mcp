@@ -30,10 +30,12 @@ func init() {
 	})
 }
 
+// ReplaceFilePartTool replaces specific language constructs by name using AST parsing.
 type ReplaceFilePartTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the replace_file_part tool request and replaces language constructs using AST.
 func (t *ReplaceFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var language string

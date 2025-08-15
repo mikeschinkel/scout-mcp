@@ -4,13 +4,15 @@ import (
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
+// Required property aliases for commonly used tool parameters.
 var (
 	RequiredSessionTokenProperty = mcputil.RequiredSessionTokenProperty
 	RequiredFilesProperty        = FilesProperty.Required()
 	RequiredPathProperty         = PathProperty.Required()
-	RequiredPathsProperty         = PathsProperty.Required()
+	RequiredPathsProperty        = PathsProperty.Required()
 )
 
+// Property definitions for MCP tool parameters with descriptions and defaults.
 var (
 	FilesProperty          = mcputil.Array("files", "List of files to process")
 	PathsProperty          = mcputil.Array("paths", "File or directory paths to use with this tool")

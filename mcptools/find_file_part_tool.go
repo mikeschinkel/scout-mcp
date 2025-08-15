@@ -26,10 +26,12 @@ func init() {
 	})
 }
 
+// FindFilePartTool finds specific language constructs by name and returns their location and content.
 type FindFilePartTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the find_file_part tool request and searches for language constructs using AST parsing.
 func (t *FindFilePartTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var language string

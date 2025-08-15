@@ -34,6 +34,7 @@ func init() {
 	})
 }
 
+// ValidateFilesTool validates syntax of source code files using language-specific parsers.
 type ValidateFilesTool struct {
 	*mcputil.ToolBase
 }
@@ -76,6 +77,8 @@ func (t *ValidateFilesTool) parseFilesOrPaths(req mcputil.ToolRequest) (files []
 
 	return files, paths, err
 }
+
+// Handle processes the validate_files tool request and performs syntax validation on source files.
 func (t *ValidateFilesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var files []string
 	var language string

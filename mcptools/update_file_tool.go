@@ -24,10 +24,12 @@ func init() {
 	})
 }
 
+// UpdateFileTool updates the entire content of an existing file in allowed directories.
 type UpdateFileTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the update_file tool request and replaces the entire file content.
 func (t *UpdateFileTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var content string

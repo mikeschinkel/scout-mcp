@@ -29,10 +29,12 @@ func init() {
 	})
 }
 
+// ReplacePatternTool finds and replaces text patterns in files with optional regex support.
 type ReplacePatternTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the replace_pattern tool request and performs text replacements.
 func (t *ReplacePatternTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var pattern string

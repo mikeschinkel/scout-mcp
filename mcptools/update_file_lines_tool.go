@@ -27,10 +27,12 @@ func init() {
 	})
 }
 
+// UpdateFileLinesTool updates specific lines in a file by line number range.
 type UpdateFileLinesTool struct {
 	*mcputil.ToolBase
 }
 
+// Handle processes the update_file_lines tool request and replaces the specified line range.
 func (t *UpdateFileLinesTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var filePath string
 	var startLine, endLine int
