@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -69,17 +69,13 @@ func TestStartSessionTool(t *testing.T) {
 	require.NotNil(t, tool, "start_session tool should be registered")
 
 	t.Run("BasicSessionCreation_ShouldReturnValidSessionData", func(t *testing.T) {
-		tf := testutil.NewTestFixture(StartSessionDirPrefix)
+		tf := fsfix.NewRootFixture(StartSessionDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("test-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
+		pf := tf.AddRepoFixture("test-project", nil)
 		// Add a test file to make it detectable as a project
-		pf.AddFileFixture("main.go", testutil.FileFixtureArgs{
-			Content:     "package main\n\nfunc main() {}\n",
-			Permissions: 0644,
+		pf.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
+			Content: "package main\n\nfunc main() {}\n",
 		})
 
 		tf.Setup(t)
@@ -105,7 +101,7 @@ func TestStartSessionTool(t *testing.T) {
 	})
 
 	t.Run("NoAllowedPaths_ShouldStillCreateSession", func(t *testing.T) {
-		tf := testutil.NewTestFixture(StartSessionDirPrefix)
+		tf := fsfix.NewRootFixture(StartSessionDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -128,7 +124,7 @@ func TestStartSessionTool(t *testing.T) {
 	})
 
 	t.Run("TokenExpiration_ShouldBeWithin24Hours", func(t *testing.T) {
-		tf := testutil.NewTestFixture(StartSessionDirPrefix)
+		tf := fsfix.NewRootFixture(StartSessionDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)

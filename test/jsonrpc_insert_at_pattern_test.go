@@ -2,14 +2,24 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// insertAtPatternArgs represents arguments for the insert_at_pattern tool.
+type insertAtPatternArgs struct {
+	Path          string `json:"path"`
+	NewContent    string `json:"new_content"`
+	BeforePattern string `json:"before_pattern,omitempty"`
+	AfterPattern  string `json:"after_pattern,omitempty"`
+	Position      string `json:"position,omitempty"`
+	Regex         bool   `json:"regex,omitempty"`
+}
 
 // TestInsertAtPatternToolWithJSONRPC tests the insert_at_pattern tool via JSON-RPC.
 func TestInsertAtPatternToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("insert-at-pattern-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("insert-at-pattern-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)

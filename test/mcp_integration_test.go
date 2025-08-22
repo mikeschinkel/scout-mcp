@@ -1,7 +1,9 @@
 package test
 
 import (
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/mikeschinkel/scout-mcp/mcputil"
@@ -9,28 +11,52 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// expectedRegisteredTools is the list of tools we expect to be registered
-// This must be kept in sync with actual tool registrations
-var expectedRegisteredTools = []string{
-	"start_session", "get_config", "help", "detect_current_project",
-	"read_files", "search_files", "analyze_files", "validate_files",
-	"create_file", "update_file", "delete_files",
-	"update_file_lines", "delete_file_lines", "insert_file_lines",
-	"insert_at_pattern", "replace_pattern",
-	"find_file_part", "replace_file_part",
-	"request_approval",
+// getExpectedToolsFromFilesystem discovers tool names by scanning for *_tool.go files
+// in mcptools/ and mcputil/ directories. This ensures tests catch when tool files
+// exist but fail to register due to syntax errors or other issues.
+// Tool names are deduplicated since the same tool may exist in multiple directories.
+func getExpectedToolsFromFilesystem(t *testing.T) []string {
+	// Tool directories to scan
+	toolDirs := []string{
+		"../mcptools",
+		"../mcputil",
+	}
+
+	// Use a map to deduplicate tool names
+	toolMap := make(map[string]struct{})
+
+	for _, dir := range toolDirs {
+		pattern := filepath.Join(dir, "*_tool.go")
+		matches, err := filepath.Glob(pattern)
+		require.NoError(t, err, "Failed to glob tool files in %s", dir)
+
+		for _, match := range matches {
+			// Extract tool name from filename
+			// e.g., "analyze_files_tool.go" -> "analyze_files"
+			filename := filepath.Base(match)
+			toolName := strings.TrimSuffix(filename, "_tool.go")
+			toolMap[toolName] = struct{}{}
+		}
+	}
+
+	// Convert map keys to sorted slice
+	expectedTools := make([]string, 0, len(toolMap))
+	for toolName := range toolMap {
+		expectedTools = append(expectedTools, toolName)
+	}
+	sort.Strings(expectedTools)
+	return expectedTools
 }
 
-// TestToolRegistrationCompleteness verifies our expected tool list matches actual registrations
+// TestToolRegistrationCompleteness verifies that all *_tool.go files are properly registered
+// This test catches syntax errors or other issues that prevent tools from being registered
 func TestToolRegistrationCompleteness(t *testing.T) {
+	// Get expected tools from filesystem
+	expected := getExpectedToolsFromFilesystem(t)
+
 	// Get actual registered tool names
 	actualTools := mcputil.GetRegisteredToolNames()
 	sort.Strings(actualTools)
-
-	// Sort expected tools for comparison
-	expected := make([]string, len(expectedRegisteredTools))
-	copy(expected, expectedRegisteredTools)
-	sort.Strings(expected)
 
 	// Verify counts match
 	assert.Equal(t, len(expected), len(actualTools), "Number of expected tools (%d) should match actual registered tools (%d)", len(expected), len(actualTools))
@@ -54,11 +80,14 @@ func TestMCPServerCommunication(t *testing.T) {
 	env := NewDirectServerTestEnv(t)
 	defer env.Cleanup()
 
+	// Get expected tools from filesystem
+	expectedTools := getExpectedToolsFromFilesystem(t)
+
 	// Simple smoke test: verify all registered tools can be called through MCP server
 	// We're not testing the tool logic (that's covered by unit tests)
 	// We're only testing MCP server routing and tool registration
 
-	for _, toolName := range expectedRegisteredTools {
+	for _, toolName := range expectedTools {
 		t.Run(toolName, func(t *testing.T) {
 			// Verify tool is registered
 			tool := mcputil.GetRegisteredTool(toolName)

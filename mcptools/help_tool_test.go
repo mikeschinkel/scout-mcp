@@ -3,9 +3,9 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +27,7 @@ func TestScoutHelpTool(t *testing.T) {
 	require.NotNil(t, tool, "help tool should be registered")
 
 	t.Run("GetFullDocumentationWithScoutContent", func(t *testing.T) {
-		tf := testutil.NewTestFixture(HelpDirPrefix)
+		tf := fsfix.NewRootFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -56,7 +56,7 @@ func TestScoutHelpTool(t *testing.T) {
 	})
 
 	t.Run("GetSpecificHelpForScoutTool", func(t *testing.T) {
-		tf := testutil.NewTestFixture(HelpDirPrefix)
+		tf := fsfix.NewRootFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)

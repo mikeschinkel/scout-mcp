@@ -2,14 +2,22 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// updateFileLinesArgs represents arguments for the update_file_lines tool.
+type updateFileLinesArgs struct {
+	Filepath   string `json:"filepath"`
+	NewContent string `json:"new_content"`
+	StartLine  int    `json:"start_line"`
+	EndLine    int    `json:"end_line"`
+}
 
 // TestUpdateFileLinesToolWithJSONRPC tests the update_file_lines tool via JSON-RPC.
 func TestUpdateFileLinesToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("update-file-lines-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("update-file-lines-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)

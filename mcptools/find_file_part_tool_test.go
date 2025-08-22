@@ -3,8 +3,8 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -130,17 +130,12 @@ func TestFindFilePartTool(t *testing.T) {
 	require.NotNil(t, tool, "find_file_part tool should be registered")
 
 	t.Run("FindGoFunction_ShouldLocateAndReturnFunctionDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(FindFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(FindFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("find-func-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("find_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
-		})
+		pf := tf.AddRepoFixture("find-func-project", nil)
+		testFile := pf.AddFileFixture("find_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent})
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -166,17 +161,12 @@ func TestFindFilePartTool(t *testing.T) {
 	})
 
 	t.Run("FindGoType_ShouldLocateAndReturnTypeDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(FindFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(FindFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("find-type-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("find_type_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
-		})
+		pf := tf.AddRepoFixture("find-type-project", nil)
+		testFile := pf.AddFileFixture("find_type_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent})
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -202,17 +192,12 @@ func TestFindFilePartTool(t *testing.T) {
 	})
 
 	t.Run("FindGoConst_ShouldLocateAndReturnConstDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(FindFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(FindFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("find-const-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("find_const_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
-		})
+		pf := tf.AddRepoFixture("find-const-project", nil)
+		testFile := pf.AddFileFixture("find_const_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent})
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -238,17 +223,12 @@ func TestFindFilePartTool(t *testing.T) {
 	})
 
 	t.Run("FindGoVar_ShouldLocateAndReturnVarDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(FindFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(FindFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("find-var-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("find_var_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
-		})
+		pf := tf.AddRepoFixture("find-var-project", nil)
+		testFile := pf.AddFileFixture("find_var_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent})
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -274,17 +254,12 @@ func TestFindFilePartTool(t *testing.T) {
 	})
 
 	t.Run("FindMethod_ShouldLocateAndReturnMethodDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(FindFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(FindFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("find-method-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("find_method_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
-		})
+		pf := tf.AddRepoFixture("find-method-project", nil)
+		testFile := pf.AddFileFixture("find_method_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent})
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -310,17 +285,12 @@ func TestFindFilePartTool(t *testing.T) {
 	})
 
 	t.Run("PartNotFound_ShouldReturnErrorWithMessage", func(t *testing.T) {
-		tf := testutil.NewTestFixture(FindFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(FindFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("missing-part-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("find_missing_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
-		})
+		pf := tf.AddRepoFixture("missing-part-project", nil)
+		testFile := pf.AddFileFixture("find_missing_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent})
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{

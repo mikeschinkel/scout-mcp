@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,16 +98,12 @@ func TestReplacePatternTool(t *testing.T) {
 	require.NotNil(t, tool, "replace_pattern tool should be registered")
 
 	t.Run("SimpleTextReplace_ShouldReplaceAllOccurrencesOfPattern", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplacePatternDirPrefix)
+		tf := fsfix.NewRootFixture(ReplacePatternDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_test.txt", testutil.FileFixtureArgs{
-			Content:     "Hello old world\nThis is old content\nold values everywhere",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-project", nil)
+		testFile := pf.AddFileFixture("replace_test.txt", &fsfix.FileFixtureArgs{
+			Content: "Hello old world\nThis is old content\nold values everywhere",
 		})
 
 		tf.Setup(t)
@@ -136,16 +132,12 @@ func TestReplacePatternTool(t *testing.T) {
 	})
 
 	t.Run("ReplaceFirstOnly_ShouldReplaceOnlyFirstOccurrence", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplacePatternDirPrefix)
+		tf := fsfix.NewRootFixture(ReplacePatternDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-first-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_first_test.txt", testutil.FileFixtureArgs{
-			Content:     "test value\ntest again\ntest final",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-first-project", nil)
+		testFile := pf.AddFileFixture("replace_first_test.txt", &fsfix.FileFixtureArgs{
+			Content: "test value\ntest again\ntest final",
 		})
 
 		tf.Setup(t)
@@ -174,16 +166,12 @@ func TestReplacePatternTool(t *testing.T) {
 	})
 
 	t.Run("RegexReplace_ShouldUseRegularExpressionForMatching", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplacePatternDirPrefix)
+		tf := fsfix.NewRootFixture(ReplacePatternDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("regex-replace-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("regex_replace_test.txt", testutil.FileFixtureArgs{
-			Content:     "func functionOne() {\n\treturn\n}\n\nfunc functionTwo(param string) {\n\treturn\n}\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("regex-replace-project", nil)
+		testFile := pf.AddFileFixture("regex_replace_test.txt", &fsfix.FileFixtureArgs{
+			Content: "func functionOne() {\n\treturn\n}\n\nfunc functionTwo(param string) {\n\treturn\n}\n",
 		})
 
 		tf.Setup(t)
@@ -218,17 +206,13 @@ func TestReplacePatternTool(t *testing.T) {
 	})
 
 	t.Run("InvalidRegex_ShouldReturnErrorWithMessage", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplacePatternDirPrefix)
+		tf := fsfix.NewRootFixture(ReplacePatternDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("regex-error-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
+		pf := tf.AddRepoFixture("regex-error-project", nil)
 		// Create a valid file for testing regex validation
-		testFile := pf.AddFileFixture("test.txt", testutil.FileFixtureArgs{
-			Content:     "some test content",
-			Permissions: 0644,
+		testFile := pf.AddFileFixture("test.txt", &fsfix.FileFixtureArgs{
+			Content: "some test content",
 		})
 
 		tf.Setup(t)

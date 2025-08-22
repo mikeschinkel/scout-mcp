@@ -25,7 +25,9 @@ func ConvertContainedSlice(input any) []any {
 	}
 }
 
-// convertTypedSlice converts a typed slice to []any.
+// convertTypedSlice converts a typed slice to []any using generics.
+// This function provides type-safe conversion from strongly typed slices
+// to the generic []any type required by the MCP protocol.
 func convertTypedSlice[T any](input []T) []any {
 	output := make([]any, len(input))
 	for i, val := range input {
@@ -35,6 +37,8 @@ func convertTypedSlice[T any](input []T) []any {
 }
 
 // convertSliceByReflection uses reflection to convert any slice type to []any.
+// This function handles unknown slice types that cannot be handled by
+// the common type switches in ConvertContainedSlice.
 func convertSliceByReflection(input any) (output []any) {
 	var n int
 
@@ -75,7 +79,9 @@ func convertSliceOfAny[T any](input []any) (output []T, err error) {
 	return output, err
 }
 
-// empty returns true if an any value is nil or equals "".
+// empty returns true if an any value is nil or equals an empty string.
+// This utility function is used throughout the requirements system
+// to check if parameter values are considered "empty" for validation purposes.
 func empty(value any) (empty bool) {
 	if value == nil {
 		empty = true

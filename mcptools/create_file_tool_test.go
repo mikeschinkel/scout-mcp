@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,10 +68,10 @@ func TestCreateFileTool(t *testing.T) {
 	require.NotNil(t, tool, "create_file tool should be registered")
 
 	t.Run("CreateNewFile_ShouldCreateFileWithContent", func(t *testing.T) {
-		tf := testutil.NewTestFixture(CreateFileDirPrefix)
+		tf := fsfix.NewRootFixture(CreateFileDirPrefix)
 		defer tf.Cleanup()
 		// Add a pending file that will be created by the tool
-		newFile := tf.AddFileFixture("new_file.txt", testutil.FileFixtureArgs{
+		newFile := tf.AddFileFixture("new_file.txt", &fsfix.FileFixtureArgs{
 			Pending: true,
 		})
 		tf.Setup(t)
@@ -97,11 +97,11 @@ func TestCreateFileTool(t *testing.T) {
 	})
 
 	t.Run("CreateFileWithDirectories_ShouldCreateParentDirectories", func(t *testing.T) {
-		tf := testutil.NewTestFixture(CreateFileDirPrefix)
+		tf := fsfix.NewRootFixture(CreateFileDirPrefix)
 		defer tf.Cleanup()
 
 		// Add a pending file in nested directories
-		newFile := tf.AddFileFixture("new_dir/nested_dir/new_file.txt", testutil.FileFixtureArgs{
+		newFile := tf.AddFileFixture("new_dir/nested_dir/new_file.txt", &fsfix.FileFixtureArgs{
 			Pending: true,
 		})
 
@@ -134,11 +134,11 @@ func TestCreateFileTool(t *testing.T) {
 	})
 
 	t.Run("CreateFileWithoutCreateDirs_ShouldFailIfParentMissing", func(t *testing.T) {
-		tf := testutil.NewTestFixture(CreateFileDirPrefix)
+		tf := fsfix.NewRootFixture(CreateFileDirPrefix)
 		defer tf.Cleanup()
 
 		// Add a pending file in missing directory (should fail without create_dirs)
-		newFile := tf.AddFileFixture("missing_dir/new_file.txt", testutil.FileFixtureArgs{
+		newFile := tf.AddFileFixture("missing_dir/new_file.txt", &fsfix.FileFixtureArgs{
 			Pending: true,
 		})
 		tf.Setup(t)

@@ -59,11 +59,14 @@ type ToolResult interface {
 // ToolResult implementations
 
 // jsonResult implements ToolResult for JSON responses.
+// This type wraps JSON data for successful tool execution results
+// that need to be returned to the MCP client.
 type jsonResult struct {
 	json string
 }
 
-// NewToolResultJSON creates a JSON result for a tool call
+// NewToolResultJSON creates a JSON result for a tool call.
+// This function serializes the provided data to JSON and wraps it in a ToolResult.
 func NewToolResultJSON(data any) ToolResult {
 	jsonData, _ := json.Marshal(data)
 	return &jsonResult{json: string(jsonData)}
@@ -78,11 +81,14 @@ func (t *jsonResult) Value() string {
 }
 
 // errorResult implements ToolResult for error responses.
+// This type wraps error messages for failed tool execution results
+// that should be returned as errors to the MCP client.
 type errorResult struct {
 	message string
 }
 
-// NewToolResultError creates an error result for a tool call
+// NewToolResultError creates an error result for a tool call.
+// This function wraps an error message in a ToolResult for failed operations.
 func NewToolResultError(err error) ToolResult {
 	return &errorResult{message: err.Error()}
 }
@@ -102,16 +108,19 @@ type InternalError struct {
 }
 
 // Error returns the formatted error message.
+// This method implements the error interface for InternalError.
 func (e *InternalError) Error() string {
 	return e.message
 }
 
 // Unwrap returns the underlying cause error for error wrapping.
+// This method supports Go's error unwrapping functionality.
 func (e *InternalError) Unwrap() error {
 	return e.cause
 }
 
-// NewInternalError creates a system-level error
+// NewInternalError creates a system-level error with a formatted message.
+// This function wraps a cause error with additional context for debugging.
 func NewInternalError(cause error, format string, args ...any) *InternalError {
 	return &InternalError{
 		cause:   cause,

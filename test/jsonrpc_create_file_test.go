@@ -2,9 +2,15 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// filepathContent represents arguments with filepath and content.
+type filepathContent struct {
+	Filepath   string `json:"filepath"`
+	NewContent string `json:"new_content"`
+}
 
 func TestCreateFileToolWithJSONRPC(t *testing.T) {
 	tests := []struct {
@@ -31,7 +37,7 @@ func TestCreateFileToolWithJSONRPC(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			fixture := testutil.NewTestFixture("create-file-test")
+			fixture := fsfix.NewRootFixture("create-file-test")
 			fixture.Setup(t)
 			defer fixture.Cleanup()
 			

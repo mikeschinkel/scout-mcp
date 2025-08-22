@@ -7,16 +7,21 @@ import (
 	"reflect"
 )
 
+// callResult wraps a ToolResult with any associated error.
 type callResult struct {
-	ToolResult
-	Error error
+	ToolResult       // The tool execution result
+	Error      error // Any error that occurred during execution
 }
 
+// CallResult creates a callResult wrapping a ToolResult and error.
+// If err is not an InternalError, it converts the error to a ToolResult.
+// This function handles the distinction between internal system errors and application errors.
+//
 //goland:noinspection GoExportedFuncWithUnexportedType
 func CallResult(tr ToolResult, err error) callResult {
 	if err != nil {
 		var intErr *InternalError
-		if errors.As(err,&intErr) {
+		if errors.As(err, &intErr) {
 			// If it is an internal error, pass it on
 			goto end
 		}
@@ -30,6 +35,9 @@ end:
 	}
 }
 
+// GetToolResult extracts and unmarshals a typed result from a callResult.
+// It handles payload unmarshaling for complex result types and provides proper error handling.
+// This generic function supports type-safe result extraction with payload deserialization.
 func GetToolResult[R any](cr callResult, errMsg string) (r *R, err error) {
 	var b []byte
 	var ute *json.UnmarshalTypeError

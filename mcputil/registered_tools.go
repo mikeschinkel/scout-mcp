@@ -45,7 +45,9 @@ end:
 	return t
 }
 
-// GetRegisteredToolNames returns the names of all registered tools
+// GetRegisteredToolNames returns the names of all registered tools.
+// This function panics if no tools have been registered, which indicates
+// a missing import of the mcptools package.
 func GetRegisteredToolNames() []string {
 	if registeredTools == nil {
 		panic("No Scout MCP server tools have been registered.\nDid you forget to import github.com/mikeschinkel/scout-mcp/mcptools for side effects (by prefixing it with '_')?")

@@ -3,8 +3,8 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -66,7 +66,7 @@ func TestGetConfigTool(t *testing.T) {
 	require.NotNil(t, tool, "get_config tool should be registered")
 
 	t.Run("GetBasicConfig", func(t *testing.T) {
-		tf := testutil.NewTestFixture(GetConfigDirPrefix)
+		tf := fsfix.NewRootFixture(GetConfigDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)

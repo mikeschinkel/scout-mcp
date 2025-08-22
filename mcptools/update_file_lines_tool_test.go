@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,16 +98,12 @@ func TestUpdateFileLinesTool(t *testing.T) {
 	require.NotNil(t, tool, "update_file_lines tool should be registered")
 
 	t.Run("UpdateSingleLine_ShouldReplaceLineWithNewContent", func(t *testing.T) {
-		tf := testutil.NewTestFixture(UpdateFileLinesDirPrefix)
+		tf := fsfix.NewRootFixture(UpdateFileLinesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("update-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("update_lines_test.txt", testutil.FileFixtureArgs{
-			Content:     "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("update-project", nil)
+		testFile := pf.AddFileFixture("update_lines_test.txt", &fsfix.FileFixtureArgs{
+			Content: "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
 		})
 
 		tf.Setup(t)
@@ -135,16 +131,12 @@ func TestUpdateFileLinesTool(t *testing.T) {
 	})
 
 	t.Run("UpdateMultipleLines_ShouldReplaceLineRangeWithNewContent", func(t *testing.T) {
-		tf := testutil.NewTestFixture(UpdateFileLinesDirPrefix)
+		tf := fsfix.NewRootFixture(UpdateFileLinesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("update-multi-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("update_multi_lines_test.txt", testutil.FileFixtureArgs{
-			Content:     "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("update-multi-project", nil)
+		testFile := pf.AddFileFixture("update_multi_lines_test.txt", &fsfix.FileFixtureArgs{
+			Content: "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
 		})
 
 		tf.Setup(t)
@@ -172,17 +164,13 @@ func TestUpdateFileLinesTool(t *testing.T) {
 	})
 
 	t.Run("UpdateInvalidLineRange_ShouldReturnErrorWithMessage", func(t *testing.T) {
-		tf := testutil.NewTestFixture(UpdateFileLinesDirPrefix)
+		tf := fsfix.NewRootFixture(UpdateFileLinesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("error-test-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
+		pf := tf.AddRepoFixture("error-test-project", nil)
 		// Create a valid file for testing line validation
-		testFile := pf.AddFileFixture("test.txt", testutil.FileFixtureArgs{
-			Content:     "Line 1\nLine 2\nLine 3\n",
-			Permissions: 0644,
+		testFile := pf.AddFileFixture("test.txt", &fsfix.FileFixtureArgs{
+			Content: "Line 1\nLine 2\nLine 3\n",
 		})
 
 		tf.Setup(t)

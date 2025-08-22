@@ -13,14 +13,14 @@ import (
 	"time"
 
 	"github.com/mikeschinkel/scout-mcp"
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/jsontest"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/tidwall/gjson"
 
 	_ "github.com/mikeschinkel/scout-mcp/jsontest/pipefuncs"
 )
 
-func RunJSONRPCTest(t *testing.T, fixture *testutil.TestFixture, tt test) {
+func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 	var err error
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "testing", true)

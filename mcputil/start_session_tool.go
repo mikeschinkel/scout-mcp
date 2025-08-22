@@ -10,10 +10,11 @@ import (
 
 // payloadTypes contains a registry of payload types; we pick 3 as most we'll need
 var payloadTypes = make(map[string]reflect.Type, 3)
-var ptMutex = &sync.Mutex{}
+var ptMutex = &sync.Mutex{} // Mutex to protect payload type registry
 
 var _ Tool = (*StartSessionTool)(nil)
 
+// RegisterPayloadType registers a payload type for start_session tool results.
 func RegisterPayloadType(payload any) {
 	t := reflect.TypeOf(payload)
 	ptMutex.Lock()
@@ -21,11 +22,13 @@ func RegisterPayloadType(payload any) {
 	payloadTypes[t.String()] = t
 }
 
+// PayloadCarrier interface for types that can carry payload information.
 type PayloadCarrier interface {
 	GetPayloadTypeName() string
 	SetPayload(Payload)
 }
 
+// GetPayloadInfo extracts payload type information from a PayloadCarrier.
 func GetPayloadInfo(g any) (t reflect.Type, tn string, _ PayloadCarrier) {
 	carrier, ok := g.(PayloadCarrier)
 	if ok {
@@ -35,6 +38,7 @@ func GetPayloadInfo(g any) (t reflect.Type, tn string, _ PayloadCarrier) {
 	return t, tn, carrier
 }
 
+// GetPayloadType retrieves a registered payload type by name.
 func GetPayloadType(pt string) reflect.Type {
 	t, ok := payloadTypes[pt]
 	if !ok {
@@ -43,6 +47,7 @@ func GetPayloadType(pt string) reflect.Type {
 	return t
 }
 
+// NewStartSessionTool creates a new start_session tool with the specified payload.
 func NewStartSessionTool(p Payload) *StartSessionTool {
 	return &StartSessionTool{
 		Payload: p,

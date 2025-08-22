@@ -7,7 +7,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/langutil/golang"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
+	"github.com/mikeschinkel/scout-mcp/testutil"
 )
 
 const (
@@ -32,6 +34,9 @@ func TestMain(m *testing.M) {
 	defer mustClose(logFile)
 	shared.LogEntryFunc = writeLogEntry(logFile)
 	shared.Token = getSessionToken()
+
+	logger := testutil.NewTestLogger()
+	golang.SetLogger(logger)
 
 	// Run tests
 	code := m.Run()

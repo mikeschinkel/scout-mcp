@@ -3,8 +3,8 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -101,16 +101,12 @@ func TestValidateFilesTool(t *testing.T) {
 	require.NotNil(t, tool, "validate_files tool should be registered")
 
 	t.Run("ValidateValidGoFile_ShouldReturnSuccessResult", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ValidateFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ValidateFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("validate-valid-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("valid_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("validate-valid-project", nil)
+		testFile := pf.AddFileFixture("valid_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -137,16 +133,12 @@ func TestValidateFilesTool(t *testing.T) {
 	})
 
 	t.Run("ValidateInvalidGoFile_ShouldReturnValidationErrors", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ValidateFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ValidateFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("validate-invalid-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("invalid_test.go", testutil.FileFixtureArgs{
-			Content:     "package main\n\nfunc main() {\n    invalid syntax here",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("validate-invalid-project", nil)
+		testFile := pf.AddFileFixture("invalid_test.go", &fsfix.FileFixtureArgs{
+			Content: "package main\n\nfunc main() {\n    invalid syntax here",
 		})
 
 		tf.Setup(t)
@@ -174,20 +166,15 @@ func TestValidateFilesTool(t *testing.T) {
 	})
 
 	t.Run("ValidateDirectory_ShouldProcessMultipleFiles", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ValidateFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ValidateFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("validate-dir-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
+		pf := tf.AddRepoFixture("validate-dir-project", nil)
+		pf.AddFileFixture("valid.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
-		pf.AddFileFixture("valid.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
-		})
-		pf.AddFileFixture("invalid.go", testutil.FileFixtureArgs{
-			Content:     "package main\n\nfunc main() { invalid",
-			Permissions: 0644,
+		pf.AddFileFixture("invalid.go", &fsfix.FileFixtureArgs{
+			Content: "package main\n\nfunc main() { invalid",
 		})
 
 		tf.Setup(t)
@@ -216,16 +203,12 @@ func TestValidateFilesTool(t *testing.T) {
 	})
 
 	t.Run("UnsupportedLanguage_ShouldHandleGracefully", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ValidateFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ValidateFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("unsupported-validate-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("test.py", testutil.FileFixtureArgs{
-			Content:     "print('hello')",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("unsupported-validate-project", nil)
+		testFile := pf.AddFileFixture("test.py", &fsfix.FileFixtureArgs{
+			Content: "print('hello')",
 		})
 
 		tf.Setup(t)

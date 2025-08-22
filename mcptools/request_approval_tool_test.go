@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,7 +71,7 @@ func TestRequestApprovalTool(t *testing.T) {
 	require.NotNil(t, tool, "request_approval tool should be registered")
 
 	t.Run("RequestBasicApproval", func(t *testing.T) {
-		tf := testutil.NewTestFixture(RequestApprovalDirPrefix)
+		tf := fsfix.NewRootFixture(RequestApprovalDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -98,7 +98,7 @@ func TestRequestApprovalTool(t *testing.T) {
 	})
 
 	t.Run("RequestHighRiskApproval", func(t *testing.T) {
-		tf := testutil.NewTestFixture(RequestApprovalDirPrefix)
+		tf := fsfix.NewRootFixture(RequestApprovalDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -125,7 +125,7 @@ func TestRequestApprovalTool(t *testing.T) {
 	})
 
 	t.Run("InvalidRiskLevel", func(t *testing.T) {
-		tf := testutil.NewTestFixture(RequestApprovalDirPrefix)
+		tf := fsfix.NewRootFixture(RequestApprovalDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)

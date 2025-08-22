@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,16 +68,12 @@ func TestUpdateFileTool(t *testing.T) {
 	require.NotNil(t, tool, "update_file tool should be registered")
 
 	t.Run("UpdateExistingFile_ShouldReplaceFileContent", func(t *testing.T) {
-		tf := testutil.NewTestFixture(UpdateFileDirPrefix)
+		tf := fsfix.NewRootFixture(UpdateFileDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("update-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("update_me.txt", testutil.FileFixtureArgs{
-			Content:     "Original content",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("update-project", nil)
+		testFile := pf.AddFileFixture("update_me.txt", &fsfix.FileFixtureArgs{
+			Content: "Original content",
 		})
 
 		tf.Setup(t)
@@ -101,10 +97,10 @@ func TestUpdateFileTool(t *testing.T) {
 	})
 
 	t.Run("UpdateNonexistentFile_ShouldReturnError", func(t *testing.T) {
-		tf := testutil.NewTestFixture(UpdateFileDirPrefix)
+		tf := fsfix.NewRootFixture(UpdateFileDirPrefix)
 		defer tf.Cleanup()
 		// Add a missing file for error testing
-		nonexistentFile := tf.AddFileFixture("does-not-exist.txt", testutil.FileFixtureArgs{
+		nonexistentFile := tf.AddFileFixture("does-not-exist.txt", &fsfix.FileFixtureArgs{
 			Missing: true,
 		})
 		tf.Setup(t)

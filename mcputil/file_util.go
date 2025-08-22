@@ -5,6 +5,9 @@ import (
 	"os"
 )
 
+// WriteFile writes content to a file after validating the path is allowed.
+// This function provides secure file writing with path validation against the server's
+// allowed paths configuration to prevent unauthorized file system access.
 func WriteFile(c Config, filePath string, content string) (err error) {
 
 	if !c.IsAllowedPath(filePath) {
@@ -18,6 +21,9 @@ end:
 	return err
 }
 
+// ReadFile reads content from a file after validating the path is allowed.
+// This function provides secure file reading with path validation against the server's
+// allowed paths configuration to prevent unauthorized file system access.
 func ReadFile(c Config, filePath string) (content string, err error) {
 	var fileData []byte
 

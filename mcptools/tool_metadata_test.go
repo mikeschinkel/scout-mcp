@@ -3,8 +3,8 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +19,7 @@ func TestToolMetadata(t *testing.T) {
 	registeredTools := mcputil.RegisteredToolsMap()
 
 	t.Run("AllExpectedToolsRegistered", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ToolMetadataDirPrefix)
+		tf := fsfix.NewRootFixture(ToolMetadataDirPrefix)
 		defer tf.Cleanup()
 		tf.Setup(t)
 
@@ -30,7 +30,7 @@ func TestToolMetadata(t *testing.T) {
 	})
 
 	t.Run("NoUnexpectedTools", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ToolMetadataDirPrefix)
+		tf := fsfix.NewRootFixture(ToolMetadataDirPrefix)
 		defer tf.Cleanup()
 		tf.Setup(t)
 
@@ -41,7 +41,7 @@ func TestToolMetadata(t *testing.T) {
 	})
 
 	t.Run("ToolCount", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ToolMetadataDirPrefix)
+		tf := fsfix.NewRootFixture(ToolMetadataDirPrefix)
 		defer tf.Cleanup()
 		tf.Setup(t)
 
@@ -50,7 +50,7 @@ func TestToolMetadata(t *testing.T) {
 	})
 
 	t.Run("ToolBasicProperties", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ToolMetadataDirPrefix)
+		tf := fsfix.NewRootFixture(ToolMetadataDirPrefix)
 		defer tf.Cleanup()
 		tf.Setup(t)
 

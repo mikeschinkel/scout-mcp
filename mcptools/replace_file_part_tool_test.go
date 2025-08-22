@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -143,16 +143,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	require.NotNil(t, tool, "replace_file_part tool should be registered")
 
 	t.Run("ReplaceFunction_ShouldUpdateFunctionAndReturnDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-func-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_func_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-func-project", nil)
+		testFile := pf.AddFileFixture("replace_func_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -184,16 +180,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("ReplaceType_ShouldUpdateTypeAndReturnDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-type-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_type_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-type-project", nil)
+		testFile := pf.AddFileFixture("replace_type_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -224,16 +216,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("ReplaceConst_ShouldUpdateConstantAndReturnDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-const-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_const_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-const-project", nil)
+		testFile := pf.AddFileFixture("replace_const_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -264,16 +252,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("ReplaceVar_ShouldUpdateVariableAndReturnDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-var-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_var_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-var-project", nil)
+		testFile := pf.AddFileFixture("replace_var_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -304,16 +288,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("ReplaceInterface_ShouldUpdateInterfaceAndReturnDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-interface-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_interface_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-interface-project", nil)
+		testFile := pf.AddFileFixture("replace_interface_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -344,16 +324,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("ReplaceMethod_ShouldUpdateMethodAndReturnDetails", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("replace-method-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("replace_method_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("replace-method-project", nil)
+		testFile := pf.AddFileFixture("replace_method_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -384,16 +360,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("UnsupportedLanguage_ShouldReturnErrorWithMessage", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("unsupported-lang-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("unsupported.py", testutil.FileFixtureArgs{
-			Content:     "def hello():\n    print('hello')",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("unsupported-lang-project", nil)
+		testFile := pf.AddFileFixture("unsupported.py", &fsfix.FileFixtureArgs{
+			Content: "def hello():\n    print('hello')",
 		})
 
 		tf.Setup(t)
@@ -419,16 +391,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("InvalidPartType_ShouldReturnErrorWithMessage", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("invalid-part-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("invalid_part_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("invalid-part-project", nil)
+		testFile := pf.AddFileFixture("invalid_part_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)
@@ -454,16 +422,12 @@ func TestReplaceFilePartTool(t *testing.T) {
 	})
 
 	t.Run("PartNotFound_ShouldReturnErrorWithMessage", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReplaceFilePartDirPrefix)
+		tf := fsfix.NewRootFixture(ReplaceFilePartDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("not-found-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("not_found_test.go", testutil.FileFixtureArgs{
-			Content:     GoTestContent,
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("not-found-project", nil)
+		testFile := pf.AddFileFixture("not_found_test.go", &fsfix.FileFixtureArgs{
+			Content: GoTestContent,
 		})
 
 		tf.Setup(t)

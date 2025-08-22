@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// Property is the interface that all property types implement
+// Property is the interface that all property types implement for MCP tool parameters.
 type Property interface {
 	propertyEmbed
 	Clone() Property
@@ -14,6 +14,7 @@ type Property interface {
 	setBase(*property)
 }
 
+// propertyEmbed defines the core property interface methods for parameter handling.
 type propertyEmbed interface {
 	GetName() string
 	GetType() PropertyType
@@ -33,7 +34,7 @@ type propertyEmbed interface {
 
 var _ propertyEmbed = (*property)(nil)
 
-// property is the base type with only truly shared fields
+// property is the base type containing shared fields for all property types.
 type property struct {
 	name        string
 	dataType    PropertyType

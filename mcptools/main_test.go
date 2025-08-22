@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/langutil/golang"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 	"github.com/mikeschinkel/scout-mcp/testutil"
@@ -18,6 +19,7 @@ func TestMain(m *testing.M) {
 	logger := testutil.NewTestLogger()
 	mcptools.SetLogger(logger)
 	mcputil.SetLogger(logger)
+	golang.SetLogger(logger)
 
 	// Run tests
 	code := m.Run()

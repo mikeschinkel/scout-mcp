@@ -2,14 +2,19 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// analyzeFilesArgs represents arguments for the analyze_files tool.
+type analyzeFilesArgs struct {
+	Files []string `json:"files"`
+}
 
 // TestAnalyzeFilesToolWithJSONRPC tests the analyze_files tool via JSON-RPC.
 func TestAnalyzeFilesToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("analyze-files-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("analyze-files-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)

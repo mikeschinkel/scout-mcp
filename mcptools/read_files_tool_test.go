@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,17 +105,13 @@ func TestReadFilesTool(t *testing.T) {
 	require.NotNil(t, tool, "read_files tool should be registered")
 
 	t.Run("ReadSingleFile_ShouldReturnFileContentAndMetadata", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReadFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ReadFilesDirPrefix)
 		defer tf.Cleanup()
 
 		// Create a test file with known content
-		pf := tf.AddProjectFixture("test-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("test.txt", testutil.FileFixtureArgs{
-			Content:     "Hello, World!",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("test-project", nil)
+		testFile := pf.AddFileFixture("test.txt", &fsfix.FileFixtureArgs{
+			Content: "Hello, World!",
 		})
 
 		tf.Setup(t)
@@ -137,20 +133,15 @@ func TestReadFilesTool(t *testing.T) {
 	})
 
 	t.Run("ReadMultipleFiles_ShouldReturnAllFileContents", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReadFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ReadFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("test-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
+		pf := tf.AddRepoFixture("test-project", nil)
+		pf1 := pf.AddFileFixture("file1.txt", &fsfix.FileFixtureArgs{
+			Content: "Content 1",
 		})
-		pf1 := pf.AddFileFixture("file1.txt", testutil.FileFixtureArgs{
-			Content:     "Content 1",
-			Permissions: 0644,
-		})
-		pf2 := pf.AddFileFixture("file2.txt", testutil.FileFixtureArgs{
-			Content:     "Content 2",
-			Permissions: 0644,
+		pf2 := pf.AddFileFixture("file2.txt", &fsfix.FileFixtureArgs{
+			Content: "Content 2",
 		})
 
 		tf.Setup(t)
@@ -175,18 +166,14 @@ func TestReadFilesTool(t *testing.T) {
 	})
 
 	t.Run("ReadDirectory_ShouldReturnAllFilesInDirectory", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReadFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ReadFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("test-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		pf.AddFileFixtures(t, testutil.FileFixtureArgs{
-			ContentFunc: func(ff *testutil.FileFixture) string {
+		pf := tf.AddRepoFixture("test-project", nil)
+		pf.AddFileFixtures(t, &fsfix.FileFixtureArgs{
+			ContentFunc: func(ff *fsfix.FileFixture) string {
 				return fmt.Sprintf("Content of %s", ff.Name)
 			},
-			Permissions: 0644,
 		}, "README.md", "main.go", "config.yaml")
 
 		tf.Setup(t)
@@ -196,7 +183,7 @@ func TestReadFilesTool(t *testing.T) {
 
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
-			"paths":         []any{pf.Dir},
+			"paths":         []any{pf.Dir()},
 			"recursive":     true,
 		})
 
@@ -209,11 +196,11 @@ func TestReadFilesTool(t *testing.T) {
 	})
 
 	t.Run("ReadNonexistentFile_ShouldReturnErrorWithMessage", func(t *testing.T) {
-		tf := testutil.NewTestFixture(ReadFilesDirPrefix)
+		tf := fsfix.NewRootFixture(ReadFilesDirPrefix)
 		defer tf.Cleanup()
 
 		// Add a missing file that doesn't exist
-		missingFile := tf.AddFileFixture("does-not-exist.txt", testutil.FileFixtureArgs{
+		missingFile := tf.AddFileFixture("does-not-exist.txt", &fsfix.FileFixtureArgs{
 			Missing: true,
 		})
 		tf.Setup(t)

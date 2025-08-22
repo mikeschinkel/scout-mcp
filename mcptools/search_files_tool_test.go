@@ -3,8 +3,8 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -69,16 +69,11 @@ func TestSearchFilesTool(t *testing.T) {
 	require.NotNil(t, tool, "search_files tool should be registered")
 
 	t.Run("BasicSearch_ShouldReturnAllFiles", func(t *testing.T) {
-		tf := testutil.NewTestFixture(SearchFilesDirPrefix)
+		tf := fsfix.NewRootFixture(SearchFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("search-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		pf.AddFileFixtures(t, testutil.FileFixtureArgs{
-			Permissions: 0644,
-		}, "file1.txt", "file2.go", "README.md")
+		pf := tf.AddRepoFixture("search-project", nil)
+		pf.AddFileFixtures(t, &fsfix.FileFixtureArgs{}, "file1.txt", "file2.go", "README.md")
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -87,7 +82,7 @@ func TestSearchFilesTool(t *testing.T) {
 
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
-			"path":          pf.Dir,
+			"path":          pf.Dir(),
 		})
 
 		result, err := mcputil.GetToolResult[SearchFilesResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error searching files")
@@ -98,16 +93,11 @@ func TestSearchFilesTool(t *testing.T) {
 	})
 
 	t.Run("SearchWithPattern_ShouldReturnMatchingFiles", func(t *testing.T) {
-		tf := testutil.NewTestFixture(SearchFilesDirPrefix)
+		tf := fsfix.NewRootFixture(SearchFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("pattern-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		pf.AddFileFixtures(t, testutil.FileFixtureArgs{
-			Permissions: 0644,
-		}, "test-file.txt", "other-file.go", "test-config.yaml")
+		pf := tf.AddRepoFixture("pattern-project", nil)
+		pf.AddFileFixtures(t, &fsfix.FileFixtureArgs{}, "test-file.txt", "other-file.go", "test-config.yaml")
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -116,7 +106,7 @@ func TestSearchFilesTool(t *testing.T) {
 
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
-			"path":          pf.Dir,
+			"path":          pf.Dir(),
 			"pattern":       "test",
 		})
 
@@ -128,16 +118,11 @@ func TestSearchFilesTool(t *testing.T) {
 	})
 
 	t.Run("SearchWithExtensions_ShouldReturnOnlyMatchingExtensions", func(t *testing.T) {
-		tf := testutil.NewTestFixture(SearchFilesDirPrefix)
+		tf := fsfix.NewRootFixture(SearchFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("ext-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		pf.AddFileFixtures(t, testutil.FileFixtureArgs{
-			Permissions: 0644,
-		}, "main.go", "utils.go", "config.yaml", "README.md")
+		pf := tf.AddRepoFixture("ext-project", nil)
+		pf.AddFileFixtures(t, &fsfix.FileFixtureArgs{}, "main.go", "utils.go", "config.yaml", "README.md")
 
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -146,7 +131,7 @@ func TestSearchFilesTool(t *testing.T) {
 
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
-			"path":          pf.Dir,
+			"path":          pf.Dir(),
 			"extensions":    []any{".go"},
 			"recursive":     true,
 		})

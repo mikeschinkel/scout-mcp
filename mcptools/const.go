@@ -53,4 +53,5 @@ var ToolNamesMap = map[string]NULL{
 	"analyze_files":          {},
 	"request_approval":       {},
 	"detect_current_project": {},
+	"check_docs":             {},
 }

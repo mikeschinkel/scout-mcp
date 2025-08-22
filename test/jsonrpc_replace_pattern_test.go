@@ -2,14 +2,23 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// replacePatternArgs represents arguments for the replace_pattern tool.
+type replacePatternArgs struct {
+	Path           string `json:"path"`
+	Pattern        string `json:"pattern"`
+	Replacement    string `json:"replacement"`
+	Regex          bool   `json:"regex,omitempty"`
+	AllOccurrences bool   `json:"all_occurrences,omitempty"`
+}
 
 // TestReplacePatternToolWithJSONRPC tests the replace_pattern tool via JSON-RPC.
 func TestReplacePatternToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("replace-pattern-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("replace-pattern-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)

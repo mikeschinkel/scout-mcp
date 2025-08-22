@@ -1,8 +1,8 @@
-module github.com/mikeschinkel/scout-mcp/cmd
+module scout-mcp
 
-go 1.24
+go 1.24.5
 
-replace github.com/mikeschinkel/scout-mcp => ..
+replace github.com/mikeschinkel/scout-mcp => ./../..
 
 require github.com/mikeschinkel/scout-mcp v0.0.0-00010101000000-000000000000
 

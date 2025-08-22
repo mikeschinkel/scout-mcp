@@ -8,8 +8,11 @@ type RequiresOneOf struct {
 	Message    string // Optional custom error message
 }
 
+// RequirementOption implements the Requirement interface marker method.
 func (r RequiresOneOf) RequirementOption() {}
 
+// IsSatisfied checks if at least one of the specified parameters is provided.
+// This method validates that the requirement is met by the tool request.
 func (r RequiresOneOf) IsSatisfied(req ToolRequest) (satisfied bool) {
 	var args map[string]any
 	var value any
@@ -46,6 +49,8 @@ end:
 	return satisfied
 }
 
+// Description returns a human-readable description of the requirement.
+// This method provides error messages for requirement validation failures.
 func (r RequiresOneOf) Description() (description string) {
 	if r.Message != "" {
 		description = r.Message
@@ -67,8 +72,11 @@ type RequiresAllOf struct {
 	Message    string // Optional custom error message
 }
 
+// RequirementOption implements the Requirement interface marker method.
 func (r RequiresAllOf) RequirementOption() {}
 
+// IsSatisfied checks if all of the specified parameters are provided.
+// This method validates that the requirement is met by the tool request.
 func (r RequiresAllOf) IsSatisfied(req ToolRequest) (satisfied bool) {
 	var args map[string]any
 	var value any
@@ -95,6 +103,8 @@ end:
 	return satisfied
 }
 
+// Description returns a human-readable description of the requirement.
+// This method provides error messages for requirement validation failures.
 func (r RequiresAllOf) Description() (description string) {
 	if r.Message != "" {
 		description = r.Message
@@ -113,8 +123,11 @@ type RequiredWhen struct {
 	Message    string // Optional custom error message
 }
 
+// RequirementOption implements the Requirement interface marker method.
 func (r RequiredWhen) RequirementOption() {}
 
+// IsSatisfied checks if the required parameters are provided when the condition is met.
+// This method validates conditional requirements based on the When function.
 func (r RequiredWhen) IsSatisfied(req ToolRequest) (satisfied bool) {
 	var args map[string]any
 	var value any
@@ -139,6 +152,8 @@ end:
 	return satisfied
 }
 
+// Description returns a human-readable description of the conditional requirement.
+// This method provides error messages for conditional requirement validation failures.
 func (r RequiredWhen) Description() (description string) {
 	if r.Message != "" {
 		description = r.Message

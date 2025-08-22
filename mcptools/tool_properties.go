@@ -9,6 +9,7 @@ var (
 	RequiredSessionTokenProperty = mcputil.RequiredSessionTokenProperty
 	RequiredFilesProperty        = FilesProperty.Required()
 	RequiredPathProperty         = PathProperty.Required()
+	RequiredNewContentProperty   = NewContentProperty.Required()
 	RequiredPathsProperty        = PathsProperty.Required()
 )
 
@@ -16,7 +17,7 @@ var (
 var (
 	FilesProperty          = mcputil.Array("files", "List of files to process")
 	PathsProperty          = mcputil.Array("paths", "File or directory paths to use with this tool")
-	RecursiveProperty      = mcputil.Bool("recursive", "Process directories recursively")
+	RecursiveProperty      = mcputil.Bool("recursive", "Process directories recursively", mcputil.DefaultTrue{})
 	StartLineProperty      = mcputil.Number("start_line", "First line to handle, inclusive")
 	EndLineProperty        = mcputil.Number("end_line", "Last line to handle, inclusive")
 	FilepathProperty       = mcputil.String("filepath", "File path to use for this tool")

@@ -2,16 +2,25 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
 
+// readFilesArgs represents arguments for the read_files tool.
+type readFilesArgs struct {
+	Paths      []string `json:"paths"`
+	Extensions []string `json:"extensions,omitempty"`
+	Recursive  bool     `json:"recursive,omitempty"`
+	Pattern    string   `json:"pattern,omitempty"`
+	MaxFiles   int      `json:"max_files,omitempty"`
+}
+
 func TestReadFilesToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("read-files-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("read-files-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
-	fixture.AddFileFixture("index.js", testutil.FileFixtureArgs{
+	fixture.AddFileFixture("index.js", &fsfix.FileFixtureArgs{
 		Content: "console.log('Hello');\n",
 	})
 	fixture.Setup(t)

@@ -3,13 +3,20 @@ package test
 import (
 	"testing"
 
-	"github.com/mikeschinkel/scout-mcp/testutil"
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// deleteFileLinesArgs represents arguments for the delete_file_lines tool.
+type deleteFileLinesArgs struct {
+	Filepath  string `json:"filepath"`
+	StartLine int    `json:"start_line"`
+	EndLine   int    `json:"end_line"`
+}
 
 // TestDeleteFileLinesToolWithJSONRPC runs the test for the 'delete_file_lines' MCP Server tool.
 func TestDeleteFileLinesToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("delete-file-lines-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("delete-file-lines-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\n// Comment to delete\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)

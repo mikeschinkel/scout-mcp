@@ -85,7 +85,7 @@ end:
 
 func Initialize() (err error) {
 
-	err = initializeFileLogger()
+	err = initializeFileLogger(logger)
 	if err != nil {
 		err = fmt.Errorf("failed to initialize logger: %v\n", err)
 		goto end
@@ -95,14 +95,16 @@ func Initialize() (err error) {
 
 	err = langutil.Initialize(langutil.Args{
 		AppName: AppName,
+		Logger: logger,
 	})
+
+	logger.Info("langutil initialized\n")
 
 end:
 	return err
 }
 
-func initializeFileLogger() (err error) {
-	var logger *slog.Logger
+func initializeFileLogger(logger *slog.Logger) (err error) {
 	var logDir string
 	var logPath string
 	var logFile *os.File

@@ -8,8 +8,8 @@ all: build test
 
 # Variables
 BINARY_NAME=scout-mcp
-BINARY_PATH=bin/$(BINARY_NAME)
-CMD_PATH=./cmd/main.go
+BINARY_PATH=./bin/$(BINARY_NAME)
+CMD_PATH=./cmd/scout-mcp/main.go
 TEST_TIMEOUT=30s
 
 # Colors for output
@@ -45,34 +45,19 @@ clean:
 ## Testing Commands
 
 # Run all tests
-test: test-unit test-integration
+test:
+	@echo "$(BLUE)🧪 Running all tests...$(NC)"
+	@go test -timeout $(TEST_TIMEOUT) ./test
+	@go test -timeout $(TEST_TIMEOUT) ./...
 	@echo "$(GREEN)🎉 All tests completed!$(NC)"
 
-# Run unit tests (mcptools package tests)
-test-unit:
-	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
-	@go test -v -timeout $(TEST_TIMEOUT) ./mcputil/...
-	@go test -v -timeout $(TEST_TIMEOUT) ./mcptools/...
-	@echo "$(GREEN)✅ Unit tests completed$(NC)"
-
-# Run integration tests (test package)
-test-integration: build
-	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
-	@cd test && go test -v -timeout $(TEST_TIMEOUT) ./...
-	@echo "$(GREEN)✅ Integration tests completed$(NC)"
-
 # Run tests with coverage
-test-coverage:
+test-cover:
 	@echo "$(BLUE)📊 Running tests with coverage...$(NC)"
-	@go test -v -coverprofile=coverage.out ./...
+	@go test -coverprofile=coverage.out ./test
+	@go test -coverprofile=coverage.out ./...
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "$(GREEN)✅ Coverage report generated: coverage.html$(NC)"
-
-# Run tests in watch mode (requires entr)
-test-watch:
-	@echo "$(BLUE)👀 Running tests in watch mode...$(NC)"
-	@echo "$(YELLOW)Press Ctrl+C to stop$(NC)"
-	@find . -name "*.go" | entr -r make test
 
 ## Code Quality Commands
 

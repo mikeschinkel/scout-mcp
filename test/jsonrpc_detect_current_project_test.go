@@ -3,22 +3,22 @@ package test
 import (
 	"testing"
 	"time"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// sessionTokenArgs represents arguments for session-based tools.
+type sessionTokenArgs struct {
+}
 
 // TestDetectCurrentProjectToolWithJSONRPC tests the detect_current_project tool via JSON-RPC.
 func TestDetectCurrentProjectToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("detect-current-project-test")
+	fixture := fsfix.NewRootFixture("detect-current-project-test")
 	// Create multiple project directories with .git to test project detection
-	fixture.AddProjectFixture("project1", testutil.ProjectFixtureArgs{
-		HasGit: true,
-		Permissions: 0755,
+	fixture.AddRepoFixture("project1", &fsfix.RepoFixtureArgs{
 		ModifiedTime: time.Now().Add(-24 * time.Hour), // Older project
 	})
-	fixture.AddProjectFixture("project2", testutil.ProjectFixtureArgs{
-		HasGit: true,
-		Permissions: 0755,
+	fixture.AddRepoFixture("project2", &fsfix.RepoFixtureArgs{
 		ModifiedTime: time.Now().Add(-1 * time.Hour), // More recent project
 	})
 	fixture.Setup(t)

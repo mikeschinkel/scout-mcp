@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,16 +61,12 @@ func TestDeleteFilesTool(t *testing.T) {
 	require.NotNil(t, tool, "delete_files tool should be registered")
 
 	t.Run("DeleteExistingFile_ShouldRemoveFileFromDisk", func(t *testing.T) {
-		tf := testutil.NewTestFixture(DeleteFilesDirPrefix)
+		tf := fsfix.NewRootFixture(DeleteFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("delete-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		fileToDelete := pf.AddFileFixture("delete_me.txt", testutil.FileFixtureArgs{
-			Content:     "This will be deleted",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("delete-project", nil)
+		fileToDelete := pf.AddFileFixture("delete_me.txt", &fsfix.FileFixtureArgs{
+			Content: "This will be deleted",
 		})
 
 		tf.Setup(t)
@@ -96,11 +92,11 @@ func TestDeleteFilesTool(t *testing.T) {
 	})
 
 	t.Run("DeleteNonexistentFile_ShouldReturnError", func(t *testing.T) {
-		tf := testutil.NewTestFixture(DeleteFilesDirPrefix)
+		tf := fsfix.NewRootFixture(DeleteFilesDirPrefix)
 		defer tf.Cleanup()
 
 		// Add a missing file for error testing
-		nonexistentFile := tf.AddFileFixture("does-not-exist.txt", testutil.FileFixtureArgs{
+		nonexistentFile := tf.AddFileFixture("does-not-exist.txt", &fsfix.FileFixtureArgs{
 			Missing: true,
 		})
 
@@ -124,18 +120,14 @@ func TestDeleteFilesTool(t *testing.T) {
 	})
 
 	t.Run("DeleteDirectory_ShouldRemoveDirectoryAndContents", func(t *testing.T) {
-		tf := testutil.NewTestFixture(DeleteFilesDirPrefix)
+		tf := fsfix.NewRootFixture(DeleteFilesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("delete-dir-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
+		pf := tf.AddRepoFixture("delete-dir-project", nil)
 
 		// Add a subdirectory structure to delete
-		subDirFile := pf.AddFileFixture("subdir/file.txt", testutil.FileFixtureArgs{
-			Content:     "content",
-			Permissions: 0644,
+		subDirFile := pf.AddFileFixture("subdir/file.txt", &fsfix.FileFixtureArgs{
+			Content: "content",
 		})
 
 		tf.Setup(t)

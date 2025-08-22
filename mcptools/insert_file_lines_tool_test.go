@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,16 +92,12 @@ func TestInsertFileLinesTool(t *testing.T) {
 	require.NotNil(t, tool, "insert_file_lines tool should be registered")
 
 	t.Run("InsertAfterLine_ShouldAddContentAfterSpecifiedLine", func(t *testing.T) {
-		tf := testutil.NewTestFixture(InsertFileLinesDirPrefix)
+		tf := fsfix.NewRootFixture(InsertFileLinesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("insert-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("insert_test.txt", testutil.FileFixtureArgs{
-			Content:     "Line 1\nLine 2\nLine 3\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("insert-project", nil)
+		testFile := pf.AddFileFixture("insert_test.txt", &fsfix.FileFixtureArgs{
+			Content: "Line 1\nLine 2\nLine 3\n",
 		})
 
 		tf.Setup(t)
@@ -129,16 +125,12 @@ func TestInsertFileLinesTool(t *testing.T) {
 	})
 
 	t.Run("InsertBeforeLine_ShouldAddContentBeforeSpecifiedLine", func(t *testing.T) {
-		tf := testutil.NewTestFixture(InsertFileLinesDirPrefix)
+		tf := fsfix.NewRootFixture(InsertFileLinesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("insert-before-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("insert_before_test.txt", testutil.FileFixtureArgs{
-			Content:     "Line 1\nLine 2\nLine 3\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("insert-before-project", nil)
+		testFile := pf.AddFileFixture("insert_before_test.txt", &fsfix.FileFixtureArgs{
+			Content: "Line 1\nLine 2\nLine 3\n",
 		})
 
 		tf.Setup(t)

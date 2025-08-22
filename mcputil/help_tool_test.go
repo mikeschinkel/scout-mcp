@@ -3,8 +3,8 @@ package mcputil_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -66,7 +66,7 @@ func TestHelpTool(t *testing.T) {
 	require.NotNil(t, tool, "help tool should be registered")
 
 	t.Run("GetFullDocumentation", func(t *testing.T) {
-		tf := testutil.NewTestFixture(HelpDirPrefix)
+		tf := fsfix.NewRootFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -90,7 +90,7 @@ func TestHelpTool(t *testing.T) {
 	})
 
 	t.Run("GetSpecificHelp", func(t *testing.T) {
-		tf := testutil.NewTestFixture(HelpDirPrefix)
+		tf := fsfix.NewRootFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)
@@ -116,7 +116,7 @@ func TestHelpTool(t *testing.T) {
 	})
 
 	t.Run("GetHelpForNonExistentTool", func(t *testing.T) {
-		tf := testutil.NewTestFixture(HelpDirPrefix)
+		tf := fsfix.NewRootFixture(HelpDirPrefix)
 		defer tf.Cleanup()
 
 		tf.Setup(t)

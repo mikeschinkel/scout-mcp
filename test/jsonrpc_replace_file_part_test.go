@@ -2,14 +2,23 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// replaceFilePartArgs represents arguments for the replace_file_part tool.
+type replaceFilePartArgs struct {
+	Path       string `json:"path"`
+	Language   string `json:"language"`
+	PartType   string `json:"part_type"`
+	PartName   string `json:"part_name"`
+	NewContent string `json:"new_content"`
+}
 
 // TestReplaceFilePartToolWithJSONRPC tests the replace_file_part tool via JSON-RPC.
 func TestReplaceFilePartToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("replace-file-part-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("replace-file-part-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)

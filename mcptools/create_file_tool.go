@@ -19,8 +19,8 @@ func init() {
 			Description: "Create a new file in allowed directories",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				FilepathProperty.Required(),
-				NewContentProperty.Required(),
+				RequiredPathProperty,
+				RequiredNewContentProperty,
 				CreateDirsProperty,
 			},
 		}),

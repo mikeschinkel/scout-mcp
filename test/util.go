@@ -3,6 +3,8 @@ package test
 import (
 	"io"
 	"log"
+	"os"
+	"path/filepath"
 )
 
 // must terminates the program if the provided error is not nil.
@@ -18,4 +20,9 @@ func mustClose(c io.Closer) {
 	if err != nil {
 		log.Println(err.Error())
 	}
+}
+
+func repoDir() string {
+	wd,_ := os.Getwd()
+	return filepath.Dir(wd)
 }

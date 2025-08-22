@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,16 +98,12 @@ func TestInsertAtPatternTool(t *testing.T) {
 	require.NotNil(t, tool, "insert_at_pattern tool should be registered")
 
 	t.Run("InsertAfterPattern_ShouldAddContentAfterMatchingPattern", func(t *testing.T) {
-		tf := testutil.NewTestFixture(InsertAtPatternDirPrefix)
+		tf := fsfix.NewRootFixture(InsertAtPatternDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("pattern-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("pattern_test.go", testutil.FileFixtureArgs{
-			Content:     "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("pattern-project", nil)
+		testFile := pf.AddFileFixture("pattern_test.go", &fsfix.FileFixtureArgs{
+			Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 		})
 
 		tf.Setup(t)
@@ -138,16 +134,12 @@ func TestInsertAtPatternTool(t *testing.T) {
 	})
 
 	t.Run("InsertBeforePattern_ShouldAddContentBeforeMatchingPattern", func(t *testing.T) {
-		tf := testutil.NewTestFixture(InsertAtPatternDirPrefix)
+		tf := fsfix.NewRootFixture(InsertAtPatternDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("pattern-before-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("pattern_before_test.go", testutil.FileFixtureArgs{
-			Content:     "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("pattern-before-project", nil)
+		testFile := pf.AddFileFixture("pattern_before_test.go", &fsfix.FileFixtureArgs{
+			Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 		})
 
 		tf.Setup(t)
@@ -178,16 +170,12 @@ func TestInsertAtPatternTool(t *testing.T) {
 	})
 
 	t.Run("RegexPattern_ShouldMatchUsingRegularExpression", func(t *testing.T) {
-		tf := testutil.NewTestFixture(InsertAtPatternDirPrefix)
+		tf := fsfix.NewRootFixture(InsertAtPatternDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("regex-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("regex_pattern_test.go", testutil.FileFixtureArgs{
-			Content:     "package main\n\nfunc test() {\n\treturn\n}\n\nfunc another() {\n\treturn\n}\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("regex-project", nil)
+		testFile := pf.AddFileFixture("regex_pattern_test.go", &fsfix.FileFixtureArgs{
+			Content: "package main\n\nfunc test() {\n\treturn\n}\n\nfunc another() {\n\treturn\n}\n",
 		})
 
 		tf.Setup(t)

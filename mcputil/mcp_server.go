@@ -75,6 +75,7 @@ func NewServer(opts ServerOpts) Server {
 
 // withRecovery creates a middleware that recovers from panics in tool handlers
 // and converts them to proper error responses with stack traces for debugging.
+// This ensures that tool panics don't crash the entire MCP server.
 func withRecovery() server.ServerOption {
 	return server.WithToolHandlerMiddleware(func(next server.ToolHandlerFunc) server.ToolHandlerFunc {
 		return func(ctx context.Context, request mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {

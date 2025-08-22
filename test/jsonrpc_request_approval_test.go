@@ -2,6 +2,15 @@ package test
 
 import "testing"
 
+// requestApprovalArgs represents arguments for the request_approval tool.
+type requestApprovalArgs struct {
+	Operation      string   `json:"operation"`
+	Files          []string `json:"files"`
+	ImpactSummary  string   `json:"impact_summary,omitempty"`
+	PreviewContent string   `json:"preview_content,omitempty"`
+	RiskLevel      string   `json:"risk_level,omitempty"`
+}
+
 // TestRequestApprovalToolWithJSONRPC tests the request_approval tool via JSON-RPC.
 func TestRequestApprovalToolWithJSONRPC(t *testing.T) {
 	RunJSONRPCTest(t, nil, test{

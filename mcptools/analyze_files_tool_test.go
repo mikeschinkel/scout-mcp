@@ -3,8 +3,8 @@ package mcptools_test
 import (
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,7 +71,7 @@ func TestAnalyzeFilesTool(t *testing.T) {
 	require.NotNil(t, tool, "analyze_files tool should be registered")
 
 	t.Run("AnalyzeSingleFile", func(t *testing.T) {
-		tf := testutil.NewTestFixture(AnalyzeFilesDirPrefix)
+		tf := fsfix.NewRootFixture(AnalyzeFilesDirPrefix)
 		defer tf.Cleanup()
 
 		// Create a more complex file for analysis
@@ -132,9 +132,8 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "OK")
 }
 `
-		testFile := tf.AddFileFixture("analyze_test.go", testutil.FileFixtureArgs{
-			Content:     complexContent,
-			Permissions: 0644,
+		testFile := tf.AddFileFixture("analyze_test.go", &fsfix.FileFixtureArgs{
+			Content: complexContent,
 		})
 		tf.Setup(t)
 		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
@@ -157,13 +156,12 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	t.Run("AnalyzeMultipleFiles", func(t *testing.T) {
-		tf := testutil.NewTestFixture(AnalyzeFilesDirPrefix)
+		tf := fsfix.NewRootFixture(AnalyzeFilesDirPrefix)
 		defer tf.Cleanup()
 
 		// Create multiple files
-		file1 := tf.AddFileFixture("simple.txt", testutil.FileFixtureArgs{
-			Content:     "Simple text file\nWith two lines",
-			Permissions: 0644,
+		file1 := tf.AddFileFixture("simple.txt", &fsfix.FileFixtureArgs{
+			Content: "Simple text file\nWith two lines",
 		})
 
 		configContent := `{
@@ -176,9 +174,8 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
     "maxConnections": 10
   }
 }`
-		file2 := tf.AddFileFixture("config.json", testutil.FileFixtureArgs{
-			Content:     configContent,
-			Permissions: 0644,
+		file2 := tf.AddFileFixture("config.json", &fsfix.FileFixtureArgs{
+			Content: configContent,
 		})
 
 		tf.Setup(t)
@@ -199,11 +196,11 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	t.Run("AnalyzeNonExistentFile", func(t *testing.T) {
-		tf := testutil.NewTestFixture(AnalyzeFilesDirPrefix)
+		tf := fsfix.NewRootFixture(AnalyzeFilesDirPrefix)
 		defer tf.Cleanup()
 
 		// Add a missing file that doesn't exist
-		missingFile := tf.AddFileFixture("nonexistent.txt", testutil.FileFixtureArgs{
+		missingFile := tf.AddFileFixture("nonexistent.txt", &fsfix.FileFixtureArgs{
 			Missing: true,
 		})
 		tf.Setup(t)

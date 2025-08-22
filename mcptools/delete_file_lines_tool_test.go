@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
-	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,16 +98,12 @@ func TestDeleteFileLinesTool(t *testing.T) {
 	require.NotNil(t, tool, "delete_file_lines tool should be registered")
 
 	t.Run("DeleteSingleLine_ShouldRemoveSpecifiedLine", func(t *testing.T) {
-		tf := testutil.NewTestFixture(DeleteFileLinesDirPrefix)
+		tf := fsfix.NewRootFixture(DeleteFileLinesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("delete-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("delete_test.txt", testutil.FileFixtureArgs{
-			Content:     "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("delete-project", nil)
+		testFile := pf.AddFileFixture("delete_test.txt", &fsfix.FileFixtureArgs{
+			Content: "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
 		})
 
 		tf.Setup(t)
@@ -134,16 +130,12 @@ func TestDeleteFileLinesTool(t *testing.T) {
 	})
 
 	t.Run("DeleteMultipleLines_ShouldRemoveSpecifiedLineRange", func(t *testing.T) {
-		tf := testutil.NewTestFixture(DeleteFileLinesDirPrefix)
+		tf := fsfix.NewRootFixture(DeleteFileLinesDirPrefix)
 		defer tf.Cleanup()
 
-		pf := tf.AddProjectFixture("delete-multi-project", testutil.ProjectFixtureArgs{
-			HasGit:      true,
-			Permissions: 0755,
-		})
-		testFile := pf.AddFileFixture("delete_multi_test.txt", testutil.FileFixtureArgs{
-			Content:     "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
-			Permissions: 0644,
+		pf := tf.AddRepoFixture("delete-multi-project", nil)
+		testFile := pf.AddFileFixture("delete_multi_test.txt", &fsfix.FileFixtureArgs{
+			Content: "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n",
 		})
 
 		tf.Setup(t)

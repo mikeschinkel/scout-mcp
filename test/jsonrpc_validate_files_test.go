@@ -2,14 +2,23 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// validateFilesArgs represents arguments for the validate_files tool.
+type validateFilesArgs struct {
+	Paths      []string `json:"paths,omitempty"`
+	Files      []string `json:"files,omitempty"`
+	Language   string   `json:"language,omitempty"`
+	Extensions []string `json:"extensions,omitempty"`
+	Recursive  bool     `json:"recursive,omitempty"`
+}
 
 // TestValidateFilesToolWithJSONRPC tests the validate_files tool via JSON-RPC.
 func TestValidateFilesToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("validate-files-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("validate-files-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)

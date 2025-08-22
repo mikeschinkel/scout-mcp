@@ -2,14 +2,22 @@ package test
 
 import (
 	"testing"
-	
-	"github.com/mikeschinkel/scout-mcp/testutil"
+
+	"github.com/mikeschinkel/scout-mcp/fsfix"
 )
+
+// findFilePartArgs represents arguments for the find_file_part tool.
+type findFilePartArgs struct {
+	Path     string `json:"path"`
+	Language string `json:"language"`
+	PartType string `json:"part_type"`
+	PartName string `json:"part_name"`
+}
 
 // TestFindFilePartToolWithJSONRPC tests the find_file_part tool via JSON-RPC.
 func TestFindFilePartToolWithJSONRPC(t *testing.T) {
-	fixture := testutil.NewTestFixture("find-file-part-test")
-	fixture.AddFileFixture("main.go", testutil.FileFixtureArgs{
+	fixture := fsfix.NewRootFixture("find-file-part-test")
+	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: "package main\n\nfunc main() {\n\tprintln(\"Hello\")\n}\n",
 	})
 	fixture.Setup(t)
