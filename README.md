@@ -25,6 +25,9 @@ git clone your-repo/scout-mcp
 cd scout-mcp
 make build
 
+# Show help
+./bin/scout help
+
 # Create default config with allowed directory
 ./bin/scout init ~/Code
 
@@ -62,7 +65,8 @@ Scout-MCP uses stdio transport for direct integration with Claude Desktop. This 
 #### 1. Build Scout-MCP
 ```bash
 cd /path/to/scout-mcp
-go build -o bin/scout-mcp ./cmd/main.go
+make build
+# Binary will be created as ./bin/scout
 ```
 
 #### 2. Find Claude Desktop Config File
@@ -127,8 +131,9 @@ Then you can use commands like:
 {
   "mcpServers": {
     "scout-mcp": {
-      "command": "/Users/mike/Projects/scout-mcp/bin/scout-mcp",
+      "command": "/Users/mike/Projects/scout-mcp/bin/scout",
       "args": [
+        "mcp",
         "/Users/mike/Projects",
         "/Users/mike/Documents/Code"
       ]
@@ -160,31 +165,37 @@ Then you can use commands like:
 Scout-MCP offers flexible path management through command line arguments:
 
 **Basic Commands:**
-- `scout-mcp <path>` - Add path to config file paths and start server
-- `scout-mcp --only <path>` - Use only the specified path (ignore config file)
-- `scout-mcp init` - Create empty config file (requires manual editing)
-- `scout-mcp init <path>` - Create config with custom initial path
-- `scout-mcp` - Start server with config file paths only
+- `scout help` - Show help for all commands with examples
+- `scout mcp <path>` - Add path to config file paths and start server
+- `scout mcp --only <path>` - Use only the specified path (ignore config file)
+- `scout init` - Create empty config file (requires manual editing)
+- `scout init <path>` - Create config with custom initial path
+- `scout mcp` - Start server with config file paths only
 
 **Examples:**
 ```bash
+# Show help with examples
+scout help
+
 # Start with ~/Projects (from config) + ~/MyCode (from command line)
-scout-mcp ~/MyCode
+scout mcp ~/MyCode
 
 # Use only /tmp/safe-dir, ignore any config file
-scout-mcp --only /tmp/safe-dir
+scout mcp --only /tmp/safe-dir
 
 # Create config with ~/Development as initial directory
-scout-mcp init ~/Development
+scout init ~/Development
 
 # Start with just config file paths
-scout-mcp
+scout mcp
 ```
 
 **Error Handling:**
-- Running without arguments and no config file shows helpful usage information
+- Running without arguments shows comprehensive help with examples and usage
+- Unknown commands display helpful error messages with guidance to use `scout help`
 - All paths are validated to exist and be directories before starting
 - Clear error messages explain available options
+- Consistent help output between `scout` and `scout help` commands
 
 ## Configuration
 
@@ -336,10 +347,10 @@ Test the server and run the comprehensive test suite:
 go test ./...
 
 # Test the server standalone before Claude integration
-./bin/scout-mcp ~/Projects
+./bin/scout mcp ~/Projects
 
 # Test with manual JSON (in another terminal, pipe input)
-echo '{"id":1,"method":"tools/list","params":{}}' | ./bin/scout-mcp ~/Projects
+echo '{"id":1,"method":"tools/list","params":{}}' | ./bin/scout mcp ~/Projects
 ```
 
 ### Integration Testing
@@ -364,8 +375,8 @@ start_session
 - Check permissions on the directory
 
 **"No allowed directories specified"**
-- Run `scout-mcp init` to create default config
-- Or specify a path: `scout-mcp /your/project/path`
+- Run `scout init` to create default config
+- Or specify a path: `scout mcp /your/project/path`
 - Check config file exists: `cat ~/.config/scout-mcp/scout-mcp.json`
 
 ### Claude Desktop Integration Issues
@@ -388,7 +399,7 @@ start_session
 - Each new conversation should start with `start_session`
 
 **Server not starting:**
-- Test the binary manually: `./scout-mcp ~/Projects`
+- Test the binary manually: `./bin/scout mcp ~/Projects`
 - Check for Go compilation errors
 - Verify all dependencies are installed
 
@@ -396,7 +407,7 @@ start_session
 
 **No response from tools:**
 - Check Claude Desktop's developer console for error messages
-- Verify the process is running: `ps aux | grep scout-mcp`
+- Verify the process is running: `ps aux | grep scout`
 - Test with minimal configuration first
 
 ## Configuration Reference
@@ -413,9 +424,9 @@ start_session
 
 **File Location**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
-- `command`: Absolute path to scout-mcp binary
-- `args`: Array of allowed directory paths
-- Server runs as subprocess of Claude Desktop
+- `command`: Absolute path to scout binary (e.g., `/path/to/scout-mcp/bin/scout`)
+- `args`: Array starting with `"mcp"` command followed by allowed directory paths
+- Server runs as subprocess of Claude Desktop with improved I/O separation
 
 ### Environment Considerations
 
@@ -426,6 +437,12 @@ start_session
 ## Architecture and Development
 
 Scout-MCP follows a "Clear Path" coding style with comprehensive security and testing:
+
+### Recent Improvements
+- **CLI Architecture Refactoring**: Proper separation between MCP protocol I/O and CLI user output
+- **Improved Error Handling**: Unknown commands now display helpful errors with guidance
+- **Consistent Help System**: Both `scout` and `scout help` show identical, deterministic output
+- **Testable CLI Framework**: Commands now use dependency injection for output, making them fully testable
 
 ### Session-Based Architecture
 - All tools require session tokens (except `start_session`)
