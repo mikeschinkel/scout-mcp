@@ -98,7 +98,10 @@ var appName string
 // always returns nil. Future versions may return initialization errors.
 func Initialize(args Args) (err error) {
 	appName = args.AppName
-	return CallInitializerFuncs(args)
+	logger.Info("Initializing langutil\n")
+	err = CallInitializerFuncs(args)
+	logger.Info("langutil initialized\n")
+	return err
 }
 
 // ValidateFileAs validates a single file as the specified language and returns the validated language.

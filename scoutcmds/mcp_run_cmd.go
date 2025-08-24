@@ -2,7 +2,6 @@ package scoutcmds
 
 import (
 	"context"
-	"os"
 
 	"github.com/mikeschinkel/scout-mcp"
 	"github.com/mikeschinkel/scout-mcp/cliutil"
@@ -50,7 +49,7 @@ func (c *MCPRunCmd) Handle(ctx context.Context, config cliutil.Config, args []st
 		goto end
 	}
 
-	fprintf(os.Stderr, "%s running...\n[Press Ctrl-C to terminate]", scout.ServerName)
+	cliutil.Errorf("%s running...\n[Press Ctrl-C to terminate]", scout.ServerName)
 	err = server.StartMCP(ctx)
 
 end:

@@ -13,6 +13,7 @@ import (
 
 	"github.com/mikeschinkel/scout-mcp/cliutil"
 	"github.com/mikeschinkel/scout-mcp/langutil"
+	"github.com/mikeschinkel/scout-mcp/langutil/golang"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
@@ -31,15 +32,16 @@ type RunArgs struct {
 	MCPWriter      io.Writer
 	CLIWriter      cliutil.OutputWriter
 	ConfigProvider ConfigProvider
+	Logger         *slog.Logger
 }
 
-func RunMain(ctx context.Context, ra RunArgs) (err error) {
+func Run(ctx context.Context, ra RunArgs) (err error) {
 	var runner *cliutil.CmdRunner
 	var ctxWithCancel context.Context
 	var cancel context.CancelFunc
 
 	// Initialize Scout
-	err = Initialize()
+	err = Initialize(ra.Logger)
 	if err != nil {
 		logger.Error("Failed to initialize Scout", "error", err)
 		goto end
@@ -96,64 +98,67 @@ func setupSignalHandling(ctx context.Context, logger *slog.Logger) (context.Cont
 	return ctxWithCancel, cancel
 }
 
-func Initialize() (err error) {
+func Initialize(logger *slog.Logger) (err error) {
 
-	err = initializeFileLogger(logger)
-	if err != nil {
-		err = fmt.Errorf("failed to initialize logger: %v\n", err)
-		goto end
-	}
-
-	logger.Info("Logger initialized\n")
+	initializeLoggers(logger)
 
 	err = langutil.Initialize(langutil.Args{
 		AppName: AppName,
 		Logger:  logger,
 	})
 
-	logger.Info("langutil initialized\n")
-
-end:
+	//end:
 	return err
 }
 
-func initializeFileLogger(logger *slog.Logger) (err error) {
+func CreateJSONLogger() (logger *slog.Logger, err error) {
 	var logDir string
-	var logPath string
-	var logFile *os.File
+	var logFilePath string
 	var homeDir string
+	var logFile *os.File
 
 	homeDir, err = os.UserHomeDir()
 	if err != nil {
+		err = fmt.Errorf("failed to access home directory; %w\n", err)
 		goto end
 	}
 
 	logDir = filepath.Join(homeDir, ".config", "scout-mcp")
 	err = os.MkdirAll(logDir, 0755)
 	if err != nil {
+		err = fmt.Errorf("failed to make log directory %s; %w\n", logDir, err)
 		goto end
 	}
-	logPath = filepath.Join(logDir, "errors.log")
-	logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logFilePath = filepath.Join(logDir, "errors.log")
+	logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
+		err = fmt.Errorf("failed to open log logFile %s; %w\n", logFilePath, err)
 		goto end
 	}
+	defer mustClose(logFile)
 
 	logger = slog.New(slog.NewJSONHandler(logFile, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 
-	// Use JSON logging for structured logs
-	SetLogger(logger)
-
-	//TODO These should be registered by the package, not hard-coded here.
-	mcptools.SetLogger(logger)
-	mcputil.SetLogger(logger)
-
-	logger.Info("Logger initialized", "log_file", logPath)
+	logger.Info("Logger initialized", "log_file", logFilePath)
 
 end:
-	return err
+	if err != nil {
+		err = fmt.Errorf("failed to initialize logger; %w\n", err)
+	}
+	return logger, err
+}
+
+func initializeLoggers(logger *slog.Logger) {
+	//TODO These should be registered by the package, not hard-coded here.
+	// OR if possible resolved via reflection
+	SetLogger(logger)
+	mcptools.SetLogger(logger)
+	mcputil.SetLogger(logger)
+	cliutil.SetLogger(logger)
+	langutil.SetLogger(logger)
+	golang.SetLogger(logger)
 }
 
 func ShowUsageError(err error) {

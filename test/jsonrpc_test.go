@@ -69,8 +69,9 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 			cliArgs = append(cliArgs, tt.cliArgs...)
 		}
 		cliOutput := testutil.NewTestOutputWriter()
-		err = scout.RunMain(ctx, scout.RunArgs{
+		err = scout.Run(ctx, scout.RunArgs{
 			Args:           cliArgs,
+			Logger:         testutil.NewTestLogger(),
 			MCPReader:      reader,
 			MCPWriter:      writer,
 			CLIWriter:      cliOutput,
