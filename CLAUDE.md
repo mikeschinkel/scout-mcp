@@ -46,6 +46,9 @@ make help
 # Build the main binary
 make build
 
+# Show comprehensive help
+./bin/scout help
+
 # Initialize configuration with allowed path
 ./bin/scout init ~/Projects
 
@@ -140,6 +143,9 @@ Scout-MCP is a secure Model Context Protocol (MCP) server that provides Claude w
 - **scout/**: Main package containing MCP server implementation and configuration
 - **mcputil/**: MCP server utilities and abstractions over mark3labs/mcp-go
 - **mcptools/**: Individual tool implementations with session management and approval system
+- **scoutcmds/**: CLI command implementations with I/O separation and help system
+- **cliutil/**: CLI framework with command routing, help system, and output abstraction
+- **testutil/**: Testing utilities including `TestOutputWriter` for CLI output capture
 - **langutil/**: Language-specific parsing utilities for AST-based operations
 - **jsontest/**: JSON testing framework with sophisticated path-based assertions and pipe functions
 - **jsontest/pipefuncs/**: Modular pipe function implementations (exists, notNull, notEmpty, len, json)
@@ -229,6 +235,7 @@ The project includes a sophisticated JSON testing framework for validating JSON-
 - **jsontest/**: JSON testing framework with path-based assertions and pipe functions
 - **jsontest/pipefuncs/**: Modular pipe function implementations for value transformation
 - **testutil/**: Mock configurations, requests, and test utilities
+  - **testutil/output.go**: `TestOutputWriter` for capturing CLI output in tests
 
 ### Current Tool Implementation (20 tools)
 
@@ -290,7 +297,17 @@ The server communicates with Claude Desktop via stdio transport:
 
 ### Recent Major Changes
 
-#### Pipe Function Architecture Refactoring (Latest)
+#### CLI Architecture Refactoring (Latest)
+- **I/O Separation**: Complete separation of MCP protocol I/O (`MCPReader`/`MCPWriter`) from CLI user output (`CLIWriter`)
+- **RunArgs Refactoring**: Updated `RunArgs` structure with proper field naming and dependency injection
+- **Error Handling Improvements**: Unknown commands now display helpful errors directing users to `scout help`
+- **Help Command Implementation**: Added `scout help` command with consistent, deterministic output
+- **TestOutputWriter Infrastructure**: New testutil package with `TestOutputWriter` for capturing CLI output in tests
+- **Framework Testability**: CLI commands now fully testable through dependency injection
+- **Consistent Help System**: Both `scout` and `scout help` show identical output using shared `ShowMainHelp()` function
+- **Makefile Updates**: Fixed all development commands to use correct `mcp` subcommand structure
+
+#### Pipe Function Architecture Refactoring
 - **Modular Pipe Functions**: Extracted all pipe functions (exists, notNull, notEmpty, len, json) from main jsontest package into dedicated `jsontest/pipefuncs` package
 - **Clean Switch Replacement**: Replaced large switch statement with pipe function registry using `err = pf.Handle(ctx, &out)` pattern
 - **Circular Import Resolution**: Fixed import cycle by moving tests to `jsontest_test` package with side-effect import
@@ -315,6 +332,9 @@ The server communicates with Claude Desktop via stdio transport:
 
 #### Core Architecture
 - **Framework-Level Session Enforcement**: All session validation moved to MCP server layer
+- **CLI Architecture Refactoring**: Complete separation of MCP protocol I/O from user-facing CLI output
+- **Help System Implementation**: Consistent, deterministic help output with `scout help` command
+- **Testable CLI Framework**: Dependency injection allows full testing of CLI commands
 - **read_file → read_files**: New tool can read multiple files/directories efficiently  
 - **Comprehensive Instruction Delivery**: `start_session` provides complete guidance
 - **Automatic Session Validation**: Tools no longer need manual session checks
@@ -358,7 +378,12 @@ When adding new MCP tools:
 
 When making changes, ensure they maintain the existing security model, follow the "Clear Path" coding style, and integrate properly with the session management system.
 
+### Current Known Bugs
 
-### Current Bugs/TODOs
+### Current TODOs
+- [ ] Update golang.CheckDocumentation() to limit the results returned to an estimate of 50% of the max size for a response, starting with symbol comments (first priority) file comments (second priority) and subdirectory README.md files (third priority)  
+- [ ] Update all comments in the project using the check_docs tool. 
 - [ ] Add logic to track what files have been read and require reading files before updating them.
 - [ ] Add test to ensure that "/tmp" is always an allowed path but that we don't have it duplicated.
+- [ ] Add unit tests for the CLI to `scoutcmds` that call `scout.RunMain()` and pass in CLI args from a table driven test and compares with expected output using buffered CLIWriter.
+- [ ] Update integration tests in ./test to cover more of the use-cases based upon the values logged in ./log/test_responses.jsonl.
