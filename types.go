@@ -58,3 +58,9 @@ type InitializeResult struct {
 type MCPServerOpts struct {
 	OnlyMode bool
 }
+
+// OutputWriter defines the interface for user-facing output
+type OutputWriter interface {
+	Printf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
+}

@@ -168,7 +168,7 @@ const (
 
 // ClearSessions removes sessions from the session store based on the specified type.
 // This function provides controlled cleanup of expired or all sessions.
-func ClearSessions(which SessionClearType) {
+func ClearSessions(which SessionClearType) (err error) {
 	switch which {
 	case ExpiredSessions:
 		clearExpiredSessions()
@@ -177,8 +177,19 @@ func ClearSessions(which SessionClearType) {
 		sessions = make(map[string]*Session)
 		sessionsMutex.Unlock()
 	default:
-		panic(fmt.Sprintf("Unsupported session clear type: %d", which))
+		err = fmt.Errorf("unsupported session clear type '%d'", which)
 	}
+	return err
+}
+
+func ClearSession(session string) (found bool) {
+	sessionsMutex.Lock()
+	defer sessionsMutex.Unlock()
+	_, found = sessions[session]
+	if found {
+		delete(sessions, session)
+	}
+	return found
 }
 
 // clearExpiredSessions removes all expired sessions from the session store.
@@ -206,6 +217,21 @@ func clearExpiredSessions() {
 		}
 		sessionsMutex.Unlock()
 	}
+}
+
+// ListSessions returns all active sessions from the session store.
+// This function provides a way to enumerate all sessions for management purposes.
+func ListSessions() []Session {
+	var sessionList []Session
+
+	sessionsMutex.RLock()
+	sessionList = make([]Session, 0, len(sessions))
+	for _, session := range sessions {
+		sessionList = append(sessionList, *session)
+	}
+	sessionsMutex.RUnlock()
+
+	return sessionList
 }
 
 // GetSessionCount returns the number of active sessions in the session store.

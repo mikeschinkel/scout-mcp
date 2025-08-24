@@ -2,11 +2,14 @@ package scout
 
 import (
 	"io"
+
+	"github.com/mikeschinkel/scout-mcp/cliutil"
 )
 
 type Opts struct {
 	OnlyMode        bool
 	AdditionalPaths []string
-	Stdin           io.Reader
-	Stdout          io.Writer
+	MCPReader       io.Reader
+	MCPWriter       io.Writer
+	CLIWriter       cliutil.OutputWriter
 }

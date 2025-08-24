@@ -64,7 +64,8 @@ func TestSessions_ValidateSession(t *testing.T) {
 		require.NoError(t, err, "Should not error on valid token")
 
 		// Clear expired sessions (this one shouldn't be cleared since it's not expired)
-		mcputil.ClearSessions(mcputil.ExpiredSessions)
+		err = mcputil.ClearSessions(mcputil.ExpiredSessions)
+		require.NoError(t, err, "Should not error on clearing expired sessions")
 
 		// Should still be valid
 		err = mcputil.ValidateSession(session.Token)
@@ -74,7 +75,8 @@ func TestSessions_ValidateSession(t *testing.T) {
 
 func TestSessions_RequireValidSession(t *testing.T) {
 	// Clear any existing sessions
-	mcputil.ClearSessions(mcputil.AllSessions)
+	err := mcputil.ClearSessions(mcputil.AllSessions)
+	require.NoError(t, err, "Should not error after clearing all sessions")
 
 	t.Run("ValidSession", func(t *testing.T) {
 		session := mcputil.NewSession()

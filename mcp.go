@@ -23,8 +23,8 @@ type MCPServer struct {
 	additionalPaths map[string]struct{}
 	allowedPaths    map[string]struct{}
 	mcpServer       mcputil.Server
-	Stdin           io.Reader
-	StdOut          io.Writer
+	Reader          io.Reader
+	Writer          io.Writer
 }
 
 // NewMCPServer creates a new MCP server instance with the given options.
@@ -51,8 +51,8 @@ func NewMCPServer(opts Opts) (s *MCPServer, err error) {
 		ListChanged: false,
 		Prompts:     false,
 		Logging:     true,
-		Stdin:       opts.Stdin,
-		Stdout:      opts.Stdout,
+		Reader:      opts.MCPReader,
+		Writer:      opts.MCPWriter,
 	})
 
 	// Register tools
@@ -179,14 +179,14 @@ func (s *MCPServer) loadConfig(opts Opts) (config *Config, err error) {
 		err = fmt.Errorf("no allowed paths specified in config file or command line")
 		goto end
 	}
-	if opts.Stdin == nil {
-		opts.Stdin = os.Stdin
+	if opts.MCPReader == nil {
+		opts.MCPReader = os.Stdin
 	}
-	s.Stdin = opts.Stdin
-	if opts.Stdout == nil {
-		opts.Stdout = os.Stdout
+	s.Reader = opts.MCPReader
+	if opts.MCPWriter == nil {
+		opts.MCPWriter = os.Stdout
 	}
-	s.StdOut = opts.Stdout
+	s.Writer = opts.MCPWriter
 
 	// Validate and normalize paths
 	err = config.Validate()

@@ -12,9 +12,9 @@ import (
 func main() {
 	err := scout.RunMain(context.Background(), scout.RunArgs{
 		Args:           os.Args,
-		MCPInput:       os.Stdin,
-		MCPOutput:      os.Stdout,
-		CLIOutput:      cliutil.NewOutputWriter(),
+		MCPReader:      os.Stdin,
+		MCPWriter:      os.Stdout,
+		CLIWriter:      cliutil.NewOutputWriter(),
 		ConfigProvider: scoutcmds.NewConfigProvider(),
 	})
 	if err != nil {

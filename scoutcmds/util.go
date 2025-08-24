@@ -19,8 +19,8 @@ func convertConfig(config cliutil.Config, args []string) (opts *scout.Opts, err 
 	opts = &scout.Opts{
 		OnlyMode:        *cfg.OnlyMode,
 		AdditionalPaths: append(cfg.AdditionalPaths, args...),
-		Stdin:           scout.NewNormalizingReader(cfg.Reader),
-		Stdout:          cfg.Writer,
+		MCPReader:       scout.NewNormalizingReader(cfg.Reader),
+		MCPWriter:       cfg.Writer,
 	}
 end:
 	return opts, err

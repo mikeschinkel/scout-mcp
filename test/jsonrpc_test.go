@@ -71,9 +71,9 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 		cliOutput := testutil.NewTestOutputWriter()
 		err = scout.RunMain(ctx, scout.RunArgs{
 			Args:           cliArgs,
-			MCPInput:       reader,
-			MCPOutput:      writer,
-			CLIOutput:      cliOutput,
+			MCPReader:      reader,
+			MCPWriter:      writer,
+			CLIWriter:      cliOutput,
 			ConfigProvider: scoutcmds.NewConfigProvider(),
 		})
 		if err != nil {

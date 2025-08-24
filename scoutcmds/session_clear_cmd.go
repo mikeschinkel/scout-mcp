@@ -31,20 +31,21 @@ func init() {
 	}, &SessionCmd{})
 }
 
-func (c *SessionClearCmd) Handle(ctx context.Context, config cliutil.Config, args []string) error {
-	var found bool
-
-	if *sessionTokenArg == "all" {
-		mcputil.ClearSessions(mcputil.AllSessions)
-		cliutil.Printf("All sessions cleared\n")
-	} else {
-		found = mcputil.ClearSession(*sessionTokenArg)
-		if !found {
-			cliutil.Printf("Session not found: %s\n", *sessionTokenArg)
-		} else {
-			cliutil.Printf("Session %s cleared\n", *sessionTokenArg)
+func (c *SessionClearCmd) Handle(ctx context.Context, config cliutil.Config, args []string) (err error) {
+	switch *sessionTokenArg {
+	case "all":
+		err = mcputil.ClearSessions(mcputil.AllSessions)
+		if err != nil {
+			goto end
 		}
+		cliutil.Printf("All sessions cleared\n")
+	default:
+		if mcputil.ClearSession(*sessionTokenArg) {
+			cliutil.Printf("Session %s cleared\n", *sessionTokenArg)
+			goto end
+		}
+		cliutil.Printf("Session not found: %s\n", *sessionTokenArg)
 	}
-
-	return nil
+end:
+	return err
 }

@@ -27,8 +27,8 @@ type Server interface {
 // session validation and tool registration.
 type mcpServer struct {
 	srv    *server.MCPServer
-	Stdin  io.Reader
-	Stdout io.Writer
+	Reader io.Reader
+	Writer io.Writer
 }
 
 // ServerOpts contains options for creating an MCP server including
@@ -41,8 +41,8 @@ type ServerOpts struct {
 	ListChanged bool // Resource list changed capability
 	Prompts     bool
 	Logging     bool
-	Stdin       io.Reader
-	Stdout      io.Writer
+	Reader      io.Reader
+	Writer      io.Writer
 }
 
 // NewServer creates a new MCP server with the given options.
@@ -68,8 +68,8 @@ func NewServer(opts ServerOpts) Server {
 
 	return &mcpServer{
 		srv:    srv,
-		Stdin:  opts.Stdin,
-		Stdout: opts.Stdout,
+		Reader: opts.Reader,
+		Writer: opts.Writer,
 	}
 }
 
@@ -189,9 +189,9 @@ func (s *mcpServer) ServeStdio(ctx context.Context) error {
 		<-sigChan
 		cancel()
 	}()
-	cr := NewCapturingReader(s.Stdin)
+	cr := NewCapturingReader(s.Reader)
 	logger.Info("Listening...", "heard", cr.String())
-	err := sss.Listen(ctx, cr, s.Stdout)
+	err := sss.Listen(ctx, cr, s.Writer)
 	if err != nil {
 		err = fmt.Errorf("ERROR: %w [REQUEST: %s]", err, cr.String())
 	}

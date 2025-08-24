@@ -34,7 +34,7 @@ type CommandHandler interface {
 	Handle(context.Context, Config, []string) error
 }
 
-func Initialize() (err error) {
+func Initialize(w OutputWriter) (err error) {
 	err = ValidateCommands()
 	if err != nil {
 		goto end
@@ -44,6 +44,9 @@ func Initialize() (err error) {
 	if err != nil {
 		goto end
 	}
+
+	SetOutput(w)
+
 end:
 	return err
 }

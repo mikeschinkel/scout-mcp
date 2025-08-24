@@ -27,9 +27,9 @@ type ConfigProvider interface {
 
 type RunArgs struct {
 	Args           []string
-	MCPInput       io.Reader
-	MCPOutput      io.Writer
-	CLIOutput      cliutil.OutputWriter
+	MCPReader      io.Reader
+	MCPWriter      io.Writer
+	CLIWriter      cliutil.OutputWriter
 	ConfigProvider ConfigProvider
 }
 
@@ -46,7 +46,7 @@ func RunMain(ctx context.Context, ra RunArgs) (err error) {
 	}
 
 	// Initialize CLI framework
-	err = cliutil.Initialize()
+	err = cliutil.Initialize(ra.CLIWriter)
 	if err != nil {
 		logger.Error("Failed to initialize CLI framework", "error", err)
 		goto end
@@ -56,7 +56,7 @@ func RunMain(ctx context.Context, ra RunArgs) (err error) {
 	ctxWithCancel, cancel = setupSignalHandling(ctx, logger)
 	defer cancel()
 
-	ra.ConfigProvider.SetIO(ra.MCPInput, ra.MCPOutput)
+	ra.ConfigProvider.SetIO(ra.MCPReader, ra.MCPWriter)
 
 	// Set up command runner
 	runner = cliutil.NewCmdRunner(cliutil.CmdRunnerArgs{
@@ -72,7 +72,7 @@ func RunMain(ctx context.Context, ra RunArgs) (err error) {
 			logger.Info("Operation cancelled by user")
 			goto end
 		}
-		ra.CLIOutput.Errorf("Error: %v\n", err)
+		cliutil.Errorf("Error: %v\n", err)
 		logger.Error("Command failed", "error", err)
 		goto end
 	}
