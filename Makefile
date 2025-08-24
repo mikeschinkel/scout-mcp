@@ -1,7 +1,7 @@
 # Scout MCP Makefile
 # Provides common development tasks for building, testing, and running Scout MCP
 
-.PHONY: all build test test-unit test-integration clean fmt vet tidy install help run dev deps check
+.PHONY: all build test test-unit test-integration test-coverage clean fmt vet tidy install help run dev deps check
 
 # Default target
 all: build test
@@ -51,12 +51,26 @@ test:
 	@go test -timeout $(TEST_TIMEOUT) ./...
 	@echo "$(GREEN)🎉 All tests completed!$(NC)"
 
+# Run only unit tests (mcptools/ package)
+test-unit:
+	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
+	@go test -timeout $(TEST_TIMEOUT) ./...
+	@echo "$(GREEN)✅ Unit tests completed$(NC)"
+
+# Run only integration tests (test/ package)
+test-integration:
+	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
+	@go test -timeout $(TEST_TIMEOUT) ./test
+	@echo "$(GREEN)✅ Integration tests completed$(NC)"
+
 # Run tests with coverage
-test-cover:
+test-coverage:
 	@echo "$(BLUE)📊 Running tests with coverage...$(NC)"
-	@go test -coverprofile=coverage.out ./test
-	@go test -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out -o coverage.html
+	@go test -coverprofile=coverage-integration.out ./test
+	@go test -coverprofile=coverage-unit.out ./...
+	@echo "$(GREEN)✅ Coverage reports generated$(NC)"
+	@echo "$(BLUE)📊 Generating HTML coverage report...$(NC)"
+	@go tool cover -html=coverage-unit.out -o coverage.html
 	@echo "$(GREEN)✅ Coverage report generated: coverage.html$(NC)"
 
 ## Code Quality Commands
@@ -105,7 +119,7 @@ run: build
 		echo "$(RED)❌ Usage: make run PATH_ARG=/path/to/directory$(NC)"; \
 		exit 1; \
 	fi
-	@./$(BINARY_PATH) $(PATH_ARG)
+	@./$(BINARY_PATH) mcp $(PATH_ARG)
 
 # Initialize configuration with default path
 init: build
@@ -123,7 +137,7 @@ run-only: build
 		echo "$(RED)❌ Usage: make run-only PATH_ARG=/path/to/directory$(NC)"; \
 		exit 1; \
 	fi
-	@./$(BINARY_PATH) --only $(PATH_ARG)
+	@./$(BINARY_PATH) mcp --only $(PATH_ARG)
 
 ## Docker Commands (for future use)
 
@@ -153,7 +167,7 @@ help:
 	@echo "$(BOLD)Scout MCP Development Commands$(NC)"
 	@echo ""
 	@echo "$(BOLD)Build Commands:$(NC)"
-	@echo "  $(BLUE)build$(NC)         Build the scout-mcp binary"
+	@echo "  $(BLUE)build$(NC)         Build the scout binary"
 	@echo "  $(BLUE)install$(NC)       Install binary to GOPATH/bin"
 	@echo "  $(BLUE)clean$(NC)         Clean build artifacts"
 	@echo ""
@@ -162,7 +176,6 @@ help:
 	@echo "  $(BLUE)test-unit$(NC)     Run unit tests only"
 	@echo "  $(BLUE)test-integration$(NC) Run integration tests only"
 	@echo "  $(BLUE)test-coverage$(NC) Run tests with coverage report"
-	@echo "  $(BLUE)test-watch$(NC)    Run tests in watch mode (requires entr)"
 	@echo ""
 	@echo "$(BOLD)Code Quality:$(NC)"
 	@echo "  $(BLUE)fmt$(NC)           Format all Go code"
