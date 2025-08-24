@@ -3,6 +3,7 @@ package cliutil
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -145,10 +146,18 @@ COMMANDS:
 
 	// Show all top-level commands
 	topCmds := GetTopLevelCmds()
+	// Sort commands by name for deterministic output
+	sort.Slice(topCmds, func(i, j int) bool {
+		return topCmds[i].Name() < topCmds[j].Name()
+	})
 	for _, cmd := range topCmds {
 		subCmds := GetSubCmds(cmd.Name())
 		subCmdText := ""
 		if len(subCmds) > 0 {
+			// Sort subcommands for deterministic output
+			sort.Slice(subCmds, func(i, j int) bool {
+				return subCmds[i].Name() < subCmds[j].Name()
+			})
 			subCmdText = fmt.Sprintf(" [%s]", subCmds[0].Name()) // Show first subcommand as example
 		}
 		Printf("    %-20s %s\n", cmd.Name()+subCmdText, cmd.Description())
