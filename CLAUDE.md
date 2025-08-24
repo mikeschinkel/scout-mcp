@@ -41,22 +41,28 @@ make run-only PATH_ARG=/tmp/safe-dir
 make help
 ```
 
-#### Direct Go Commands
+#### Direct Binary Commands
 ```bash
 # Build the main binary
-go build -o bin/scout-mcp ./cmd/main.go
+make build
 
-# Run directly during development
-go run ./cmd/main.go
+# Initialize configuration with allowed path
+./bin/scout init ~/Projects
 
-# Initialize configuration with default path
-go run ./cmd/main.go init ~/Projects
+# Start MCP server with additional paths
+./bin/scout mcp ~/MyProjects
 
-# Run server with additional paths
-go run ./cmd/main.go ~/MyProjects
+# Start server with only specified path (ignore config)  
+./bin/scout mcp --only /tmp/safe-dir
 
-# Run server with only specified path (ignore config)
-go run ./cmd/main.go --only /tmp/safe-dir
+# Session management
+./bin/scout session new
+./bin/scout session list
+./bin/scout session clear all
+
+# Tool management
+./bin/scout tool list
+./bin/scout tool run read_files
 ```
 
 ### Testing and Linting

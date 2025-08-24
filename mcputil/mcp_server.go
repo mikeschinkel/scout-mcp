@@ -190,9 +190,10 @@ func (s *mcpServer) ServeStdio(ctx context.Context) error {
 		cancel()
 	}()
 	cr := NewCapturingReader(s.Stdin)
+	logger.Info("Listening...", "heard", cr.String())
 	err := sss.Listen(ctx, cr, s.Stdout)
 	if err != nil {
-		err = fmt.Errorf("ERROR: %w [REQUEST: %s]", err, cr.Capture)
+		err = fmt.Errorf("ERROR: %w [REQUEST: %s]", err, cr.String())
 	}
 	return err
 }
@@ -202,31 +203,4 @@ func (s *mcpServer) ServeStdio(ctx context.Context) error {
 func (s *mcpServer) Shutdown(context.Context) error {
 	// mcp-go may not have explicit shutdown - check docs
 	return nil
-}
-
-var _ io.Reader = (*CapturingReader)(nil)
-
-// CapturingReader wraps an io.Reader to capture all read data
-// for debugging and error reporting purposes.
-type CapturingReader struct {
-	io.Reader
-	Capture []byte
-}
-
-// NewCapturingReader creates a new CapturingReader that captures
-// all data read from the underlying reader.
-func NewCapturingReader(reader io.Reader) *CapturingReader {
-	return &CapturingReader{Reader: reader}
-}
-
-// Read implements io.Reader by reading from the underlying reader
-// while capturing the read data for later inspection.
-func (c *CapturingReader) Read(p []byte) (n int, err error) {
-	n, err = c.Reader.Read(p)
-	if err != nil {
-		goto end
-	}
-	c.Capture = append(c.Capture, p...)
-end:
-	return n, err
 }

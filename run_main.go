@@ -2,85 +2,98 @@ package scout
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
+	"github.com/mikeschinkel/scout-mcp/cliutil"
 	"github.com/mikeschinkel/scout-mcp/langutil"
 	"github.com/mikeschinkel/scout-mcp/mcptools"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
 
+// ConfigProvider provides access to CLI commands and configuration
+type ConfigProvider interface {
+	GetConfig() cliutil.Config
+	GlobalFlagSet() *cliutil.FlagSet
+	SetIO(io.Reader, io.Writer)
+	GetIO() (io.Reader, io.Writer)
+}
+
 type RunArgs struct {
-	Args   []string
-	Stdin  io.Reader
-	Stdout io.Writer
+	Args           []string
+	MCPInput       io.Reader
+	MCPOutput      io.Writer
+	CLIOutput      cliutil.OutputWriter
+	ConfigProvider ConfigProvider
 }
 
 func RunMain(ctx context.Context, ra RunArgs) (err error) {
-	var server *MCPServer
-	var args Args
-	var serverOpts Opts
+	var runner *cliutil.CmdRunner
+	var ctxWithCancel context.Context
+	var cancel context.CancelFunc
 
-	// Initialize scout package
+	// Initialize Scout
 	err = Initialize()
 	if err != nil {
-		logger.Error("Failed to initialize %s: %v", AppName, err)
+		logger.Error("Failed to initialize Scout", "error", err)
 		goto end
 	}
 
-	logger.Info("CLI Args:", "args", os.Args[1:])
-
-	args, err = ParseArgs(ra.Args[1:])
+	// Initialize CLI framework
+	err = cliutil.Initialize()
 	if err != nil {
-		logger.Error("Error parsing arguments", "error", err)
+		logger.Error("Failed to initialize CLI framework", "error", err)
 		goto end
 	}
 
-	if args.IsInit {
-		err = CreateDefaultConfig(args)
-		if err != nil {
-			logger.Error("Failed to create config", "error", err)
+	// Set up signal handling for the context
+	ctxWithCancel, cancel = setupSignalHandling(ctx, logger)
+	defer cancel()
+
+	ra.ConfigProvider.SetIO(ra.MCPInput, ra.MCPOutput)
+
+	// Set up command runner
+	runner = cliutil.NewCmdRunner(cliutil.CmdRunnerArgs{
+		Config:        ra.ConfigProvider.GetConfig(),
+		GlobalFlagSet: ra.ConfigProvider.GlobalFlagSet(),
+		Args:          ra.Args[1:], // Skip program name
+	})
+
+	// Execute command
+	err = runner.Run(ctxWithCancel)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			logger.Info("Operation cancelled by user")
 			goto end
 		}
-		goto end
-	}
-
-	// Convert MCPServerOpts to Opts
-	serverOpts = Opts{
-		OnlyMode:        args.ServerOpts.OnlyMode,
-		AdditionalPaths: args.AdditionalPaths,
-		Stdin:           ra.Stdin,
-		Stdout:          ra.Stdout,
-	}
-
-	server, err = NewMCPServer(serverOpts)
-	if err != nil {
-		if len(serverOpts.AdditionalPaths) == 0 && !serverOpts.OnlyMode {
-			ShowUsageError(err)
-			goto end
-		}
-
-		logger.Error("Failed to create server", "error", err)
-		goto end
-	}
-
-	logger.Info("Scout-MCP File Operations Server starting")
-	logger.Info("Allowed directories:")
-	for path := range server.AllowedPaths() {
-		logger.Info("Directory", "path", path)
-	}
-
-	err = server.StartMCP(ctx)
-	if err != nil {
-		logger.Error("MCP server failed", "error", err)
+		ra.CLIOutput.Errorf("Error: %v\n", err)
+		logger.Error("Command failed", "error", err)
 		goto end
 	}
 
 end:
 	return err
+}
+
+func setupSignalHandling(ctx context.Context, logger *slog.Logger) (context.Context, context.CancelFunc) {
+	ctxWithCancel, cancel := context.WithCancel(ctx)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		logger.Info("Received interrupt signal, shutting down...")
+		cancel()
+	}()
+
+	return ctxWithCancel, cancel
 }
 
 func Initialize() (err error) {
@@ -95,7 +108,7 @@ func Initialize() (err error) {
 
 	err = langutil.Initialize(langutil.Args{
 		AppName: AppName,
-		Logger: logger,
+		Logger:  logger,
 	})
 
 	logger.Info("langutil initialized\n")

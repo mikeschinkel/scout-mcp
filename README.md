@@ -20,24 +20,30 @@ Scout-MCP is a comprehensive Model Context Protocol (MCP) server that provides C
 ## Quick Start
 
 ```bash
-# Clone/create your project
+# Clone and build
 git clone your-repo/scout-mcp
 cd scout-mcp
+make build
 
-# Initialize Go module
-go mod init scout-mcp
+# Create default config with allowed directory
+./bin/scout init ~/Code
 
-# Create default config with custom directory
-go run cmd/main.go init ~/Code
+# Start MCP server with config file paths
+./bin/scout mcp
 
-# Start server with config file paths
-go run cmd/main.go
-
-# Or add additional path to config file paths
-go run cmd/main.go ~/MyProjects
+# Or start with additional paths
+./bin/scout mcp ~/MyProjects
 
 # Or use only a specific path (ignore config)
-go run cmd/main.go --only /tmp/safe-dir
+./bin/scout mcp --only /tmp/safe-dir
+
+# Session management
+./bin/scout session new      # Create new session
+./bin/scout session list     # List active sessions
+./bin/scout session clear all  # Clear all sessions
+
+# Tool operations
+./bin/scout tool list        # List available tools
 ```
 
 ## Documentation
@@ -72,8 +78,20 @@ Edit (or create) the Claude Desktop config file:
 {
   "mcpServers": {
     "scout-mcp": {
-      "command": "/absolute/path/to/scout-mcp/bin/scout-mcp",
-      "args": ["/Users/yourusername/Projects"]
+      "command": "/absolute/path/to/scout-mcp/bin/scout",
+      "args": ["mcp", "/Users/yourusername/Projects"]
+    }
+  }
+}
+```
+
+**Alternative with only mode:**
+```json
+{
+  "mcpServers": {
+    "scout-mcp": {
+      "command": "/absolute/path/to/scout-mcp/bin/scout",
+      "args": ["mcp", "--only", "/Users/yourusername/Projects"]
     }
   }
 }

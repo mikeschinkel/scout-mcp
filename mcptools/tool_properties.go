@@ -42,4 +42,8 @@ var (
 	CreateDirsProperty     = mcputil.Bool("create_dirs", "Create parent directories if needed")
 	MaxProjectsProperty    = mcputil.Number("max_projects", "Maximum number of recent projects to track (default: 5)", mcputil.DefaultInt{5})
 	IgnoreGitProperty      = mcputil.Bool("ignore_git_requirement", "If true, don't require .git directory to consider a directory a project (default: false)")
+
+	// Pagination properties for limiting response size
+	MaxIssuesProperty = mcputil.Number("max_issues", "Maximum number of issues to return (default: 500)", mcputil.DefaultInt{500})
+	OffsetProperty    = mcputil.Number("offset", "Number of issues to skip for pagination (default: 0)", mcputil.DefaultInt{0})
 )

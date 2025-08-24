@@ -15,6 +15,8 @@ import (
 	"github.com/mikeschinkel/scout-mcp"
 	"github.com/mikeschinkel/scout-mcp/fsfix"
 	"github.com/mikeschinkel/scout-mcp/jsontest"
+	"github.com/mikeschinkel/scout-mcp/scoutcmds"
+	"github.com/mikeschinkel/scout-mcp/testutil"
 	"github.com/tidwall/gjson"
 
 	_ "github.com/mikeschinkel/scout-mcp/jsontest/pipefuncs"
@@ -38,7 +40,7 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 				t.Errorf("Error unmarshalling arguments: %v", err)
 				return
 			}
-			
+
 			// Transform relative paths to absolute paths in temp directory
 			if fixture != nil {
 				transformPaths(argMap, fixture.TempDir())
@@ -50,26 +52,29 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 		tt.input.Params.Arguments = argMap
 		input, err = json.Marshal(tt.input)
 		if err != nil {
-			t.Errorf("Error marshalling input: %v", err)
+			t.Errorf("Error marshalling reader: %v", err)
 			return
 		}
 
 		// Debug: Print what we're sending
-		stdin := strings.NewReader(string(input) + "\n")
-		//stdin := strings.NewReader(string(input) + "\n")
-		stdout := &bytes.Buffer{}
-		
-		// Use fixture temp directory as allowed path
-		cliArgs := []string{""}
+		reader := strings.NewReader(string(input) + "\n")
+		//reader := strings.NewReader(string(input) + "\n")
+		writer := &bytes.Buffer{}
+
+		// Use fixture temp directory as allowed path for MCP server
+		cliArgs := []string{"", "mcp"}
 		if fixture != nil {
 			cliArgs = append(cliArgs, fixture.TempDir())
 		} else {
 			cliArgs = append(cliArgs, tt.cliArgs...)
 		}
+		cliOutput := testutil.NewTestOutputWriter()
 		err = scout.RunMain(ctx, scout.RunArgs{
-			Args:   cliArgs,
-			Stdin:  stdin,
-			Stdout: stdout,
+			Args:           cliArgs,
+			MCPInput:       reader,
+			MCPOutput:      writer,
+			CLIOutput:      cliOutput,
+			ConfigProvider: scoutcmds.NewConfigProvider(),
 		})
 		if err != nil {
 			t.Error(err.Error())
@@ -77,11 +82,12 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 		var output []byte
 		for i := 0; i < 100; i++ { // Max attempts
 			time.Sleep(10 * time.Millisecond)
-			output = stdout.Bytes()
+			output = writer.Bytes()
 			if len(output) > 0 {
 				break
 			}
 		}
+
 		// Log the response for analysis
 		err = shared.LogEntryFunc(map[string]any{
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -99,12 +105,12 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 		for k, v := range st.expected {
 			expected[k] = v
 		}
-		isError:= gjson.GetBytes(output,"result.isError")
-		switch  {
+		isError := gjson.GetBytes(output, "result.isError")
+		switch {
 		case !tt.wantErr && isError.Bool():
-			errMsg:= gjson.GetBytes(output, "result.content.0.text")
+			errMsg := gjson.GetBytes(output, "result.content.0.text")
 			if !errMsg.Exists() {
-				errMsg.Str = "Error returned but without any message: "+string(output)
+				errMsg.Str = "Error returned but without any message: " + string(output)
 			}
 			t.Error(errMsg.Str)
 			return
@@ -124,7 +130,7 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 	if tt.subtests == nil {
 		// No subtests, run single test
 		t.Run(tt.name, func(t *testing.T) {
-			testFunc(t,"", subtest{
+			testFunc(t, "", subtest{
 				name:      tt.name,
 				arguments: tt.arguments,
 				expected:  tt.expected,
@@ -135,9 +141,9 @@ func RunJSONRPCTest(t *testing.T, fixture *fsfix.RootFixture, tt test) {
 	// Run subtests for each file type
 	for fileType, subtests := range tt.subtests {
 		t.Run(fileType, func(t *testing.T) {
-			for i,subtest := range subtests {
-				name:= strconv.Itoa(i+1)
-				if subtest.name !=""{
+			for i, subtest := range subtests {
+				name := strconv.Itoa(i + 1)
+				if subtest.name != "" {
 					name = fmt.Sprintf("%s-%d", subtest.name, i+1)
 				}
 				t.Run(name, func(t *testing.T) {
@@ -177,4 +183,3 @@ func isPathField(field string) bool {
 	}
 	return false
 }
-

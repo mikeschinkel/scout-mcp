@@ -7,9 +7,9 @@
 all: build test
 
 # Variables
-BINARY_NAME=scout-mcp
+BINARY_NAME=scout
 BINARY_PATH=./bin/$(BINARY_NAME)
-CMD_PATH=./cmd/scout-mcp/main.go
+CMD_PATH=./cmd/scout/main.go
 TEST_TIMEOUT=30s
 
 # Colors for output

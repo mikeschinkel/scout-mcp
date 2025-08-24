@@ -76,6 +76,7 @@ func (s *MCPServer) StartMCP(ctx context.Context) (err error) {
 
 	// Start the stdio server (blocking)
 	err = s.mcpServer.ServeStdio(ctx)
+	logger.Info("MCP server stopped.")
 
 	return err
 }

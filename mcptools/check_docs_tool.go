@@ -20,6 +20,8 @@ func init() {
 				RequiredPathProperty,
 				RecursiveProperty,
 				MaxFilesProperty,
+				MaxIssuesProperty,
+				OffsetProperty,
 			},
 		}),
 	})
