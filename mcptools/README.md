@@ -333,6 +333,30 @@ Find and replace text patterns with support for regex.
 
 ## Language-Aware Tools (AST-Based)
 
+### `check_docs`
+Find all types/funcs/var/consts/etc without conforming comment, files without a top comment, and subdirectories withouth a README.md file.
+
+**Parameters:**
+- `session_token` (required): Session token from start_session
+- `path` (required): Full path to the source code directory to check
+- `language` (required): Programming language ("go" currently supported)
+- `offset`: Number of items to skip for pagination (default: 0)
+- `recursive`: Check only the path (false) or check path and all its subdirectories (true) (default: true)
+
+**Example:**
+```json
+{
+  "tool": "check_docs",
+  "parameters": {
+    "session_token": "your-session-token",
+    "path": "/Users/mike/project/myproject",
+    "language": "go", 
+    "offset": 100,
+    "recursive": true 
+  }
+}
+```
+
 ### `find_file_part`
 Find specific language constructs (functions, types, constants) by name using AST parsing.
 

@@ -270,6 +270,7 @@ Scout-MCP provides 20 comprehensive tools to Claude:
 - **`replace_pattern`**: Find and replace text patterns with regex support
 
 ### Language-Aware Operations (AST-based)
+- **`check_docs`**: Find all types/funcs/var/consts/etc w/o conforming comment, top comment, or README.
 - **`find_file_part`**: Find specific language constructs (functions, types, etc.)
 - **`replace_file_part`**: Replace language constructs using syntax-aware parsing (requires approval)
 - **`validate_files`**: Validate syntax of source code files
