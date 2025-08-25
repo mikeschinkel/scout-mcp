@@ -42,6 +42,5 @@ var (
 	RecursiveProperty      = mcputil.Bool("recursive", "Process directories recursively", mcputil.DefaultTrue{})
 	RegexProperty          = mcputil.Bool("regex", "Whether to treat pattern as regular expression")
 	ReplacementProperty    = mcputil.String("replacement", "Text to replace the pattern with")
-	SessionIdProperty      = mcputil.String("session_id", "Session ID returned by start_session")
 	StartLineProperty      = mcputil.Number("start_line", "First line to handle, inclusive")
 )
