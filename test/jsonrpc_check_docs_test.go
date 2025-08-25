@@ -16,7 +16,7 @@ type checkDocsArgs struct {
 // TestCheckDocsToolWithJSONRPC tests the check_docs tool via JSON-RPC.
 func TestCheckDocsToolWithJSONRPC(t *testing.T) {
 	fixture := fsfix.NewRootFixture("check-docs-jsonrpc-test")
-	
+
 	// Create a Go file with documentation issues
 	fixture.AddFileFixture("main.go", &fsfix.FileFixtureArgs{
 		Content: `package main
@@ -30,8 +30,8 @@ type Config struct {
 }
 `,
 	})
-	
-	// Create a fully documented Go file  
+
+	// Create a fully documented Go file
 	fixture.AddFileFixture("documented.go", &fsfix.FileFixtureArgs{
 		Content: `// Package main provides a documented example.
 package main
@@ -42,7 +42,7 @@ func DocumentedFunc() {
 }
 `,
 	})
-	
+
 	fixture.Setup(t)
 	defer fixture.Cleanup()
 
@@ -52,9 +52,11 @@ func DocumentedFunc() {
 			"jsonrpc":               "2.0",
 			"result.content.#":      1,
 			"result.content.0.type": "text",
-			"result.content.0.text|json()|path|notEmpty()": true,
-			"result.content.0.text|json()|total|exists()":  true,
-			"result.content.0.text|json()|issues|exists()": true,
+			"result.content.0.text|json()|path|notEmpty()":          true,
+			"result.content.0.text|json()|total_count|exists()":     true,
+			"result.content.0.text|json()|returned_count|exists()":  true,
+			"result.content.0.text|json()|remaining_count|exists()": true,
+			"result.content.0.text|json()|issues|exists()":          true,
 		},
 		subtests: map[string][]subtest{
 			"CurrentRepo": {
@@ -70,7 +72,7 @@ func DocumentedFunc() {
 						Path: ".", // Pass directory, tool will find main.go
 					},
 					expected: map[string]any{
-						"result.content.0.text|json()|total|exists()": true, // Should find documentation issues in main.go
+						"result.content.0.text|json()|total_count|exists()": true, // Should find documentation issues in main.go
 					},
 				},
 			},
@@ -81,7 +83,7 @@ func DocumentedFunc() {
 						Recursive: false,
 					},
 					expected: map[string]any{
-						"result.content.0.text|json()|total|exists()": true, // Should find some issues
+						"result.content.0.text|json()|total_count|exists()": true, // Should find some issues
 					},
 				},
 			},
@@ -92,7 +94,7 @@ func DocumentedFunc() {
 						Recursive: true,
 					},
 					expected: map[string]any{
-						"result.content.0.text|json()|total|exists()": true, // Should find issues including README.md
+						"result.content.0.text|json()|total_count|exists()": true, // Should find issues including README.md
 					},
 				},
 			},
@@ -103,7 +105,7 @@ func DocumentedFunc() {
 						MaxFiles: 1,
 					},
 					expected: map[string]any{
-						"result.content.0.text|json()|total|exists()": true, // Should respect max_files limit
+						"result.content.0.text|json()|total_count|exists()": true, // Should respect max_files limit
 					},
 				},
 			},

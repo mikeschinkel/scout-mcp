@@ -184,9 +184,7 @@ use (
 	t.Run("recursive_workspace", func(t *testing.T) {
 		gotExceptions, err := golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
 			Path:      tf.TempDir(),
-			Recursive: golang.DoRecurse,
-			MaxFiles:  10000,
-		})
+			Recursive: golang.DoRecurse})
 
 		if err != nil {
 			t.Errorf("DocExceptions() recursive error = %v", err)
@@ -201,9 +199,7 @@ use (
 	t.Run("non_recursive_root", func(t *testing.T) {
 		gotExceptions, err := golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
 			Path:      tf.TempDir(),
-			Recursive: golang.DoNotRecurse,
-			MaxFiles:  10000,
-		})
+			Recursive: golang.DoNotRecurse})
 
 		// Should not error for "no Go files" case
 		if err != nil {
@@ -565,9 +561,7 @@ func TempFunction() {
 		// Test with default exclusions - should skip .git and node_modules
 		exceptions, err := golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
 			Path:      fixture.Dir(),
-			Recursive: golang.DoRecurse,
-			MaxFiles:  100,
-		})
+			Recursive: golang.DoRecurse})
 
 		if err != nil {
 			t.Fatalf("DocExceptions() error = %v", err)
@@ -590,10 +584,8 @@ func TempFunction() {
 	t.Run("CustomExclusions", func(t *testing.T) {
 		// Test with custom exclusions added to defaults
 		exceptions, err := golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
-			Path:        fixture.Dir(),
-			Recursive:   golang.DoRecurse,
-			MaxFiles:    100,
-			Exclude:     []string{"custom_exclude"},
+			Path:      fixture.Dir(),
+			Recursive: golang.DoRecurse, Exclude: []string{"custom_exclude"},
 			ExcludeMode: golang.AddToDefaults,
 		})
 
@@ -618,10 +610,8 @@ func TempFunction() {
 	t.Run("ReplaceExclusions", func(t *testing.T) {
 		// Test with completely replacing default exclusions
 		exceptions, err := golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
-			Path:        fixture.Dir(),
-			Recursive:   golang.DoRecurse,
-			MaxFiles:    100,
-			Exclude:     []string{"custom_exclude"}, // Only exclude custom, not defaults
+			Path:      fixture.Dir(),
+			Recursive: golang.DoRecurse, Exclude: []string{"custom_exclude"}, // Only exclude custom, not defaults
 			ExcludeMode: golang.ReplaceDefaults,
 		})
 
@@ -641,10 +631,8 @@ func TempFunction() {
 	t.Run("FileExclusions", func(t *testing.T) {
 		// Test excluding specific files
 		exceptions, err := golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
-			Path:        fixture.Dir(),
-			Recursive:   golang.DoRecurse,
-			MaxFiles:    100,
-			Exclude:     []string{"excluded_file.go", "temp_file.go"},
+			Path:      fixture.Dir(),
+			Recursive: golang.DoRecurse, Exclude: []string{"excluded_file.go", "temp_file.go"},
 			ExcludeMode: golang.AddToDefaults,
 		})
 

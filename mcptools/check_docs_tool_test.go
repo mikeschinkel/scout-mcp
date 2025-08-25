@@ -15,9 +15,14 @@ const CheckDocsDirPrefix = "check-docs-tool-test"
 
 // CheckDocsResult matches the JSON output structure of CheckDocsTool
 type CheckDocsResult struct {
-	Path   string           `json:"path"`
-	Issues []CheckDocsIssue `json:"issues"`
-	Total  int              `json:"total"`
+	Path           string           `json:"path"`
+	Issues         []CheckDocsIssue `json:"issues"`
+	ReturnedCount  int              `json:"returned_count"`
+	TotalCount     int              `json:"total_count"`
+	RemainingCount int              `json:"remaining_count"`
+	SizeLimited    bool             `json:"size_limited"`
+	ResponseSize   int              `json:"response_size_chars"`
+	Message        string           `json:"message,omitempty"`
 }
 
 type CheckDocsIssue struct {
@@ -56,8 +61,9 @@ func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, op
 		// Verify required fields exist
 		assert.NotEmpty(t, result.Path, "Path should not be empty")
 		assert.NotNil(t, result.Issues, "Issues should not be nil (can be empty slice)")
-		assert.GreaterOrEqual(t, result.Total, 0, "Total should be non-negative")
-		assert.Equal(t, result.Total, len(result.Issues), "Total should match issues array length")
+		assert.GreaterOrEqual(t, result.TotalCount, 0, "TotalCount should be non-negative")
+		assert.Equal(t, result.ReturnedCount, len(result.Issues), "ReturnedCount should match issues array length")
+		assert.Equal(t, result.TotalCount-result.ReturnedCount, result.RemainingCount, "RemainingCount should be correct")
 	}
 
 	// Check specific path if expected
@@ -67,11 +73,11 @@ func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, op
 
 	// Check issue count (only if explicitly set)
 	if opts.ExpectedIssueCount > 0 || (opts.ExpectedIssueCount == 0 && opts.ExpectedMinIssues == 0) {
-		assert.Equal(t, opts.ExpectedIssueCount, result.Total, "Total should match expected count")
+		assert.Equal(t, opts.ExpectedIssueCount, result.TotalCount, "TotalCount should match expected count")
 		assert.Len(t, result.Issues, opts.ExpectedIssueCount, "Issues array should match expected count")
 	}
 	if opts.ExpectedMinIssues > 0 {
-		assert.GreaterOrEqual(t, result.Total, opts.ExpectedMinIssues, "Should have at least minimum issues")
+		assert.GreaterOrEqual(t, result.TotalCount, opts.ExpectedMinIssues, "Should have at least minimum issues")
 		assert.GreaterOrEqual(t, len(result.Issues), opts.ExpectedMinIssues, "Issues array should have minimum count")
 	}
 

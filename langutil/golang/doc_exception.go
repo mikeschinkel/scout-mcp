@@ -207,7 +207,6 @@ func NewDocException(file string, Type DocExceptionType, args *DocExceptionArgs)
 type DocsExceptionsArgs struct {
 	Path        string           // File or directory path to analyze (supports "..." for recursive)
 	Recursive   RecurseDirective // Whether to process directories recursively
-	MaxFiles    int              // Maximum number of files to process (0 for unlimited)
 	Exclude     []string         // File and directory names to exclude (used with ExcludeMode)
 	ExcludeMode ExcludeMode      // How to interpret Exclude (default: UseDefaults)
 }
