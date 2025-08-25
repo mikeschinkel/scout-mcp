@@ -300,7 +300,6 @@ end:
 //   - Documentation coverage reporting and metrics
 func DocExceptions(ctx context.Context, args *DocsExceptionsArgs) (exceptions []DocException, err error) {
 	var dir *GoDirectory
-	var traverseArgs *TraverseArgs
 
 	ensureLogger()
 
@@ -315,16 +314,16 @@ func DocExceptions(ctx context.Context, args *DocsExceptionsArgs) (exceptions []
 	}
 
 	dir = NewGoDirectory(args.Path, nil)
-	traverseArgs = &TraverseArgs{
+
+	err = dir.Traverse(ctx, &TraverseArgs{
 		RecurseDirectory: args.Recursive,
 		Exclude:          args.Exclude,
 		ExcludeMode:      args.ExcludeMode,
-	}
-	err = dir.Traverse(ctx, traverseArgs)
+	})
 	if err != nil {
 		goto end
 	}
-	exceptions = dir.Exceptions(ctx, args.Path, args.Recursive)
+	exceptions = dir.Exceptions(ctx, args)
 
 end:
 	return exceptions, err

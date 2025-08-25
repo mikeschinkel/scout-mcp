@@ -35,12 +35,14 @@ type CheckDocsIssue struct {
 }
 
 type checkDocsResultOpts struct {
-	ExpectError          bool
-	ExpectedErrorMsg     string
-	ExpectedIssueCount   int // Use -1 to indicate "don't check exact count"
-	ExpectedMinIssues    int
-	ExpectedPath         string
-	ExpectValidStructure bool
+	ExpectError           bool
+	ExpectedErrorMsg      string
+	ExpectedIssueCount    int // Use -1 to indicate "don't check exact count" - for tests where TotalCount == Issues.length
+	ExpectedTotalCount    int // Use -1 to indicate "don't check" - checks TotalCount specifically
+	ExpectedReturnedCount int // Use -1 to indicate "don't check" - checks Issues.length specifically
+	ExpectedMinIssues     int
+	ExpectedPath          string
+	ExpectValidStructure  bool
 }
 
 func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, opts checkDocsResultOpts) {
@@ -63,7 +65,11 @@ func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, op
 		assert.NotNil(t, result.Issues, "Issues should not be nil (can be empty slice)")
 		assert.GreaterOrEqual(t, result.TotalCount, 0, "TotalCount should be non-negative")
 		assert.Equal(t, result.ReturnedCount, len(result.Issues), "ReturnedCount should match issues array length")
-		assert.Equal(t, result.TotalCount-result.ReturnedCount, result.RemainingCount, "RemainingCount should be correct")
+
+		// Only validate RemainingCount with old logic if not using offset-specific validation
+		if opts.ExpectedTotalCount == 0 && opts.ExpectedReturnedCount == 0 {
+			assert.Equal(t, result.TotalCount-result.ReturnedCount, result.RemainingCount, "RemainingCount should be correct")
+		}
 	}
 
 	// Check specific path if expected
@@ -71,11 +77,22 @@ func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, op
 		assert.Equal(t, opts.ExpectedPath, result.Path, "Path should match expected")
 	}
 
-	// Check issue count (only if explicitly set)
+	// Check issue count (only if explicitly set) - this is for tests where TotalCount == Issues.length
 	if opts.ExpectedIssueCount > 0 || (opts.ExpectedIssueCount == 0 && opts.ExpectedMinIssues == 0) {
 		assert.Equal(t, opts.ExpectedIssueCount, result.TotalCount, "TotalCount should match expected count")
 		assert.Len(t, result.Issues, opts.ExpectedIssueCount, "Issues array should match expected count")
 	}
+
+	// Check total count specifically (for offset/limit scenarios) - only check if ExpectedIssueCount disabled
+	if opts.ExpectedTotalCount > 0 && opts.ExpectedIssueCount == -1 {
+		assert.Equal(t, opts.ExpectedTotalCount, result.TotalCount, "TotalCount should match expected total count")
+	}
+
+	// Check returned count specifically (for offset/limit scenarios) - only check if ExpectedIssueCount disabled
+	if opts.ExpectedReturnedCount >= 0 && opts.ExpectedIssueCount == -1 {
+		assert.Len(t, result.Issues, opts.ExpectedReturnedCount, "Issues array should match expected returned count")
+	}
+
 	if opts.ExpectedMinIssues > 0 {
 		assert.GreaterOrEqual(t, result.TotalCount, opts.ExpectedMinIssues, "Should have at least minimum issues")
 		assert.GreaterOrEqual(t, len(result.Issues), opts.ExpectedMinIssues, "Issues array should have minimum count")
@@ -116,7 +133,8 @@ func TestCheckDocsTool(t *testing.T) {
 		properties := tool.Options().Properties
 		hasPath := false
 		hasRecursive := false
-		hasMaxFiles := false
+		hasLanguage := false
+		hasOffset := false
 
 		for _, prop := range properties {
 			switch prop.GetName() {
@@ -126,18 +144,22 @@ func TestCheckDocsTool(t *testing.T) {
 			case "recursive":
 				hasRecursive = true
 				assert.False(t, prop.IsRequired(), "recursive property should be optional")
-			case "max_files":
-				hasMaxFiles = true
-				assert.False(t, prop.IsRequired(), "max_files property should be optional")
+			case "language":
+				hasLanguage = true
+				assert.True(t, prop.IsRequired(), "language property should be required")
+			case "offset":
+				hasOffset = true
+				assert.False(t, prop.IsRequired(), "offset property should be optional")
 			}
 		}
 
 		assert.True(t, hasPath, "Tool should have path property")
 		assert.True(t, hasRecursive, "Tool should have recursive property")
-		assert.True(t, hasMaxFiles, "Tool should have max_files property")
+		assert.True(t, hasLanguage, "Tool should have language property")
+		assert.True(t, hasOffset, "Tool should have offset property")
 	})
 
-	t.Run("RequiredParameters_MissingPath_ShouldFail", func(t *testing.T) {
+	t.Run("RequiredParameters_MissingLanguage_ShouldFail", func(t *testing.T) {
 		tf := fsfix.NewRootFixture(CheckDocsDirPrefix)
 		defer tf.Cleanup()
 		tf.Setup(t)
@@ -148,16 +170,16 @@ func TestCheckDocsTool(t *testing.T) {
 
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
+			"path":          tf.TempDir(),
 			"recursive":     true,
-			"max_files":     100,
-			// Missing required "path" parameter
+			// Missing required "language" parameter
 		})
 
-		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle missing path parameter")
+		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle missing language parameter")
 
 		requireCheckDocsResult(t, result, err, checkDocsResultOpts{
 			ExpectError:      true,
-			ExpectedErrorMsg: "path",
+			ExpectedErrorMsg: "language",
 		})
 	})
 
@@ -192,6 +214,7 @@ type Config struct {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir(),
+			"language":      "go",
 		})
 
 		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error analyzing fully documented Go file")
@@ -231,6 +254,7 @@ type Config struct {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir(),
+			"language":      "go",
 		})
 
 		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error analyzing undocumented Go file")
@@ -278,6 +302,7 @@ func UndocumentedFunc() {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir(),
+			"language":      "go",
 			"recursive":     false,
 		})
 
@@ -327,6 +352,7 @@ func SubFunc() {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir(),
+			"language":      "go",
 			"recursive":     true,
 		})
 
@@ -339,7 +365,7 @@ func SubFunc() {
 		})
 	})
 
-	t.Run("ParameterCombinations_MaxFiles_ShouldLimitResults", func(t *testing.T) {
+	t.Run("ParameterCombinations_Language_ShouldWork", func(t *testing.T) {
 		tf := fsfix.NewRootFixture(CheckDocsDirPrefix)
 		defer tf.Cleanup()
 
@@ -364,13 +390,13 @@ func Function%d() {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir(),
+			"language":      "go",
 			"recursive":     true,
-			"max_files":     2, // Limit to 2 files
 		})
 
-		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should not error with max_files limit")
+		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should work with language parameter")
 
-		// Just verify the tool accepts max_files parameter and returns valid structure
+		// Just verify the tool accepts language parameter and returns valid structure
 		requireCheckDocsResult(t, result, err, checkDocsResultOpts{
 			ExpectValidStructure: true,
 			ExpectedPath:         pf.Dir(),
@@ -394,6 +420,7 @@ func Function%d() {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          nonExistentPath.Filepath,
+			"language":      "go",
 		})
 
 		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle non-existent path gracefully")
@@ -427,6 +454,7 @@ func Function%d() {
 		req := mcputil.NewMockRequest(mcputil.Params{
 			"session_token": testToken,
 			"path":          pf.Dir(),
+			"language":      "go",
 		})
 
 		result, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, req)), "Should handle directory with no Go files")
@@ -436,5 +464,101 @@ func Function%d() {
 			ExpectedPath:         pf.Dir(),
 			ExpectedIssueCount:   0, // No Go files = no issues
 		})
+	})
+
+	t.Run("OffsetParameter_ShouldSkipSpecifiedNumberOfIssues", func(t *testing.T) {
+		tf := fsfix.NewRootFixture(CheckDocsDirPrefix)
+		defer tf.Cleanup()
+
+		pf := tf.AddRepoFixture("offset-test-project", nil)
+
+		// Create multiple Go files with predictable documentation issues
+		for i := 1; i <= 5; i++ {
+			pf.AddFileFixture(fmt.Sprintf("file%d.go", i), &fsfix.FileFixtureArgs{
+				Content: fmt.Sprintf(`package main
+
+func Function%d() {
+	// Missing documentation
+}
+
+type Type%d struct {
+	Field string
+}
+`, i, i),
+			})
+		}
+
+		tf.Setup(t)
+		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
+			AllowedPaths: []string{tf.TempDir()},
+		}))
+
+		// First, get all issues without offset
+		reqAll := mcputil.NewMockRequest(mcputil.Params{
+			"session_token": testToken,
+			"path":          pf.Dir(),
+			"language":      "go",
+		})
+
+		allResult, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, reqAll)), "Should get all issues")
+		requireCheckDocsResult(t, allResult, err, checkDocsResultOpts{
+			ExpectValidStructure: true,
+			ExpectedPath:         pf.Dir(),
+			ExpectedMinIssues:    1, // Should have multiple issues
+		})
+
+		totalIssues := allResult.TotalCount
+		if totalIssues < 3 {
+			t.Skipf("Need at least 3 issues for offset testing, got %d", totalIssues)
+		}
+
+		// Test offset = 2 (skip first 2 issues)
+		expectedReturnedCount := totalIssues - 2
+		if expectedReturnedCount < 0 {
+			expectedReturnedCount = 0
+		}
+
+		reqOffset := mcputil.NewMockRequest(mcputil.Params{
+			"session_token": testToken,
+			"path":          pf.Dir(),
+			"language":      "go",
+			"offset":        2,
+		})
+
+		offsetResult, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, reqOffset)), "Should handle offset parameter")
+		requireCheckDocsResult(t, offsetResult, err, checkDocsResultOpts{
+			ExpectValidStructure:  true,
+			ExpectedPath:          pf.Dir(),
+			ExpectedIssueCount:    -1,                    // Disable original logic
+			ExpectedTotalCount:    totalIssues,           // Total should remain the same
+			ExpectedReturnedCount: expectedReturnedCount, // Returned should be reduced by offset
+		})
+
+		// Verify that RemainingCount is calculated correctly: total - offset - returned
+		expectedRemainingCount := totalIssues - 2 - expectedReturnedCount // 15 - 2 - 13 = 0
+		assert.Equal(t, expectedRemainingCount, offsetResult.RemainingCount,
+			"RemainingCount should be total(%d) - offset(2) - returned(%d) = %d",
+			totalIssues, expectedReturnedCount, expectedRemainingCount)
+
+		// Test offset beyond available issues
+		reqBeyond := mcputil.NewMockRequest(mcputil.Params{
+			"session_token": testToken,
+			"path":          pf.Dir(),
+			"language":      "go",
+			"offset":        totalIssues + 10,
+		})
+
+		beyondResult, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, reqBeyond)), "Should handle offset beyond available issues")
+		requireCheckDocsResult(t, beyondResult, err, checkDocsResultOpts{
+			ExpectValidStructure:  true,
+			ExpectedPath:          pf.Dir(),
+			ExpectedIssueCount:    -1,          // Disable original logic
+			ExpectedTotalCount:    totalIssues, // Total should remain the same
+			ExpectedReturnedCount: 0,           // Should return 0 issues when offset beyond total
+		})
+
+		// Verify that RemainingCount is now correctly 0 (the bug we fixed)
+		assert.Equal(t, 0, beyondResult.RemainingCount,
+			"RemainingCount should be 0 when offset is beyond total issues")
 	})
 }

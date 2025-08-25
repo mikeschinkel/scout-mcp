@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mikeschinkel/scout-mcp/langutil"
 	"github.com/mikeschinkel/scout-mcp/langutil/golang"
 	"github.com/mikeschinkel/scout-mcp/mcputil"
 )
@@ -23,6 +24,7 @@ func init() {
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
 				RequiredPathProperty,
+				RequiredLanguageProperty,
 				RecursiveProperty,
 				OffsetProperty,
 			},
@@ -35,16 +37,27 @@ type CheckDocsTool struct {
 	*mcputil.ToolBase
 }
 
-const TARGET_CHAR_LIMIT = 90000 // 90K safety margin as per PLAN.md
+const TargetCharLimit = 90000 // 90K safety margin as per PLAN.md
 
 // Handle processes the check_docs tool request and returns documentation analysis results.
 func (t *CheckDocsTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
 	var recursive bool
-	var allExceptions []golang.DocException
+	var exceptions []golang.DocException
 	var path string
 	var analysisResult *DocsAnalysisResult
+	var language string
+	var offset int
 
 	logger.Info("Tool called", "tool", t.Name())
+
+	language, err = LanguageProperty.String(req)
+	if err != nil {
+		goto end
+	}
+	if language != string(langutil.GoLanguage) {
+		err = fmt.Errorf("the '%s' language not currently (yet?) supported by 'check_docs' tool", language)
+		goto end
+	}
 
 	path, err = RequiredPathProperty.String(req)
 	if err != nil {
@@ -56,8 +69,13 @@ func (t *CheckDocsTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 		goto end
 	}
 
-	// Get all documentation exceptions
-	allExceptions, err = golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
+	offset, err = OffsetProperty.Int(req)
+	if err != nil {
+		goto end
+	}
+
+	// Get all documentation exceptions (without offset first)
+	exceptions, err = golang.DocExceptions(context.Background(), &golang.DocsExceptionsArgs{
 		Path:      path,
 		Recursive: golang.GetRecurseDirective(recursive),
 	})
@@ -65,10 +83,11 @@ func (t *CheckDocsTool) Handle(_ context.Context, req mcputil.ToolRequest) (resu
 		goto end
 	}
 
-	// Apply intelligent response sizing and prioritization
-	analysisResult = t.createSizedAnalysisResult(path, allExceptions)
+	// Apply intelligent response sizing and prioritization (includes offset handling)
+	analysisResult = t.createSizedAnalysisResult(path, exceptions, offset)
 
 	logger.Info("Tool completed", "tool", t.Name(),
+		"language", language,
 		"total_issues", analysisResult.TotalCount,
 		"returned_issues", analysisResult.ReturnedCount,
 		"size_limited", analysisResult.SizeLimited,
@@ -91,21 +110,36 @@ type DocsAnalysisResult struct {
 	Message        string              `json:"message,omitempty"`
 }
 
-func NewDocsAnalysisResult(path string, exceptions []golang.DocException, totalFound int, responseSize int) *DocsAnalysisResult {
-	returnedCount := len(exceptions)
-	sizeLimited := totalFound > returnedCount
+type DocsAnalysisResultArgs struct {
+	Path         string
+	Exceptions   []golang.DocException
+	TotalFound   int
+	ResponseSize int
+	Offset       int
+}
+
+func NewDocsAnalysisResult(args DocsAnalysisResultArgs) *DocsAnalysisResult {
+	returnedCount := len(args.Exceptions)
+	sizeLimited := args.TotalFound > returnedCount
+
+	// Calculate remaining count considering offset
+	// RemainingCount = issues not yet returned (total - offset - returned)
+	remainingCount := args.TotalFound - args.Offset - returnedCount
+	if remainingCount < 0 {
+		remainingCount = 0
+	}
 
 	// Convert issues to use relative paths
-	issues := NewDocsAnalysisIssues(exceptions, path)
+	issues := NewDocsAnalysisIssues(args.Exceptions, args.Path)
 
 	result := &DocsAnalysisResult{
-		Path:           path,
+		Path:           args.Path,
 		Issues:         issues,
 		ReturnedCount:  returnedCount,
-		TotalCount:     totalFound,
-		RemainingCount: totalFound - returnedCount,
+		TotalCount:     args.TotalFound,
+		RemainingCount: remainingCount,
 		SizeLimited:    sizeLimited,
-		ResponseSize:   responseSize,
+		ResponseSize:   args.ResponseSize,
 	}
 
 	if sizeLimited {
@@ -113,7 +147,7 @@ func NewDocsAnalysisResult(path string, exceptions []golang.DocException, totalF
 			"Response limited to %d of %d total issues due to size constraints (%d chars). "+
 				"Showing highest priority issues first. %d issues remaining. "+
 				"Run again with smaller max_files parameter or after fixing current issues.",
-			returnedCount, totalFound, responseSize, result.RemainingCount)
+			returnedCount, args.TotalFound, args.ResponseSize, result.RemainingCount)
 	}
 
 	return result
@@ -156,28 +190,56 @@ func NewDocsAnalysisIssue(e golang.DocException, basePath string) (r DocsAnalysi
 }
 
 // createSizedAnalysisResult applies intelligent response sizing with prioritization
-func (t *CheckDocsTool) createSizedAnalysisResult(path string, allExceptions []golang.DocException) *DocsAnalysisResult {
+func (t *CheckDocsTool) createSizedAnalysisResult(path string, allExceptions []golang.DocException, offset int) (result *DocsAnalysisResult) {
+	var exceptions []golang.DocException
+	var maxIssues int
+	var currentSize int
+	var jsonBytes []byte
+
 	totalCount := len(allExceptions)
-	if totalCount == 0 {
-		return NewDocsAnalysisResult(path, allExceptions, totalCount, 0)
-	}
 
 	// Sort by priority first
 	sortIssuesByPriority(allExceptions)
 
-	// Apply user-specified limits if provided
-	exceptions := allExceptions
+	// Apply offset for pagination
+	exceptions = allExceptions
+	if offset > 0 {
+		if offset >= len(exceptions) {
+			exceptions = []golang.DocException{}
+		} else {
+			exceptions = exceptions[offset:]
+		}
+	}
 
-	// Dynamic size optimization
-	maxIssues := len(exceptions)
-	testResult := NewDocsAnalysisResult(path, exceptions[:maxIssues], totalCount, 0)
-	jsonBytes, _ := json.Marshal(testResult)
-	currentSize := len(jsonBytes)
+	// Dynamic size optimization - start with all available exceptions
+	maxIssues = len(exceptions)
 
 	// Iterative size reduction with ratio-based optimization
-	for currentSize > TARGET_CHAR_LIMIT && maxIssues > 1 {
+	for {
+		result = NewDocsAnalysisResult(DocsAnalysisResultArgs{
+			Path:         path,
+			Exceptions:   exceptions[:maxIssues],
+			TotalFound:   totalCount,
+			ResponseSize: currentSize,
+			Offset:       offset,
+		})
+		// Handle empty case
+		if totalCount == 0 {
+			exceptions = allExceptions
+			goto end
+		}
+		if maxIssues == 0 {
+			goto end
+		}
+
+		// Calculate initial size
+		jsonBytes, _ = json.Marshal(result)
+		currentSize = len(jsonBytes)
+		if currentSize < TargetCharLimit {
+			goto end
+		}
 		// Calculate ratio for efficient reduction
-		ratio := float64(TARGET_CHAR_LIMIT) / float64(currentSize)
+		ratio := float64(TargetCharLimit) / float64(currentSize)
 		newMaxIssues := int(float64(maxIssues) * ratio * 0.95) // 5% buffer
 
 		// Ensure progress
@@ -189,17 +251,10 @@ func (t *CheckDocsTool) createSizedAnalysisResult(path string, allExceptions []g
 		}
 
 		maxIssues = newMaxIssues
-
-		// Test new size
-		truncatedExceptions := exceptions[:maxIssues]
-		testResult = NewDocsAnalysisResult(path, truncatedExceptions, totalCount, 0)
-		jsonBytes, _ = json.Marshal(testResult)
-		currentSize = len(jsonBytes)
 	}
 
-	// Create final result with actual size
-	finalResult := NewDocsAnalysisResult(path, exceptions[:maxIssues], totalCount, currentSize)
-	return finalResult
+end:
+	return result
 }
 
 // getIssueSeverity returns priority level for different exception types

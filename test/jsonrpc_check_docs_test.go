@@ -9,8 +9,9 @@ import (
 // checkDocsArgs represents arguments for the check_docs tool.
 type checkDocsArgs struct {
 	Path      string `json:"path"`
+	Language  string `json:"language"`
 	Recursive bool   `json:"recursive,omitempty"`
-	MaxFiles  int    `json:"max_files,omitempty"`
+	Offset    int    `json:"offset,omitempty"`
 }
 
 // TestCheckDocsToolWithJSONRPC tests the check_docs tool via JSON-RPC.
@@ -62,14 +63,16 @@ func DocumentedFunc() {
 			"CurrentRepo": {
 				{
 					arguments: checkDocsArgs{
-						Path: repoDir(),
+						Path:     repoDir(),
+						Language: "go",
 					},
 				},
 			},
 			"SingleFile": {
 				{
 					arguments: checkDocsArgs{
-						Path: ".", // Pass directory, tool will find main.go
+						Path:     ".", // Pass directory, tool will find main.go
+						Language: "go",
 					},
 					expected: map[string]any{
 						"result.content.0.text|json()|total_count|exists()": true, // Should find documentation issues in main.go
@@ -80,6 +83,7 @@ func DocumentedFunc() {
 				{
 					arguments: checkDocsArgs{
 						Path:      ".",
+						Language:  "go",
 						Recursive: false,
 					},
 					expected: map[string]any{
@@ -91,6 +95,7 @@ func DocumentedFunc() {
 				{
 					arguments: checkDocsArgs{
 						Path:      ".",
+						Language:  "go",
 						Recursive: true,
 					},
 					expected: map[string]any{
@@ -98,14 +103,15 @@ func DocumentedFunc() {
 					},
 				},
 			},
-			"WithMaxFiles": {
+			"WithOffset": {
 				{
 					arguments: checkDocsArgs{
 						Path:     ".",
-						MaxFiles: 1,
+						Language: "go",
+						Offset:   2,
 					},
 					expected: map[string]any{
-						"result.content.0.text|json()|total_count|exists()": true, // Should respect max_files limit
+						"result.content.0.text|json()|total_count|exists()": true, // Should handle offset parameter
 					},
 				},
 			},

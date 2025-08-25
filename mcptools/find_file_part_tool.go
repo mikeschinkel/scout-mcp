@@ -17,8 +17,8 @@ func init() {
 			Description: "Find specific language constructs by name and return their location and content",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				PathProperty.Required(),
-				LanguageProperty.Required(),
+				RequiredPathProperty,
+				RequiredLanguageProperty,
 				PartTypeProperty.Required(),
 				PartNameProperty.Required(),
 			},

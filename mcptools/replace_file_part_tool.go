@@ -20,11 +20,11 @@ func init() {
 			Description: "Replace specific language constructs (functions, types, constants) by name using AST parsing",
 			Properties: []mcputil.Property{
 				RequiredSessionTokenProperty,
-				PathProperty.Required(),
-				LanguageProperty.Required(),
+				RequiredPathProperty,
+				RequiredLanguageProperty,
 				PartTypeProperty.Required(),
 				PartNameProperty.Required(),
-				NewContentProperty.Required(),
+				RequiredNewContentProperty,
 			},
 		}),
 	})

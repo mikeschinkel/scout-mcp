@@ -42,7 +42,7 @@ func (dir *GoDirectory) AddSubDir(gd *GoDirectory) {
 }
 
 // Exceptions returns documentation exceptions for all files in this directory
-func (dir *GoDirectory) Exceptions(ctx context.Context, basePath string, rd RecurseDirective) (exceptions []DocException) {
+func (dir *GoDirectory) Exceptions(ctx context.Context, args *DocsExceptionsArgs) (exceptions []DocException) {
 	// Skip invalid directories
 	if dir == nil {
 		goto end
@@ -50,7 +50,7 @@ func (dir *GoDirectory) Exceptions(ctx context.Context, basePath string, rd Recu
 
 	// README.md presence per directory with Go files
 	// But not in the root; we ignore those
-	if !dir.HasReadme && len(dir.Path) > len(basePath) {
+	if !dir.HasReadme && len(dir.Path) > len(args.Path) {
 		exceptions = append(exceptions, NewDocException(dir.Path+"/README.md", ReadmeException, nil))
 	}
 
@@ -58,13 +58,13 @@ func (dir *GoDirectory) Exceptions(ctx context.Context, basePath string, rd Recu
 	for _, f := range dir.files {
 		exceptions = append(exceptions, f.Exceptions(ctx)...)
 	}
-	if rd == DoNotRecurse {
+	if args.Recursive == DoNotRecurse {
 		goto end
 	}
 
 	// Check exceptions for subdirectories
 	for _, sd := range dir.subDirs {
-		exceptions = append(exceptions, sd.Exceptions(ctx, basePath, rd)...)
+		exceptions = append(exceptions, sd.Exceptions(ctx, args)...)
 	}
 
 end:
