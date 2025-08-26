@@ -168,8 +168,6 @@ func TestCheckDocsTool(t *testing.T) {
 		hasPath := false
 		hasRecursive := false
 		hasLanguage := false
-		hasOffset := false
-
 		for _, prop := range properties {
 			switch prop.GetName() {
 			case "path":
@@ -181,16 +179,12 @@ func TestCheckDocsTool(t *testing.T) {
 			case "language":
 				hasLanguage = true
 				assert.True(t, prop.IsRequired(), "language property should be required")
-			case "offset":
-				hasOffset = true
-				assert.False(t, prop.IsRequired(), "offset property should be optional")
 			}
 		}
 
 		assert.True(t, hasPath, "Tool should have path property")
 		assert.True(t, hasRecursive, "Tool should have recursive property")
 		assert.True(t, hasLanguage, "Tool should have language property")
-		assert.True(t, hasOffset, "Tool should have offset property")
 	})
 
 	t.Run("RequiredParameters_MissingLanguage_ShouldFail", func(t *testing.T) {
@@ -500,99 +494,4 @@ func Function%d() {
 		})
 	})
 
-	t.Run("OffsetParameter_ShouldSkipSpecifiedNumberOfIssues", func(t *testing.T) {
-		tf := fsfix.NewRootFixture(CheckDocsDirPrefix)
-		defer tf.Cleanup()
-
-		pf := tf.AddRepoFixture("offset-test-project", nil)
-
-		// Create multiple Go files with predictable documentation issues
-		for i := 1; i <= 5; i++ {
-			pf.AddFileFixture(fmt.Sprintf("file%d.go", i), &fsfix.FileFixtureArgs{
-				Content: fmt.Sprintf(`package main
-
-func Function%d() {
-	// Missing documentation
-}
-
-type Type%d struct {
-	Field string
-}
-`, i, i),
-			})
-		}
-
-		tf.Setup(t)
-		tool.SetConfig(mcputil.NewMockConfig(mcputil.MockConfigArgs{
-			AllowedPaths: []string{tf.TempDir()},
-		}))
-
-		// First, get all issues without offset
-		reqAll := mcputil.NewMockRequest(mcputil.Params{
-			"session_token": testToken,
-			"path":          pf.Dir(),
-			"language":      "go",
-		})
-
-		allResult, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, reqAll)), "Should get all issues")
-		requireCheckDocsResult(t, allResult, err, checkDocsResultOpts{
-			ExpectValidStructure: true,
-			ExpectedPath:         pf.Dir(),
-			ExpectedMinIssues:    1, // Should have multiple issues
-		})
-
-		totalIssues := allResult.TotalCount
-		if totalIssues < 3 {
-			t.Skipf("Need at least 3 issues for offset testing, got %d", totalIssues)
-		}
-
-		// Test offset = 2 (skip first 2 issues)
-		expectedReturnedCount := totalIssues - 2
-		if expectedReturnedCount < 0 {
-			expectedReturnedCount = 0
-		}
-
-		reqOffset := mcputil.NewMockRequest(mcputil.Params{
-			"session_token": testToken,
-			"path":          pf.Dir(),
-			"language":      "go",
-			"offset":        2,
-		})
-
-		offsetResult, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, reqOffset)), "Should handle offset parameter")
-		requireCheckDocsResult(t, offsetResult, err, checkDocsResultOpts{
-			ExpectValidStructure:  true,
-			ExpectedPath:          pf.Dir(),
-			ExpectedIssueCount:    -1,                    // Disable original logic
-			ExpectedTotalCount:    totalIssues,           // Total should remain the same
-			ExpectedReturnedCount: expectedReturnedCount, // Returned should be reduced by offset
-		})
-
-		// Verify that RemainingCount is calculated correctly: total - offset - returned
-		expectedRemainingCount := totalIssues - 2 - expectedReturnedCount // 15 - 2 - 13 = 0
-		assert.Equal(t, expectedRemainingCount, offsetResult.RemainingCount,
-			"RemainingCount should be total(%d) - offset(2) - returned(%d) = %d",
-			totalIssues, expectedReturnedCount, expectedRemainingCount)
-
-		// Test offset beyond available issues
-		reqBeyond := mcputil.NewMockRequest(mcputil.Params{
-			"session_token": testToken,
-			"path":          pf.Dir(),
-			"language":      "go",
-			"offset":        totalIssues + 10,
-		})
-
-		beyondResult, err := mcputil.GetToolResult[CheckDocsResult](mcputil.CallResult(mcputil.CallTool(tool, reqBeyond)), "Should handle offset beyond available issues")
-		requireCheckDocsResult(t, beyondResult, err, checkDocsResultOpts{
-			ExpectValidStructure:  true,
-			ExpectedPath:          pf.Dir(),
-			ExpectedIssueCount:    -1,          // Disable original logic
-			ExpectedTotalCount:    totalIssues, // Total should remain the same
-			ExpectedReturnedCount: 0,           // Should return 0 issues when offset beyond total
-		})
-
-		// Verify that RemainingCount is now correctly 0 (the bug we fixed)
-		assert.Equal(t, 0, beyondResult.RemainingCount,
-			"RemainingCount should be 0 when offset is beyond total issues")
-	})
 }

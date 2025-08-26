@@ -11,7 +11,6 @@ type checkDocsArgs struct {
 	Path      string `json:"path"`
 	Language  string `json:"language"`
 	Recursive bool   `json:"recursive,omitempty"`
-	Offset    int    `json:"offset,omitempty"`
 }
 
 // TestCheckDocsToolWithJSONRPC tests the check_docs tool via JSON-RPC.
@@ -101,18 +100,6 @@ func DocumentedFunc() {
 					},
 					expected: map[string]any{
 						"result.content.0.text|json()|total_count|exists()": true, // Should find issues including README.md
-					},
-				},
-			},
-			"WithOffset": {
-				{
-					arguments: checkDocsArgs{
-						Path:     ".",
-						Language: "go",
-						Offset:   2,
-					},
-					expected: map[string]any{
-						"result.content.0.text|json()|total_count|exists()": true, // Should handle offset parameter
 					},
 				},
 			},
