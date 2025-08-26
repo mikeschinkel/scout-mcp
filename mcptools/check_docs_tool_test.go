@@ -15,14 +15,32 @@ const CheckDocsDirPrefix = "check-docs-tool-test"
 
 // CheckDocsResult matches the JSON output structure of CheckDocsTool
 type CheckDocsResult struct {
-	Path           string           `json:"path"`
-	Issues         []CheckDocsIssue `json:"issues"`
-	ReturnedCount  int              `json:"returned_count"`
-	TotalCount     int              `json:"total_count"`
-	RemainingCount int              `json:"remaining_count"`
-	SizeLimited    bool             `json:"size_limited"`
-	ResponseSize   int              `json:"response_size_chars"`
-	Message        string           `json:"message,omitempty"`
+	Path           string                    `json:"path"`
+	IssuesByFile   []CheckDocsFileIssueGroup `json:"issues_by_file"`
+	Summary        CheckDocsIssueSummary     `json:"summary"`
+	ReturnedCount  int                       `json:"returned_count"`
+	TotalCount     int                       `json:"total_count"`
+	RemainingCount int                       `json:"remaining_count"`
+	SizeLimited    bool                      `json:"size_limited"`
+	ResponseSize   int                       `json:"response_size_chars"`
+	Message        string                    `json:"message,omitempty"`
+}
+
+type CheckDocsFileIssueGroup struct {
+	File       string           `json:"file"`
+	IssueCount int              `json:"issue_count"`
+	Issues     []CheckDocsIssue `json:"issues"`
+}
+
+type CheckDocsFileIssueCountItem struct {
+	File       string `json:"file"`
+	IssueCount int    `json:"issue_count"`
+}
+
+type CheckDocsIssueSummary struct {
+	TotalFilesWithIssues int                           `json:"total_files_with_issues"`
+	TotalIssues          int                           `json:"total_issues"`
+	FilesByIssueCount    []CheckDocsFileIssueCountItem `json:"files_by_issue_count"`
 }
 
 type CheckDocsIssue struct {
@@ -59,12 +77,22 @@ func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, op
 	require.NoError(t, err, "Should not have error")
 	require.NotNil(t, result, "Result should not be nil")
 
+	// Calculate total issues across all file groups for validation
+	totalIssuesInGroups := 0
+	for _, fileGroup := range result.IssuesByFile {
+		totalIssuesInGroups += fileGroup.IssueCount
+	}
+
 	if opts.ExpectValidStructure {
 		// Verify required fields exist
 		assert.NotEmpty(t, result.Path, "Path should not be empty")
-		assert.NotNil(t, result.Issues, "Issues should not be nil (can be empty slice)")
+		assert.NotNil(t, result.IssuesByFile, "IssuesByFile should not be nil (can be empty slice)")
 		assert.GreaterOrEqual(t, result.TotalCount, 0, "TotalCount should be non-negative")
-		assert.Equal(t, result.ReturnedCount, len(result.Issues), "ReturnedCount should match issues array length")
+		assert.Equal(t, result.ReturnedCount, totalIssuesInGroups, "ReturnedCount should match total issues in groups")
+
+		// Validate summary structure
+		assert.Equal(t, len(result.IssuesByFile), result.Summary.TotalFilesWithIssues, "Summary should match file group count")
+		assert.Equal(t, totalIssuesInGroups, result.Summary.TotalIssues, "Summary TotalIssues should match actual issues")
 
 		// Only validate RemainingCount with old logic if not using offset-specific validation
 		if opts.ExpectedTotalCount == 0 && opts.ExpectedReturnedCount == 0 {
@@ -80,7 +108,7 @@ func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, op
 	// Check issue count (only if explicitly set) - this is for tests where TotalCount == Issues.length
 	if opts.ExpectedIssueCount > 0 || (opts.ExpectedIssueCount == 0 && opts.ExpectedMinIssues == 0) {
 		assert.Equal(t, opts.ExpectedIssueCount, result.TotalCount, "TotalCount should match expected count")
-		assert.Len(t, result.Issues, opts.ExpectedIssueCount, "Issues array should match expected count")
+		assert.Equal(t, opts.ExpectedIssueCount, totalIssuesInGroups, "Total issues in groups should match expected count")
 	}
 
 	// Check total count specifically (for offset/limit scenarios) - only check if ExpectedIssueCount disabled
@@ -90,28 +118,34 @@ func requireCheckDocsResult(t *testing.T, result *CheckDocsResult, err error, op
 
 	// Check returned count specifically (for offset/limit scenarios) - only check if ExpectedIssueCount disabled
 	if opts.ExpectedReturnedCount >= 0 && opts.ExpectedIssueCount == -1 {
-		assert.Len(t, result.Issues, opts.ExpectedReturnedCount, "Issues array should match expected returned count")
+		assert.Equal(t, opts.ExpectedReturnedCount, totalIssuesInGroups, "Total issues in groups should match expected returned count")
 	}
 
 	if opts.ExpectedMinIssues > 0 {
 		assert.GreaterOrEqual(t, result.TotalCount, opts.ExpectedMinIssues, "Should have at least minimum issues")
-		assert.GreaterOrEqual(t, len(result.Issues), opts.ExpectedMinIssues, "Issues array should have minimum count")
+		assert.GreaterOrEqual(t, totalIssuesInGroups, opts.ExpectedMinIssues, "Total issues in groups should have minimum count")
 	}
 
-	// Validate issue structure if any issues exist
-	for i, issue := range result.Issues {
-		assert.NotEmpty(t, issue.File, "Issue %d should have file", i)
-		// Line can be 0 for README.md issues, otherwise should be > 0
-		if !strings.Contains(issue.Issue, "README.md") {
-			assert.Greater(t, issue.Line, 0, "Issue %d should have valid line number", i)
-		} else {
-			assert.GreaterOrEqual(t, issue.Line, 0, "Issue %d should have non-negative line number", i)
-		}
-		assert.NotEmpty(t, issue.Issue, "Issue %d should have issue description", i)
-		// Element name can be empty for file-level issues (like missing file comments)
-		// EndLine can be nil, but if set should be >= Line
-		if issue.EndLine != nil {
-			assert.GreaterOrEqual(t, *issue.EndLine, issue.Line, "Issue %d EndLine should be >= Line", i)
+	// Validate file group structure and nested issues
+	for groupIdx, fileGroup := range result.IssuesByFile {
+		assert.NotEmpty(t, fileGroup.File, "File group %d should have file name", groupIdx)
+		assert.Equal(t, len(fileGroup.Issues), fileGroup.IssueCount, "File group %d IssueCount should match actual issues", groupIdx)
+
+		// Validate individual issues within each file group
+		for issueIdx, issue := range fileGroup.Issues {
+			assert.NotEmpty(t, issue.File, "File group %d, issue %d should have file", groupIdx, issueIdx)
+			// Line can be 0 for README.md issues, otherwise should be > 0
+			if !strings.Contains(issue.Issue, "README.md") {
+				assert.Greater(t, issue.Line, 0, "File group %d, issue %d should have valid line number", groupIdx, issueIdx)
+			} else {
+				assert.GreaterOrEqual(t, issue.Line, 0, "File group %d, issue %d should have non-negative line number", groupIdx, issueIdx)
+			}
+			assert.NotEmpty(t, issue.Issue, "File group %d, issue %d should have issue description", groupIdx, issueIdx)
+			// Element name can be empty for file-level issues (like missing file comments)
+			// EndLine can be nil, but if set should be >= Line
+			if issue.EndLine != nil {
+				assert.GreaterOrEqual(t, *issue.EndLine, issue.Line, "File group %d, issue %d EndLine should be >= Line", groupIdx, issueIdx)
+			}
 		}
 	}
 }

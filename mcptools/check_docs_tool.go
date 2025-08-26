@@ -37,7 +37,7 @@ type CheckDocsTool struct {
 	*mcputil.ToolBase
 }
 
-const TargetCharLimit = 90000 // 90K safety margin as per PLAN.md
+const TargetCharLimit = 75000 // 75K provided safety margin for 25k tokens max
 
 // Handle processes the check_docs tool request and returns documentation analysis results.
 func (t *CheckDocsTool) Handle(_ context.Context, req mcputil.ToolRequest) (result mcputil.ToolResult, err error) {
@@ -99,15 +99,33 @@ end:
 	return result, err
 }
 
+type FileIssueGroup struct {
+	File       string              `json:"file"`
+	IssueCount int                 `json:"issue_count"`
+	Issues     []DocsAnalysisIssue `json:"issues"`
+}
+
+type FileIssueCountItem struct {
+	File       string `json:"file"`
+	IssueCount int    `json:"issue_count"`
+}
+
+type IssueSummary struct {
+	TotalFilesWithIssues int                  `json:"total_files_with_issues"`
+	TotalIssues          int                  `json:"total_issues"`
+	FilesByIssueCount    []FileIssueCountItem `json:"files_by_issue_count"`
+}
+
 type DocsAnalysisResult struct {
-	Path           string              `json:"path"`
-	Issues         []DocsAnalysisIssue `json:"issues"`
-	ReturnedCount  int                 `json:"returned_count"`
-	TotalCount     int                 `json:"total_count"`
-	RemainingCount int                 `json:"remaining_count"`
-	SizeLimited    bool                `json:"size_limited"`
-	ResponseSize   int                 `json:"response_size_chars"`
-	Message        string              `json:"message,omitempty"`
+	Path           string           `json:"path"`
+	IssuesByFile   []FileIssueGroup `json:"issues_by_file"`
+	Summary        IssueSummary     `json:"summary"`
+	ReturnedCount  int              `json:"returned_count"`
+	TotalCount     int              `json:"total_count"`
+	RemainingCount int              `json:"remaining_count"`
+	SizeLimited    bool             `json:"size_limited"`
+	ResponseSize   int              `json:"response_size_chars"`
+	Message        string           `json:"message,omitempty"`
 }
 
 type DocsAnalysisResultArgs struct {
@@ -118,23 +136,52 @@ type DocsAnalysisResultArgs struct {
 	Offset       int
 }
 
-func NewDocsAnalysisResult(args DocsAnalysisResultArgs) *DocsAnalysisResult {
-	returnedCount := len(args.Exceptions)
-	sizeLimited := args.TotalFound > returnedCount
+func NewDocsAnalysisResult(args DocsAnalysisResultArgs) (result *DocsAnalysisResult) {
+	var fileGroups []FileIssueGroup
+	var returnedCount int
+	var sizeLimited bool
+	var remainingCount int
+	var issues []DocsAnalysisIssue
+	var summary IssueSummary
+	var filesByIssueCount []FileIssueCountItem
+
+	// Convert flat issues to grouped structure
+	issues = NewDocsAnalysisIssues(args.Exceptions, args.Path)
+	fileGroups = groupIssuesByFile(issues)
+
+	returnedCount = len(args.Exceptions)
+	sizeLimited = args.TotalFound > returnedCount
 
 	// Calculate remaining count considering offset
-	// RemainingCount = issues not yet returned (total - offset - returned)
-	remainingCount := args.TotalFound - args.Offset - returnedCount
+	remainingCount = args.TotalFound - args.Offset - returnedCount
 	if remainingCount < 0 {
 		remainingCount = 0
 	}
 
-	// Convert issues to use relative paths
-	issues := NewDocsAnalysisIssues(args.Exceptions, args.Path)
+	// Create summary with files ordered by issue count (descending)
+	filesByIssueCount = make([]FileIssueCountItem, 0, len(fileGroups))
+	for _, group := range fileGroups {
+		filesByIssueCount = append(filesByIssueCount, FileIssueCountItem{
+			File:       group.File,
+			IssueCount: group.IssueCount,
+		})
+	}
 
-	result := &DocsAnalysisResult{
+	// Sort files by issue count (descending)
+	sort.Slice(filesByIssueCount, func(i, j int) bool {
+		return filesByIssueCount[i].IssueCount > filesByIssueCount[j].IssueCount
+	})
+
+	summary = IssueSummary{
+		TotalFilesWithIssues: len(fileGroups),
+		TotalIssues:          returnedCount,
+		FilesByIssueCount:    filesByIssueCount,
+	}
+
+	result = &DocsAnalysisResult{
 		Path:           args.Path,
-		Issues:         issues,
+		IssuesByFile:   fileGroups,
+		Summary:        summary,
 		ReturnedCount:  returnedCount,
 		TotalCount:     args.TotalFound,
 		RemainingCount: remainingCount,
@@ -146,7 +193,7 @@ func NewDocsAnalysisResult(args DocsAnalysisResultArgs) *DocsAnalysisResult {
 		result.Message = fmt.Sprintf(
 			"Response limited to %d of %d total issues due to size constraints (%d chars). "+
 				"Showing highest priority issues first. %d issues remaining. "+
-				"Run again with smaller max_files parameter or after fixing current issues.",
+				"Run again with offset parameter or after fixing current issues.",
 			returnedCount, args.TotalFound, args.ResponseSize, result.RemainingCount)
 	}
 
@@ -187,6 +234,38 @@ func NewDocsAnalysisIssue(e golang.DocException, basePath string) (r DocsAnalysi
 		Element:   e.Element,
 		MultiLine: e.MultiLine,
 	}
+}
+
+func groupIssuesByFile(issues []DocsAnalysisIssue) (fileGroups []FileIssueGroup) {
+	var fileGroupMap map[string][]DocsAnalysisIssue
+	var group []DocsAnalysisIssue
+	var exists bool
+	var seenFiles []string
+
+	fileGroupMap = make(map[string][]DocsAnalysisIssue)
+
+	// Group issues by file, preserving order
+	for _, issue := range issues {
+		group, exists = fileGroupMap[issue.File]
+		if !exists {
+			seenFiles = append(seenFiles, issue.File)
+		}
+		group = append(group, issue)
+		fileGroupMap[issue.File] = group
+	}
+
+	// Convert to array format, maintaining file priority order
+	fileGroups = make([]FileIssueGroup, 0, len(seenFiles))
+	for _, filePath := range seenFiles {
+		group = fileGroupMap[filePath]
+		fileGroups = append(fileGroups, FileIssueGroup{
+			File:       filePath,
+			IssueCount: len(group),
+			Issues:     group,
+		})
+	}
+
+	return fileGroups
 }
 
 // createSizedAnalysisResult applies intelligent response sizing with prioritization
@@ -251,6 +330,12 @@ func (t *CheckDocsTool) createSizedAnalysisResult(path string, allExceptions []g
 		}
 
 		maxIssues = newMaxIssues
+
+		logger.Info("Size limiting iteration",
+			"maxIssues", maxIssues,
+			"currentSize", currentSize,
+			"targetLimit", TargetCharLimit,
+			"ratio", ratio)
 	}
 
 end:

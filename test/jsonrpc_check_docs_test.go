@@ -57,7 +57,8 @@ func DocumentedFunc() {
 			"result.content.0.text|json()|total_count|exists()":     true,
 			"result.content.0.text|json()|returned_count|exists()":  true,
 			"result.content.0.text|json()|remaining_count|exists()": true,
-			"result.content.0.text|json()|issues|exists()":          true,
+			"result.content.0.text|json()|issues_by_file|exists()":  true,
+			"result.content.0.text|json()|summary|exists()":         true,
 		},
 		subtests: map[string][]subtest{
 			"CurrentRepo": {

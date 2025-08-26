@@ -255,7 +255,13 @@ If you want to accept *unified diffs* from a client, add:
 * `generate_diff` — produces unified diffs (uses `difflib`, already in the plan). ([GitHub][4])
 * `apply_unified_diff` — parse with `bluekeyes/go-gitdiff` and apply strictly (or add a small “fuzz” window). Note: `go-gitdiff` applies in strict mode by default; drift-tolerant application is an open topic. ([GitHub][8])
 
+### 2.6 Miscellaneous Potential tools:
+* https://hackernoon.com/building-a-go-dependency-scanner-from-scratch
+
+
 ---
+
+
 
 ## Milestone 3 — Integrate approval & de-risk “whole-file write”
 
