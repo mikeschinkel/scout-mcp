@@ -1,6 +1,9 @@
-# Scout-MCP: Secure File Operations Server
+# Scout-MCP: 
+Scout-MCP is a comprehensive Model Context Protocol (MCP) server that provides features for Go developers to be used with Claude including file access and manipulation capabilities through stdio transport. 
 
-Scout-MCP is a comprehensive Model Context Protocol (MCP) server that provides Claude with secure file access and manipulation capabilities through stdio transport. Built with explicit directory whitelisting, session-based instruction enforcement, and advanced file operations including AST-based editing.
+The primary standout feature for Go developers is the list of all exceptions to the [Go Doc Comments standards](https://tip.golang.org/doc/comment).
+
+Built with explicit directory whitelisting, session-based instruction enforcement, and advanced file operations including AST-based editing.
 
 ## Features
 
