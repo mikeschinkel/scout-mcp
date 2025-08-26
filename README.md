@@ -1,4 +1,5 @@
-# Scout-MCP: 
+# Scout-MCP: MCP Server for Go Developers
+
 Scout-MCP is a comprehensive Model Context Protocol (MCP) server that provides features for Go developers to be used with Claude including file access and manipulation capabilities through stdio transport. 
 
 The primary standout feature for Go developers is the list of all exceptions to the [Go Doc Comments standards](https://tip.golang.org/doc/comment).
